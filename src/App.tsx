@@ -8,6 +8,7 @@ import WorkoutDay from './pages/WorkoutDay'
 import Progress from './pages/Progress'
 import Profile from './pages/Profile'
 import Home from './pages/Home'
+import HIIT from './pages/HIIT'
 import PageTransition from './components/PageTransition'
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/hiit" element={<HIIT />} />
         <Route path="/workout/:day" element={<WorkoutDay />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/" element={<Navigate to="/home" replace />} />

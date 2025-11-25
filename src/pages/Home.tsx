@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress, getCurrentDay, getWorkoutByDay } from '../utils/workouts'
-import { Dumbbell, Share2, Trophy, Calendar, TrendingUp } from 'lucide-react'
+import { Dumbbell, Share2, Trophy, Calendar, TrendingUp, Flame } from 'lucide-react'
 import { UserProgress, Workout } from '../types'
 
 export default function Home() {
@@ -122,6 +122,20 @@ export default function Home() {
             className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-purple-700 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
           >
             Iniciar Treino do Dia {currentDay}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center mb-2">
+            <Flame className="w-5 h-5 text-red-500 mr-2" />
+            <div className="text-xl font-bold text-gray-900">HIIT Opcional • Gordura + Abdômen</div>
+          </div>
+          <p className="text-gray-700">30 minutos no formato 40s ON / 20s OFF. Ideal para quem deseja acelerar a queima de gordura.</p>
+          <button
+            onClick={() => navigate('/hiit')}
+            className="mt-4 w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-red-600 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
+          >
+            Ver Treino HIIT Opcional
           </button>
         </div>
 
