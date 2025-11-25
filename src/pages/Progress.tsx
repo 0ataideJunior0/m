@@ -189,48 +189,70 @@ export default function Progress() {
 
         {/* Grade Semanal */}
         <div className="bg-gray-900 text-white rounded-2xl shadow-lg p-6 mt-8">
-          <h2 className="text-xl font-bold mb-6">Grade Semanal (4 semanas)</h2>
+          <h2 className="text-xl font-bold mb-6">Grade Semanal (3 semanas)</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left">
-                  <th className="py-2 pr-4">Ciclo</th>
-                  <th className="py-2 px-4">Dia 1</th>
-                  <th className="py-2 px-4">Dia 2</th>
-                  <th className="py-2 px-4">Dia 3</th>
-                  <th className="py-2 px-4">Dia 4</th>
-                  <th className="py-2 px-4">Dia 5</th>
-                  <th className="py-2 px-4">Dia 6</th>
-                  <th className="py-2 px-4">Dia 7</th>
+                  <th className="py-2 pr-4">Semana</th>
+                  <th className="py-2 px-4">Seg</th>
+                  <th className="py-2 px-4">Ter</th>
+                  <th className="py-2 px-4">Qua</th>
+                  <th className="py-2 px-4">Qui</th>
+                  <th className="py-2 px-4">Sex</th>
+                  <th className="py-2 px-4">Sáb</th>
+                  <th className="py-2 px-4">Dom</th>
                 </tr>
               </thead>
               <tbody>
-                {[1,2,3,4].map((semana) => (
-                  <tr key={semana} className="border-t border-white/10">
-                    <td className="py-3 pr-4 font-semibold">Semana {semana}</td>
-                    <td className="py-3 px-4">T-A</td>
-                    <td className="py-3 px-4">T-B</td>
-                    <td className="py-3 px-4">T-C</td>
-                    <td className="py-3 px-4">T-D</td>
-                    <td className="py-3 px-4">T-E</td>
-                    <td className="py-3 px-4">Descanso</td>
-                    <td className="py-3 px-4">Descanso</td>
-                  </tr>
-                ))}
+                <tr className="border-t border-white/10">
+                  <td className="py-3 pr-4 font-semibold">Semana 1</td>
+                  <td className="py-3 px-4">M-A (D1)</td>
+                  <td className="py-3 px-4">M-B (D2)</td>
+                  <td className="py-3 px-4">M-C (D3)</td>
+                  <td className="py-3 px-4">M-D (D4)</td>
+                  <td className="py-3 px-4">M-E (D5)</td>
+                  <td className="py-3 px-4">M-F (D6)</td>
+                  <td className="py-3 px-4">M-G (D7)</td>
+                </tr>
+                <tr className="border-t border-white/10">
+                  <td className="py-3 pr-4 font-semibold">Semana 2</td>
+                  <td className="py-3 px-4">M-A (D8)</td>
+                  <td className="py-3 px-4">M-B (D9)</td>
+                  <td className="py-3 px-4">M-C (D10)</td>
+                  <td className="py-3 px-4">M-D (D11)</td>
+                  <td className="py-3 px-4">M-E (D12)</td>
+                  <td className="py-3 px-4">M-F (D13)</td>
+                  <td className="py-3 px-4">M-G (D14)</td>
+                </tr>
+                <tr className="border-t border-white/10">
+                  <td className="py-3 pr-4 font-semibold">Semana 3</td>
+                  <td className="py-3 px-4">M-A (D15)</td>
+                  <td className="py-3 px-4">M-B (D16)</td>
+                  <td className="py-3 px-4">M-C (D17)</td>
+                  <td className="py-3 px-4">M-D (D18)</td>
+                  <td className="py-3 px-4">M-E (D19)</td>
+                  <td className="py-3 px-4">M-F (D20)</td>
+                  <td className="py-3 px-4">DESCANSO</td>
+                </tr>
               </tbody>
             </table>
           </div>
           <div className="mt-6 flex items-center justify-between">
             <button
               onClick={() => {
-                const header = ['Ciclo','Dia 1','Dia 2','Dia 3','Dia 4','Dia 5','Dia 6','Dia 7']
-                const rows = [1,2,3,4].map((s) => ['Semana '+s,'T-A','T-B','T-C','T-D','T-E','Descanso','Descanso'])
+                const header = ['Semana','Seg','Ter','Qua','Qui','Sex','Sáb','Dom']
+                const rows = [
+                  ['Semana 1','M-A (D1)','M-B (D2)','M-C (D3)','M-D (D4)','M-E (D5)','M-F (D6)','M-G (D7)'],
+                  ['Semana 2','M-A (D8)','M-B (D9)','M-C (D10)','M-D (D11)','M-E (D12)','M-F (D13)','M-G (D14)'],
+                  ['Semana 3','M-A (D15)','M-B (D16)','M-C (D17)','M-D (D18)','M-E (D19)','M-F (D20)','DESCANSO'],
+                ]
                 const csv = [header, ...rows].map(r => r.join(',')).join('\n')
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
                 a.href = url
-                a.download = 'musa_grade_semanal.csv'
+                a.download = 'musa_grade_semanal_3semanas.csv'
                 a.click()
                 URL.revokeObjectURL(url)
               }}
