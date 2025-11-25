@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c084fc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a855f7;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #f7f7f7 37%, #eee 63%);
+  background-size: 400% 100%;
+}
+
+@layer components {
+  .ui-hover {
+    @apply transition duration-300 ease-out hover:scale-[1.02];
+  }
+  .ui-link {
+    @apply transition-colors duration-300 hover:text-purple-700 underline underline-offset-2;
+  }
+  .ui-fade-in {
+    @apply animate-fade-in;
+  }
+  .ui-fade-out {
+    @apply animate-fade-out;
+  }
+  .ui-page-in {
+    @apply animate-page-in;
+  }
+  .ui-page-out {
+    @apply animate-page-out;
+  }
+  .ui-slide-up {
+    @apply animate-slide-up;
+  }
+  .ui-slide-down {
+    @apply animate-slide-down;
+  }
+  .ui-shimmer {
+    @apply animate-shimmer;
+  }
+}
