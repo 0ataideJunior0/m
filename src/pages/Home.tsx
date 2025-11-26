@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress, getCurrentDay, getWorkoutByDay } from '../utils/workouts'
-import { Dumbbell, Share2, Trophy, Calendar, TrendingUp, Flame } from 'lucide-react'
+import { Dumbbell, Share2, Trophy, Calendar, TrendingUp, Flame, FileDown, Eye } from 'lucide-react'
 import { UserProgress, Workout } from '../types'
+import { getSignedPlanUrl } from '../utils/plans'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -11,6 +12,8 @@ export default function Home() {
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [workout, setWorkout] = useState<Workout | null>(null)
   const [loading, setLoading] = useState(true)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState<'mass_gain' | 'fat_loss' | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -137,6 +140,117 @@ export default function Home() {
           >
             Ver Treino HIIT Opcional
           </button>
+        </div>
+
+        {/* Planos Alimentares */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="text-xl font-bold text-gray-900 mb-2">Planos Alimentares (PDF)</div>
+          <p className="text-gray-700 mb-4">Selecione o plano desejado. Download seguro com validação de acesso.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border border-gray-200 rounded-xl p-4">
+              <div className="font-semibold text-gray-900 mb-1">Ganho de Massa Muscular</div>
+              <p className="text-sm text-gray-600 mb-3">Plano com foco em hipertrofia e superávit calórico.</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      setDownloading('mass_gain')
+                      const { url } = await getSignedPlanUrl('mass_gain', 300)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'plano_hipertrofia.pdf'
+                      a.rel = 'noopener'
+                      a.click()
+                      setDownloading(null)
+                    } catch (e: any) {
+                      setDownloading(null)
+                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
+                      alert(`Não foi possível baixar o plano. ${msg}`)
+                    }
+                  }}
+                  className="ui-hover bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-2 rounded-lg flex items-center"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  {downloading === 'mass_gain' ? 'Baixando...' : 'Baixar PDF'}
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const { url } = await getSignedPlanUrl('mass_gain', 600)
+                      const w = window.open(url, '_blank', 'noopener')
+                      if (!w) setPreviewUrl(url)
+                      else setPreviewUrl(null)
+                    } catch (e: any) {
+                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
+                      alert(`Pré-visualização indisponível no momento. ${msg}`)
+                    }
+                  }}
+                  className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Visualizar
+                </button>
+              </div>
+            </div>
+
+            <div className="border border-gray-200 rounded-xl p-4">
+              <div className="font-semibold text-gray-900 mb-1">Perda de Gordura</div>
+              <p className="text-sm text-gray-600 mb-3">Plano com foco em déficit calórico e definição.</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      setDownloading('fat_loss')
+                      const { url } = await getSignedPlanUrl('fat_loss', 300)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'plano_perda_gordura.pdf'
+                      a.rel = 'noopener'
+                      a.click()
+                      setDownloading(null)
+                    } catch (e: any) {
+                      setDownloading(null)
+                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
+                      alert(`Não foi possível baixar o plano. ${msg}`)
+                    }
+                  }}
+                  className="ui-hover bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg flex items-center"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  {downloading === 'fat_loss' ? 'Baixando...' : 'Baixar PDF'}
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const { url } = await getSignedPlanUrl('fat_loss', 600)
+                      const w = window.open(url, '_blank', 'noopener')
+                      if (!w) setPreviewUrl(url)
+                      else setPreviewUrl(null)
+                    } catch (e: any) {
+                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
+                      alert(`Pré-visualização indisponível no momento. ${msg}`)
+                    }
+                  }}
+                  className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Visualizar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {previewUrl && (
+            <div className="mt-6">
+              <div className="text-sm text-gray-600 mb-2">Pré-visualização (pode não funcionar em todos os navegadores). Se necessário, use o botão de download.</div>
+              <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden">
+                <iframe src={previewUrl} title="Pré-visualização do PDF" className="w-full h-full" />
+              </div>
+              <div className="mt-3">
+                <button onClick={() => setPreviewUrl(null)} className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg">Fechar Pré-visualização</button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
