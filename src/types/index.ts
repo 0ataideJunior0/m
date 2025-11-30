@@ -31,6 +31,7 @@ export interface Exercise {
   note?: string
   group?: string
   type?: 'warmup' | 'drop_set' | 'core' | 'normal'
+  video?: string
 }
 
 export interface AuthError {

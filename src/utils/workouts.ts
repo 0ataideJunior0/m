@@ -10,7 +10,39 @@ export const getWorkoutByDay = async (dayNumber: number): Promise<Workout | null
       .single()
 
     if (error) throw error
-    return data
+    // Normalize exercises structure and video field
+    const normalizeVideo = (ex: any) => {
+      return (
+        ex?.video ??
+        ex?.video_url ??
+        ex?.videoUrl ??
+        ex?.url_video ??
+        null
+      )
+    }
+
+    const exercisesRaw = (data as any).exercises
+    const exercisesArr: any[] =
+      typeof exercisesRaw === 'string'
+        ? JSON.parse(exercisesRaw)
+        : Array.isArray(exercisesRaw)
+          ? exercisesRaw
+          : []
+
+    const exercises = exercisesArr.map((ex: any) => ({
+      exercise: String(ex.exercise ?? ''),
+      reps: String(ex.reps ?? ''),
+      sets: ex.sets ? String(ex.sets) : undefined,
+      note: ex.note ? String(ex.note) : undefined,
+      group: ex.group ? String(ex.group) : undefined,
+      type: ex.type as any,
+      video: normalizeVideo(ex) || undefined,
+    }))
+
+    return {
+      ...(data as any),
+      exercises,
+    } as Workout
   } catch (error) {
     console.error('Error fetching workout:', error)
     return null

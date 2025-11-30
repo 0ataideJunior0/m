@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getWorkoutByDay, markDayComplete, getUserProgress } from '../utils/workouts'
 import { Workout as WorkoutType, UserProgress } from '../types'
-import { Check, ArrowLeft, Play } from 'lucide-react'
+import { Check, ArrowLeft, Play, X } from 'lucide-react'
 
 export default function WorkoutDay() {
   const { day } = useParams<{ day: string }>()
@@ -14,6 +14,11 @@ export default function WorkoutDay() {
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [videoTitle, setVideoTitle] = useState<string>('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [videoLoading, setVideoLoading] = useState(false)
+  const videoCache = useState<Map<string, string>>(() => new Map())[0]
 
   const dayNumber = parseInt(day || '1')
 
@@ -37,12 +42,39 @@ export default function WorkoutDay() {
       
       setWorkout(workoutData)
       setProgress(userProgress)
+      // Prefetch first exercise video if available
+      if (workoutData?.exercises?.[0]?.video) {
+        const url = resolveVideoUrl(workoutData.exercises[0].video)
+        videoCache.set(workoutData.exercises[0].exercise, url)
+      }
     } catch (error) {
       console.error('Error loading workout:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  const resolveVideoUrl = (raw: string): string => {
+    const conn = (navigator as any).connection?.effectiveType as string | undefined
+    const isYouTube = /youtube\.com|youtu\.be/.test(raw)
+    if (isYouTube) {
+      const quality = conn?.includes('2g') ? 'small' : conn?.includes('3g') ? 'medium' : 'hd1080'
+      const base = raw.replace('watch?v=', 'embed/').replace('shorts/', 'embed/')
+      const sep = base.includes('?') ? '&' : '?'
+      return `${base}${sep}rel=0&modestbranding=1&controls=1&vq=${quality}`
+    }
+    return raw
+  }
+
+  const openExerciseVideo = openExerciseVideoFactory(
+    workout,
+    videoCache,
+    setVideoTitle,
+    setVideoUrl,
+    setModalOpen,
+    setVideoLoading,
+    resolveVideoUrl,
+  )
 
   const handleCompleteWorkout = async () => {
     if (!user || !workout) return
@@ -107,19 +139,20 @@ export default function WorkoutDay() {
           </div>
         </div>
 
-        {/* Video */}
+        {/* Video geral do treino */}
         {workout.video_url && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
               <Play className="w-5 h-5 mr-2" />
               Vídeo do Treino
             </h2>
-            <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <Play className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">Vídeo do treino</p>
-                <p className="text-sm text-gray-400 mt-1">{workout.video_url}</p>
-              </div>
+            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              <iframe
+                src={resolveVideoUrl(workout.video_url)}
+                title="Vídeo do treino"
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              />
             </div>
           </div>
         )}
@@ -153,7 +186,10 @@ export default function WorkoutDay() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {groupItems.map((exercise, idx) => (
-                          <div key={`pair-${g}-${idx}`} className="bg-purple-50 rounded-md p-3">
+                          <div
+                            key={`pair-${g}-${idx}`}
+                            className="bg-purple-50 rounded-md p-3"
+                          >
                             <h3 className="font-medium text-gray-900">{exercise.exercise}</h3>
                             <p className="text-gray-600 text-sm">
                               {exercise.sets ? `${exercise.sets} séries` : ''}
@@ -162,6 +198,16 @@ export default function WorkoutDay() {
                             </p>
                             {exercise.note && (
                               <p className="text-xs text-purple-700 mt-1">{exercise.note}</p>
+                            )}
+                            {(exercise.video || workout.video_url) ? (
+                              <button
+                                onClick={() => openExerciseVideo(exercise)}
+                                className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
+                              >
+                                <Play className="w-4 h-4 mr-1" /> Assistir vídeo
+                              </button>
+                            ) : (
+                              <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
                             )}
                           </div>
                         ))}
@@ -175,7 +221,10 @@ export default function WorkoutDay() {
                 const isWarmup = ex.type === 'warmup'
                 const isDrop = ex.type === 'drop_set'
                 cards.push(
-                  <div key={`single-${i}`} className={`border rounded-lg p-4 ${isWarmup ? 'border-yellow-300 bg-yellow-50' : isDrop ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
+                  <div
+                    key={`single-${i}`}
+                    className={`border rounded-lg p-4 ${isWarmup ? 'border-yellow-300 bg-yellow-50' : isDrop ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium text-gray-900">{ex.exercise}</h3>
@@ -187,6 +236,16 @@ export default function WorkoutDay() {
                         {ex.note && (
                           <p className={`${isDrop ? 'text-red-700' : isWarmup ? 'text-yellow-700' : 'text-gray-600'} text-xs mt-1`}>{ex.note}</p>
                         )}
+                        {(ex.video || workout.video_url) ? (
+                          <button
+                            onClick={() => openExerciseVideo(ex)}
+                            className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
+                          >
+                            <Play className="w-4 h-4 mr-1" /> Assistir vídeo
+                          </button>
+                        ) : (
+                          <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -197,6 +256,47 @@ export default function WorkoutDay() {
             })()}
           </div>
         </div>
+
+        {/* Modal de vídeo por exercício */}
+        {modalOpen && videoUrl && (
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
+            <div className="bg-white/95 p-3 flex items-center justify-between">
+              <div className="font-semibold text-gray-900">{videoTitle || 'Vídeo do exercício'}</div>
+              <button
+                onClick={() => { setModalOpen(false); setVideoLoading(false); }}
+                className="ui-hover bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-md flex items-center"
+                aria-label="Fechar"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Fechar
+              </button>
+            </div>
+            <div className="flex-1 bg-black relative">
+              {videoLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin"></div>
+                </div>
+              )}
+              {/youtube\.com|youtu\.be|vimeo\.com/.test(videoUrl) ? (
+                <iframe
+                  src={videoUrl}
+                  title="Vídeo do exercício"
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  onLoad={() => setVideoLoading(false)}
+                />
+              ) : (
+                <video
+                  controls
+                  className="w-full h-full"
+                  onCanPlay={() => setVideoLoading(false)}
+                >
+                  <source src={videoUrl} />
+                </video>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Complete Button */}
         {!isDayCompleted && (
@@ -234,4 +334,30 @@ export default function WorkoutDay() {
       </div>
     </div>
   )
+}
+
+function openExerciseVideoFactory(
+  workout: WorkoutType | null,
+  videoCache: Map<string, string>,
+  setVideoTitle: (s: string) => void,
+  setVideoUrl: (s: string | null) => void,
+  setModalOpen: (b: boolean) => void,
+  setVideoLoading: (b: boolean) => void,
+  resolveVideoUrl: (raw: string) => string,
+) {
+  return (exercise: WorkoutType['exercises'][number]) => {
+    const title = exercise.exercise
+    setVideoTitle(title)
+    const raw = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || workout?.video_url || ''
+    if (!raw) {
+      alert('Vídeo não disponível para este exercício.')
+      return
+    }
+    const cached = videoCache.get(title)
+    const url = cached || resolveVideoUrl(raw)
+    if (!cached) videoCache.set(title, url)
+    setVideoUrl(url)
+    setModalOpen(true)
+    setVideoLoading(true)
+  }
 }
