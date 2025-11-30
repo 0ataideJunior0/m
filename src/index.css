@@ -79,3 +79,9 @@
     @apply animate-shimmer;
   }
 }
+
+#trae-badge-plugin,
+.trae-badge {
+  display: none !important;
+  pointer-events: none !important;
+}

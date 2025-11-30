@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress, getCurrentDay, getWorkoutByDay } from '../utils/workouts'
-import { Dumbbell, Share2, Trophy, Calendar, TrendingUp, Flame, FileDown, Eye } from 'lucide-react'
+import { Dumbbell, Trophy, Calendar, TrendingUp, Flame, Eye, X, Download } from 'lucide-react'
 import { UserProgress, Workout } from '../types'
 import { getSignedPlanUrl } from '../utils/plans'
 
@@ -12,8 +12,10 @@ export default function Home() {
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [workout, setWorkout] = useState<Workout | null>(null)
   const [loading, setLoading] = useState(true)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [downloading, setDownloading] = useState<'mass_gain' | 'fat_loss' | null>(null)
+  const [modalUrl, setModalUrl] = useState<string | null>(null)
+  const [opening, setOpening] = useState<'mass_gain' | 'fat_loss' | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [modalTitle, setModalTitle] = useState<string>('')
   const [logoSrc, setLogoSrc] = useState('/logo.svg')
   const logoCandidates = useMemo(() => ['/logo.svg', '/logo.png', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
 
@@ -151,7 +153,7 @@ export default function Home() {
         {/* Planos Alimentares */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-xl font-bold text-gray-900 mb-2">Planos Alimentares (PDF)</div>
-          <p className="text-gray-700 mb-4">Selecione o plano desejado. Download seguro com validação de acesso.</p>
+          <p className="text-gray-700 mb-4">Visualize em tela cheia. Download disponível dentro do modal.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border border-gray-200 rounded-xl p-4">
               <div className="font-semibold text-gray-900 mb-1">Ganho de Massa Muscular</div>
@@ -160,41 +162,22 @@ export default function Home() {
                 <button
                   onClick={async () => {
                     try {
-                      setDownloading('mass_gain')
-                      const { url } = await getSignedPlanUrl('mass_gain', 300)
-                      const a = document.createElement('a')
-                      a.href = url
-                      a.download = 'plano_hipertrofia.pdf'
-                      a.rel = 'noopener'
-                      a.click()
-                      setDownloading(null)
-                    } catch (e: any) {
-                      setDownloading(null)
-                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      alert(`Não foi possível baixar o plano. ${msg}`)
-                    }
-                  }}
-                  className="ui-hover bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-2 rounded-lg flex items-center"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  {downloading === 'mass_gain' ? 'Baixando...' : 'Baixar PDF'}
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const { url } = await getSignedPlanUrl('mass_gain', 600)
-                      const w = window.open(url, '_blank', 'noopener')
-                      if (!w) setPreviewUrl(url)
-                      else setPreviewUrl(null)
+                      setOpening('mass_gain')
+                      const { url, meta } = await getSignedPlanUrl('mass_gain', 900)
+                      setModalTitle(meta.title)
+                      setModalUrl(url)
+                      setPreviewLoading(true)
                     } catch (e: any) {
                       const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
                       alert(`Pré-visualização indisponível no momento. ${msg}`)
+                    } finally {
+                      setOpening(null)
                     }
                   }}
                   className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Visualizar
+                  {opening === 'mass_gain' ? 'Abrindo...' : 'Visualizar'}
                 </button>
               </div>
             </div>
@@ -206,57 +189,27 @@ export default function Home() {
                 <button
                   onClick={async () => {
                     try {
-                      setDownloading('fat_loss')
-                      const { url } = await getSignedPlanUrl('fat_loss', 300)
-                      const a = document.createElement('a')
-                      a.href = url
-                      a.download = 'plano_perda_gordura.pdf'
-                      a.rel = 'noopener'
-                      a.click()
-                      setDownloading(null)
-                    } catch (e: any) {
-                      setDownloading(null)
-                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      alert(`Não foi possível baixar o plano. ${msg}`)
-                    }
-                  }}
-                  className="ui-hover bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg flex items-center"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  {downloading === 'fat_loss' ? 'Baixando...' : 'Baixar PDF'}
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const { url } = await getSignedPlanUrl('fat_loss', 600)
-                      const w = window.open(url, '_blank', 'noopener')
-                      if (!w) setPreviewUrl(url)
-                      else setPreviewUrl(null)
+                      setOpening('fat_loss')
+                      const { url, meta } = await getSignedPlanUrl('fat_loss', 900)
+                      setModalTitle(meta.title)
+                      setModalUrl(url)
+                      setPreviewLoading(true)
                     } catch (e: any) {
                       const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
                       alert(`Pré-visualização indisponível no momento. ${msg}`)
+                    } finally {
+                      setOpening(null)
                     }
                   }}
                   className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Visualizar
+                  {opening === 'fat_loss' ? 'Abrindo...' : 'Visualizar'}
                 </button>
               </div>
             </div>
           </div>
-
-          {previewUrl && (
-            <div className="mt-6">
-              <div className="text-sm text-gray-600 mb-2">Pré-visualização (pode não funcionar em todos os navegadores). Se necessário, use o botão de download.</div>
-              <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden">
-                <iframe src={previewUrl} title="Pré-visualização do PDF" className="w-full h-full" />
-              </div>
-              <div className="mt-3">
-                <button onClick={() => setPreviewUrl(null)} className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg">Fechar Pré-visualização</button>
-              </div>
-            </div>
-          )}
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -276,6 +229,45 @@ export default function Home() {
           </button>
         </div>
       </div>
+      {modalUrl && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
+          <div className="bg-white/95 p-3 flex items-center justify-between">
+            <div className="font-semibold text-gray-900">{modalTitle || 'Visualização do PDF'}</div>
+            <div className="flex items-center gap-2">
+              <a
+                href={modalUrl}
+                download
+                rel="noopener"
+                className="ui-hover bg-gradient-to-r from-purple-600 to-pink-500 text-white px-3 py-2 rounded-md flex items-center"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Baixar
+              </a>
+              <button
+                onClick={() => { setModalUrl(null); setPreviewLoading(false); }}
+                className="ui-hover bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-md flex items-center"
+                aria-label="Fechar"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Fechar
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 bg-white">
+            {previewLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin"></div>
+              </div>
+            )}
+            <iframe
+              src={modalUrl}
+              title="Visualização do PDF"
+              className="w-full h-full"
+              onLoad={() => setPreviewLoading(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
