@@ -121,7 +121,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://youtube.com/embed/TC_quadriceps'
+  'https://www.youtube.com/shorts/2AcUF3rQk_o'
 ),
 (8, 'T-C: Quadríceps',
   '[
@@ -132,7 +132,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://youtube.com/embed/TC_quadriceps'
+  'https://www.youtube.com/shorts/2AcUF3rQk_o'
 ),
 (13, 'T-C: Quadríceps',
   '[
@@ -143,7 +143,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://youtube.com/embed/TC_quadriceps'
+  'https://www.youtube.com/shorts/2AcUF3rQk_o'
 ),
 (18, 'T-C: Quadríceps',
   '[
@@ -154,7 +154,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://youtube.com/embed/TC_quadriceps'
+  'https://www.youtube.com/shorts/2AcUF3rQk_o'
 );
 
 -- T-D: Ombro e Tríceps

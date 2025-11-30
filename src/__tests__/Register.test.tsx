@@ -53,5 +53,23 @@ describe('Register page', () => {
     await screen.findByRole('button', { name: /criar conta/i })
     expect(localStorage.getItem('musa_username')).toBe('maria')
   })
+
+  it('remove erro quando senhas iguais são digitadas', () => {
+    render(
+      <MemoryRouter>
+        <Register />
+      </MemoryRouter>
+    )
+
+    const passwordInput = screen.getByLabelText(/senha/i)
+    const confirmInput = screen.getByLabelText(/confirmar senha/i)
+
+    fireEvent.change(passwordInput, { target: { value: 'abc123' } })
+    fireEvent.change(confirmInput, { target: { value: 'abc12' } })
+    expect(screen.getByText(/não coincidem/i)).toBeInTheDocument()
+
+    fireEvent.change(confirmInput, { target: { value: 'abc123' } })
+    expect(screen.queryByText(/não coincidem/i)).toBeNull()
+  })
 })
 
