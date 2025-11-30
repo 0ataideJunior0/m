@@ -17,7 +17,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  'https://youtube.com/embed/TA_gluteo_posterior'
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 ),
 (6, 'T-A: Glúteo e Posterior',
   '[
@@ -30,7 +30,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  'https://youtube.com/embed/TA_gluteo_posterior'
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 ),
 (11, 'T-A: Glúteo e Posterior',
   '[
@@ -43,7 +43,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  'https://youtube.com/embed/TA_gluteo_posterior'
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 ),
 (16, 'T-A: Glúteo e Posterior',
   '[
@@ -56,7 +56,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  'https://youtube.com/embed/TA_gluteo_posterior'
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 );
 
 -- T-B: Costas e Bíceps
@@ -71,7 +71,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  'https://youtube.com/embed/TB_costas_biceps'
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 ),
 (7, 'T-B: Costas e Bíceps',
   '[
@@ -83,7 +83,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  'https://youtube.com/embed/TB_costas_biceps'
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 ),
 (12, 'T-B: Costas e Bíceps',
   '[
@@ -95,7 +95,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  'https://youtube.com/embed/TB_costas_biceps'
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 ),
 (17, 'T-B: Costas e Bíceps',
   '[
@@ -107,7 +107,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  'https://youtube.com/embed/TB_costas_biceps'
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 );
 
 -- T-C: Quadríceps
@@ -121,7 +121,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://www.youtube.com/shorts/2AcUF3rQk_o'
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 ),
 (8, 'T-C: Quadríceps',
   '[
@@ -132,7 +132,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://www.youtube.com/shorts/2AcUF3rQk_o'
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 ),
 (13, 'T-C: Quadríceps',
   '[
@@ -143,7 +143,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://www.youtube.com/shorts/2AcUF3rQk_o'
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 ),
 (18, 'T-C: Quadríceps',
   '[
@@ -154,7 +154,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ 1 Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  'https://www.youtube.com/shorts/2AcUF3rQk_o'
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 );
 
 -- T-D: Ombro e Tríceps
@@ -169,7 +169,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  'https://youtube.com/embed/TD_ombro_triceps'
+  'https://www.youtube.com/shorts/H59irhx1u14'
 ),
 (9, 'T-D: Ombro e Tríceps',
   '[
@@ -181,7 +181,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  'https://youtube.com/embed/TD_ombro_triceps'
+  'https://www.youtube.com/shorts/H59irhx1u14'
 ),
 (14, 'T-D: Ombro e Tríceps',
   '[
@@ -193,7 +193,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  'https://youtube.com/embed/TD_ombro_triceps'
+  'https://www.youtube.com/shorts/H59irhx1u14'
 ),
 (19, 'T-D: Ombro e Tríceps',
   '[
@@ -205,7 +205,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  'https://youtube.com/embed/TD_ombro_triceps'
+  'https://www.youtube.com/shorts/H59irhx1u14'
 );
 
 -- T-E: Inferiores Completo
@@ -220,7 +220,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  'https://youtube.com/embed/TE_inferiores_completo'
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 ),
 (10, 'T-E: Inferiores Completo',
   '[
@@ -232,7 +232,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  'https://youtube.com/embed/TE_inferiores_completo'
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 ),
 (15, 'T-E: Inferiores Completo',
   '[
@@ -244,7 +244,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  'https://youtube.com/embed/TE_inferiores_completo'
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 ),
 (20, 'T-E: Inferiores Completo',
   '[
@@ -256,6 +256,6 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  'https://youtube.com/embed/TE_inferiores_completo'
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 );
 

@@ -12,7 +12,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 ),
 (8, 'M-A: Treino de Quadríceps',
   '[
@@ -23,7 +23,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 ),
 (15, 'M-A: Treino de Quadríceps',
   '[
@@ -34,7 +34,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"aumentando carga","note":"+ Drop Set final 30 reps"},
     {"exercise":"Cadeira Extensora (Drop Set Final)","sets":"1","reps":"10+10+10","note":"alta→média→leve","type":"drop_set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/FA8JMD09M4E'
 );
 
 -- M-B: Costas e Bíceps (2,9,16)
@@ -49,7 +49,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 ),
 (9, 'M-B: Costas e Bíceps',
   '[
@@ -61,7 +61,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 ),
 (16, 'M-B: Costas e Bíceps',
   '[
@@ -73,7 +73,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Bíceps Barra","sets":"3","reps":"12"},
     {"exercise":"Prancha (pós-treino)","sets":"2","reps":"30s-1min","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/R9buc95ALUk'
 );
 
 -- M-C: Glúteo e Posterior (3,10,17)
@@ -89,7 +89,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 ),
 (10, 'M-C: Glúteo e Posterior',
   '[
@@ -102,7 +102,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 ),
 (17, 'M-C: Glúteo e Posterior',
   '[
@@ -115,7 +115,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Stiff com Barra","sets":"3","reps":"bi-set","group":"A"},
     {"exercise":"Panturrilha","sets":"3","reps":"10-12"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/5QXUBKWqe4w'
 );
 
 -- M-D: Ombro e Tríceps (4,11,18)
@@ -130,7 +130,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/H59irhx1u14'
 ),
 (11, 'M-D: Ombro e Tríceps',
   '[
@@ -142,7 +142,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/H59irhx1u14'
 ),
 (18, 'M-D: Ombro e Tríceps',
   '[
@@ -154,7 +154,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Tríceps Corda","sets":"4","reps":"10-12"},
     {"exercise":"Abdominal (Remador)","sets":"3","reps":"12","type":"core"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/H59irhx1u14'
 );
 
 -- M-E: Inferiores Completo (5,12,19)
@@ -169,7 +169,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 ),
 (12, 'M-E: Inferiores Completo',
   '[
@@ -181,7 +181,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 ),
 (19, 'M-E: Inferiores Completo',
   '[
@@ -193,7 +193,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Cadeira Extensora","sets":"3","reps":"12","group":"B","note":"Bi-set com Agachamento Taça"},
     {"exercise":"Agachamento Taça","sets":"3","reps":"12","group":"B","note":"Bi-set"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/AiiK07TgAio'
 );
 
 -- M-F: Bíceps e Tríceps (Sábado) (6,13,20) – todos bi-sets
@@ -207,7 +207,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Rosca Halteres no Banco Inclinado","sets":"3","reps":"10-12","group":"E"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12","group":"E"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/ACwh6bYPRZo'
 ),
 (13, 'M-F: Bíceps e Tríceps (Bi-sets)',
   '[
@@ -218,7 +218,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Rosca Halteres no Banco Inclinado","sets":"3","reps":"10-12","group":"E"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12","group":"E"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/ACwh6bYPRZo'
 ),
 (20, 'M-F: Bíceps e Tríceps (Bi-sets)',
   '[
@@ -229,7 +229,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Rosca Halteres no Banco Inclinado","sets":"3","reps":"10-12","group":"E"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12","group":"E"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/ACwh6bYPRZo'
 );
 
 -- M-G: Glúteo Isolado (Domingo) (7,14)
@@ -243,7 +243,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Extensão de Quadril na Polia","sets":"3","reps":"10-12"},
     {"exercise":"Abdução de Quadril na Polia","sets":"3","reps":"10-12"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/TVPuN30d9vQ'
 ),
 (14, 'M-G: Glúteo Isolado',
   '[
@@ -254,6 +254,6 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
     {"exercise":"Extensão de Quadril na Polia","sets":"3","reps":"10-12"},
     {"exercise":"Abdução de Quadril na Polia","sets":"3","reps":"10-12"}
   ]',
-  NULL
+  'https://www.youtube.com/shorts/TVPuN30d9vQ'
 );
 
