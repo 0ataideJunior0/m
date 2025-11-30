@@ -95,18 +95,8 @@ export default function HIIT() {
           </ul>
         </div>
 
-        <div className="fixed left-0 right-0 bottom-0 bg-transparent p-4">
-          <div className="max-w-4xl mx-auto">
-            <button
-              onClick={() => navigate('/home')}
-              className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-4 rounded-full shadow-lg hover:from-red-600 hover:to-pink-600 transition-transform duration-300 hover:scale-[1.02] active:scale-95"
-            >
-              Iniciar HIIT de 30 minutos
-            </button>
-          </div>
-        </div>
+        
       </div>
     </div>
   )
 }
-

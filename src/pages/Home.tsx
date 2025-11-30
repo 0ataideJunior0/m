@@ -14,6 +14,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [downloading, setDownloading] = useState<'mass_gain' | 'fat_loss' | null>(null)
+  const [logoSrc, setLogoSrc] = useState('/logo.svg')
+  const logoCandidates = useMemo(() => ['/logo.svg', '/logo.png', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -67,17 +69,21 @@ export default function Home() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center shadow-md mr-3">
-              <Dumbbell className="w-6 h-6 text-white" />
-            </div>
+            <img
+              src={logoSrc}
+              alt="Logo Musa Fit"
+              className="w-12 h-12 mr-3 rounded-full shadow-md object-contain"
+              onError={() => {
+                const i = logoCandidates.indexOf(logoSrc)
+                const next = logoCandidates[i + 1]
+                if (next) setLogoSrc(next)
+              }}
+            />
             <div>
               <div className="text-2xl font-bold text-purple-800">Musa Fit</div>
               <div className="text-sm text-gray-600">Olá, {displayName}!</div>
             </div>
           </div>
-          <button className="p-2 rounded-lg hover:bg-black/5 transition" aria-label="Compartilhar">
-            <Share2 className="w-5 h-5 text-gray-700" />
-          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">

@@ -162,7 +162,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
 (4, 'T-D: Ombro e Tríceps',
   '[
     {"exercise":"Desenvolvimento com Barra","sets":"4","reps":"10-12"},
-    {"exercise":"Elevação Lateral (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
+    {"exercise":"Elevação Lateral sentado (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
     {"exercise":"Elevação Frontal com Anilha","sets":"3","reps":"20"},
     {"exercise":"Face Pull","sets":"4","reps":"10-12"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12"},
@@ -174,7 +174,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
 (9, 'T-D: Ombro e Tríceps',
   '[
     {"exercise":"Desenvolvimento com Barra","sets":"4","reps":"10-12"},
-    {"exercise":"Elevação Lateral (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
+    {"exercise":"Elevação Lateral sentado (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
     {"exercise":"Elevação Frontal com Anilha","sets":"3","reps":"20"},
     {"exercise":"Face Pull","sets":"4","reps":"10-12"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12"},
@@ -186,7 +186,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
 (14, 'T-D: Ombro e Tríceps',
   '[
     {"exercise":"Desenvolvimento com Barra","sets":"4","reps":"10-12"},
-    {"exercise":"Elevação Lateral (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
+    {"exercise":"Elevação Lateral sentado (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
     {"exercise":"Elevação Frontal com Anilha","sets":"3","reps":"20"},
     {"exercise":"Face Pull","sets":"4","reps":"10-12"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12"},
@@ -198,7 +198,7 @@ INSERT INTO workouts (day_number, title, exercises, video_url) VALUES
 (19, 'T-D: Ombro e Tríceps',
   '[
     {"exercise":"Desenvolvimento com Barra","sets":"4","reps":"10-12"},
-    {"exercise":"Elevação Lateral (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
+    {"exercise":"Elevação Lateral sentado (Drop Set)","sets":"3","reps":"12 + 12","note":"peso maior→menor","type":"drop_set"},
     {"exercise":"Elevação Frontal com Anilha","sets":"3","reps":"20"},
     {"exercise":"Face Pull","sets":"4","reps":"10-12"},
     {"exercise":"Tríceps Francês com Halter","sets":"3","reps":"10-12"},
