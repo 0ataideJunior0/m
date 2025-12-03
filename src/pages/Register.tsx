@@ -266,9 +266,7 @@ export default function Register() {
                 <CheckCircle2 className="absolute right-10 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" aria-hidden="true" />
               )}
             </div>
-            {fieldErrors.confirmPassword && (
-              <p id="confirm-error" className="mt-1 text-sm text-red-600" role="alert">{fieldErrors.confirmPassword}</p>
-            )}
+            
           </div>
 
           <button
