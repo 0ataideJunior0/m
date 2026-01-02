@@ -154,11 +154,10 @@ export default function Home() {
         {/* Planos Alimentares */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-xl font-bold text-gray-900 mb-2">Planos Alimentares (PDF)</div>
-          <p className="text-gray-700 mb-4">Visualize em tela cheia. Download disponível dentro do modal.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-gray-200 rounded-xl p-4">
-              <div className="font-semibold text-gray-900 mb-1">Ganho de Massa Muscular</div>
-              <p className="text-sm text-gray-600 mb-3">Plano com foco em hipertrofia e superávit calórico.</p>
+            <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+              <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1">Ganho de Massa Muscular</div>
+              <p className="text-sm text-gray-600 mb-4">Plano com foco em hipertrofia e superávit calórico.</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
@@ -183,9 +182,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="border border-gray-200 rounded-xl p-4">
-              <div className="font-semibold text-gray-900 mb-1">Perda de Gordura</div>
-              <p className="text-sm text-gray-600 mb-3">Plano com foco em déficit calórico e definição.</p>
+            <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+              <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1">Perda de Gordura</div>
+              <p className="text-sm text-gray-600 mb-4">Plano com foco em déficit calórico e definição.</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
