@@ -88,5 +88,5 @@ export const getCurrentDay = (progress: UserProgress[]): number => {
   if (progress.length === 0) return 1
   
   const completedDays = progress.filter(p => p.completed).length
-  return Math.min(completedDays + 1, 20)
+  return Math.min(completedDays + 1, 30)
 }

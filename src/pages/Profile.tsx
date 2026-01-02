@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target } from 'lucide-react'
+import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target, Share2, Info, CheckCircle2 } from 'lucide-react'
 import { signOut } from '../utils/auth'
 
 export default function Profile() {
@@ -43,9 +43,38 @@ export default function Profile() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const TOTAL_DAYS = 30
   const completedDays = progress.filter(p => p.completed).length
-  const remainingDays = Math.max(20 - completedDays, 0)
-  const progressPct = Math.round((completedDays / 20) * 100)
+  const remainingDays = Math.max(TOTAL_DAYS - completedDays, 0)
+  const progressPct = Math.round((completedDays / TOTAL_DAYS) * 100)
+
+  useEffect(() => {
+    try {
+      const last = parseInt(localStorage.getItem('musa_last_completed') || '0')
+      if (completedDays > last) {
+        const el = document.getElementById('progress-bar-fill')
+        if (el) {
+          el.classList.add('ui-shimmer')
+          setTimeout(() => el.classList.remove('ui-shimmer'), 1200)
+        }
+        localStorage.setItem('musa_last_completed', String(completedDays))
+      }
+    } catch {}
+  }, [completedDays])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        load()
+      }
+    }
+    const id = setInterval(() => load(), 30000)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   const firstAchievementDate = useMemo(() => {
     const done = progress.filter(p => p.completed && p.completed_at)
@@ -112,12 +141,23 @@ export default function Profile() {
           <div className="text-gray-600">{user?.email}</div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
+        {/* Progresso 30 dias */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
           <div className="flex items-center mb-2">
             <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span className="text-lg font-bold text-gray-900">Suas Conquistas</span>
+            <span id="progress-title" className="text-lg font-bold text-gray-900">Desafio de 30 dias</span>
           </div>
-          <p className="text-sm text-gray-600 mb-6">Acompanhe seu progresso no desafio de 20 dias</p>
+          <p className="text-sm text-gray-600 mb-4">Acompanhe seu progresso e conquistas</p>
+
+          <div className="mb-4" role="progressbar" aria-valuenow={completedDays} aria-valuemin={0} aria-valuemax={TOTAL_DAYS} aria-label="Progresso dos dias">
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div id="progress-bar-fill" className="bg-purple-600 h-3 rounded-full transition-all duration-700" style={{ width: `${progressPct}%` }}></div>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
+              <span>{completedDays}/{TOTAL_DAYS} dias</span>
+              <span>Restantes: {remainingDays}</span>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="rounded-xl p-6 text-center bg-purple-50 transition-transform duration-300 hover:scale-[1.02]">
@@ -140,38 +180,87 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Conquistas por categorias */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
-          <div className="flex items-center mb-4">
+          <div className="flex items-center mb-2">
             <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span className="text-lg font-bold text-gray-900">Badges Conquistadas</span>
+            <span className="text-lg font-bold text-gray-900">Conquistas</span>
           </div>
-          <div className="space-y-3">
-            <div className="rounded-xl p-4 bg-gray-50 flex items-center transition-colors duration-300 hover:bg-gray-100">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-indigo-500 flex items-center justify-center mr-3">
-                <Target className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">Primeira Conquista</div>
-                <div className="text-sm text-gray-600">
-                  {firstAchievementDate ? firstAchievementDate.toLocaleDateString() : 'Ainda não conquistada'}
-                </div>
-              </div>
-            </div>
+          <p className="text-sm text-gray-600 mb-6">Categorias: Frequência, Desempenho, Consistência</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { name: 'Frequência', target: 10 },
+              { name: 'Desempenho', target: 20 },
+              { name: 'Consistência', target: TOTAL_DAYS },
+            ].map((c) => {
+              const partial = Math.min(completedDays, c.target)
+              const pct = Math.round((partial / c.target) * 100)
+              return (
+                <button key={c.name} className="rounded-xl p-4 bg-gray-50 text-left hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label={`Detalhes da conquista ${c.name}`}
+                  onClick={() => alert(`${c.name}: ${pct}% concluído`) }>
+                  <div className="flex items-center mb-2">
+                    <Target className="w-5 h-5 text-purple-600 mr-2" />
+                    <span className="font-medium text-gray-900">{c.name}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${pct}%` }}></div>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-600">{partial}/{c.target}</div>
+                </button>
+              )
+            })}
           </div>
         </div>
 
+        {/* Atividade recente e estatísticas */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-24 animate-slide-up">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm text-gray-600">Tempo de uso do aplicativo</div>
-              <div className="text-lg font-semibold text-gray-900">{timeUsingApp}</div>
+              <div className="text-lg font-semibold text-gray-900">Atividade recente</div>
+              <div className="text-sm text-gray-600">Tempo de uso: {timeUsingApp}</div>
             </div>
-            <button
-              onClick={() => navigate('/progress')}
-              className="px-5 py-3 rounded-full bg-white border border-gray-300 shadow-sm text-blue-700 hover:bg-blue-50 transition-transform duration-300 hover:scale-[1.03] active:scale-95"
-            >
-              Ver Cronograma Completo
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/progress')}
+                className="px-4 py-2 rounded-full bg-white border border-gray-300 shadow-sm text-purple-700 hover:bg-purple-50"
+              >
+                Ver Cronograma
+              </button>
+              <button
+                onClick={() => {
+                  const text = `Completei ${completedDays}/${TOTAL_DAYS} dias no Musa Fit!`;
+                  if (navigator.share) {
+                    navigator.share({ title: 'Minhas Conquistas', text })
+                  } else {
+                    navigator.clipboard?.writeText(text)
+                    alert('Texto de conquista copiado!')
+                  }
+                }}
+                className="px-4 py-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 flex items-center"
+                aria-label="Compartilhar conquistas"
+              >
+                <Share2 className="w-4 h-4 mr-2" /> Compartilhar
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3" aria-live="polite">
+            {progress
+              .filter(p => p.completed)
+              .sort((a,b) => new Date(b.completed_at || '').getTime() - new Date(a.completed_at || '').getTime())
+              .slice(0,5)
+              .map((p) => (
+                <div key={p.id} className="rounded-xl p-4 bg-gray-50 flex items-center">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 mr-3" />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">Dia {p.day_number} concluído</div>
+                    <div className="text-xs text-gray-600">{p.completed_at ? new Date(p.completed_at).toLocaleString() : ''}</div>
+                  </div>
+                </div>
+              ))}
+            {completedDays === 0 && (
+              <div className="text-sm text-gray-600">Ainda sem atividades concluídas — vamos começar!</div>
+            )}
           </div>
         </div>
 

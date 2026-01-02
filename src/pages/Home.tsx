@@ -16,8 +16,8 @@ export default function Home() {
   const [opening, setOpening] = useState<'mass_gain' | 'fat_loss' | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [modalTitle, setModalTitle] = useState<string>('')
-  const [logoSrc, setLogoSrc] = useState('/logo.svg')
-  const logoCandidates = useMemo(() => ['/logo.svg', '/logo.png', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
+  const [logoSrc, setLogoSrc] = useState('/logo.png')
+  const logoCandidates = useMemo(() => ['/logo.png', '/logo.svg', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -47,10 +47,11 @@ export default function Home() {
     return name || 'Usuária Musa'
   }, [user])
 
+  const TOTAL_DAYS = 30
   const completedDays = progress.filter(p => p.completed).length
   const currentDay = getCurrentDay(progress)
-  const remainingDays = Math.max(20 - completedDays, 0)
-  const progressPct = Math.round((completedDays / 20) * 100)
+  const remainingDays = Math.max(TOTAL_DAYS - completedDays, 0)
+  const progressPct = Math.round((completedDays / TOTAL_DAYS) * 100)
 
   if (isLoading || loading) {
     return (
@@ -93,10 +94,10 @@ export default function Home() {
             <div className="text-xl font-bold text-gray-900">Seu Progresso</div>
             <div className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center">
               <Trophy className="w-4 h-4 mr-1" />
-              <span className="font-semibold">{completedDays}/20</span>
+              <span className="font-semibold">{completedDays}/{TOTAL_DAYS}</span>
             </div>
           </div>
-          <div className="text-sm text-gray-600 mt-1">{completedDays} de 20 dias concluídos</div>
+          <div className="text-sm text-gray-600 mt-1">{completedDays} de {TOTAL_DAYS} dias concluídos</div>
           <div className="mt-4">
             <div className="flex justify-between text-xs text-gray-600 mb-1">
               <span>Progresso</span>
@@ -111,7 +112,7 @@ export default function Home() {
               <Calendar className="w-5 h-5 text-gray-700" />
               <div>
                 <div className="text-sm text-gray-600">Dia Atual</div>
-                <div className="text-xl font-bold text-purple-700">{currentDay <= 20 ? currentDay : 20}</div>
+                <div className="text-xl font-bold text-purple-700">{currentDay <= TOTAL_DAYS ? currentDay : TOTAL_DAYS}</div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
