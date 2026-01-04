@@ -13,11 +13,11 @@ export default function HIIT() {
           </button>
           <div className="flex items-center">
             <Flame className="w-6 h-6 text-red-500 mr-2" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">HIIT 30 min • Gordura + Abdômen</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">HIIT disponível a partir da segunda semana.</h1>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        {/* <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center text-gray-700 mb-2">
             <Timer className="w-5 h-5 mr-2" />
             <span>Formato: 40s ON / 20s OFF </span>
@@ -93,7 +93,7 @@ export default function HIIT() {
             <li>Hidrate-se bem antes e depois.</li>
             <li>Execute o treino de 3 a 5x por semana.</li>
           </ul>
-        </div>
+        </div> */}
 
         
       </div>
