@@ -5,7 +5,7 @@ DELETE FROM workouts;
 
 WITH base(day_in_week, code, title, video_url, exercises_json) AS (
   VALUES
-  (1,'M-A','Segunda • Quadríceps','https://www.youtube.com/shorts/FA8JMD09M4E',
+  (1,'M-A','Segunda • Quadríceps','https://www.youtube.com/shorts/dGrI2K2b9fU',
    '[
      {"exercise":"Mobilidade/Alongamento","reps":"5-8 min","type":"warmup","note":"Mobilidade de quadril/joelho"},
      {"exercise":"Agachamento livre","sets":"4","reps":"15/12/10/6","note":"Aumentar carga a cada série"},
@@ -13,7 +13,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Afundo com halteres","sets":"3","reps":"12","note":"Drop set: 12 com peso + 10 sem peso"},
      {"exercise":"Cadeira extensora","sets":"4","reps":"7-7-7-7","note":"Método 7+7 parciais, repetir 4 vezes/ série"}
    ]'),
-  (2,'M-B','Terça • Costas e Bíceps','https://www.youtube.com/shorts/R9buc95ALUk',
+  (2,'M-B','Terça • Costas e Bíceps','https://www.youtube.com/shorts/Qo0TFXUdVb8',
    '[
      {"exercise":"Puxada pulley aberta","sets":"4","reps":"12","note":"Progredir carga"},
      {"exercise":"Remada unilateral com halter","sets":"3","reps":"12"},
@@ -24,7 +24,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Abdominal prancha","sets":"2","reps":"60s"},
      {"exercise":"Abdominal supra com peso","sets":"2","reps":"12-15"}
    ]'),
-  (3,'M-C','Quarta • Glúteo e Posterior','https://www.youtube.com/shorts/5QXUBKWqe4w',
+  (3,'M-C','Quarta • Glúteo e Posterior','https://www.youtube.com/shorts/9oDDdNfo2ac',
    '[
      {"exercise":"Mobilidade/Alongamento","reps":"5-8 min","type":"warmup"},
      {"exercise":"Cadeira abdutora","sets":"3","reps":"12","note":"Aumentar carga + drop set na última"},
@@ -35,7 +35,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Cadeira flexora + Stiff","sets":"3","reps":"12"},
      {"exercise":"Panturrilha","sets":"3","reps":"12"}
    ]'),
-  (4,'M-D','Quinta • Peito, Ombro e Tríceps','https://www.youtube.com/shorts/H59irhx1u14',
+  (4,'M-D','Quinta • Peito, Ombro e Tríceps','https://www.youtube.com/shorts/B0BP74TqpO8',
    '[
      {"exercise":"Supino inclinado com halteres","sets":"3","reps":"12"},
      {"exercise":"Voador peitoral","sets":"3","reps":"15/12/10","note":"Aumentar carga"},
@@ -46,7 +46,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Abdominal prancha","sets":"2","reps":"60s"},
      {"exercise":"Abdominal remador","sets":"2","reps":"15"}
    ]'),
-  (5,'M-E','Sexta • Posterior e Quadríceps','https://www.youtube.com/shorts/AiiK07TgAio',
+  (5,'M-E','Sexta • Posterior e Quadríceps','https://www.youtube.com/shorts/nIRlOiGsriY',
    '[
      {"exercise":"Mobilidade/Alongamento","reps":"5-8 min","type":"warmup"},
      {"exercise":"Cadeira flexora","sets":"4","reps":"15/12/10/6","note":"Progredir carga"},
@@ -56,7 +56,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Cadeira extensora + Agachamento taça","sets":"4","reps":"12"},
      {"exercise":"Panturrilha","sets":"3","reps":"12"}
    ]'),
-  (6,'M-F','Sábado • Costas, Bíceps e Tríceps','https://www.youtube.com/shorts/ACwh6bYPRZo',
+  (6,'M-F','Sábado • Costas, Bíceps e Tríceps','https://www.youtube.com/shorts/xsRDXpwCiWY',
    '[
      {"exercise":"Remada curvada com barra","sets":"4","reps":"12"},
      {"exercise":"Remada máquina pegada neutra","sets":"4","reps":"15/12/10/6","note":"Aumentar carga"},
@@ -67,7 +67,7 @@ WITH base(day_in_week, code, title, video_url, exercises_json) AS (
      {"exercise":"Abdominal prancha","sets":"2","reps":"60s"},
      {"exercise":"Abdominal supra com peso","sets":"2","reps":"12-15"}
    ]'),
-  (7,'M-G','Domingo • Glúteo e Posterior','https://www.youtube.com/shorts/TVPuN30d9vQ',
+  (7,'M-G','Domingo • Glúteo e Posterior','https://www.youtube.com/shorts/JvFmGrvtCqo',
    '[
      {"exercise":"Mobilidade/Alongamento","reps":"5-8 min","type":"warmup"},
      {"exercise":"Cadeira abdutora","sets":"4","reps":"12","note":"Aumentar carga + 1 drop set"},
