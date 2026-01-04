@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { UserProgress } from '../types'
 import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target, Share2, Info, CheckCircle2 } from 'lucide-react'
+import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
 
 export default function Profile() {
@@ -58,6 +59,7 @@ export default function Profile() {
           setTimeout(() => el.classList.remove('ui-shimmer'), 1200)
         }
         localStorage.setItem('musa_last_completed', String(completedDays))
+        trackEvent('DayCompleted', { completedDays })
       }
     } catch {}
   }, [completedDays])
@@ -235,8 +237,9 @@ export default function Profile() {
                     navigator.clipboard?.writeText(text)
                     alert('Texto de conquista copiado!')
                   }
+                  trackEvent('ShareAchievements', { completedDays })
                 }}
-                className="w-full md:w-auto px-4 py-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center"
+                className="px-4 py-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 flex items-center"
                 aria-label="Compartilhar conquistas"
               >
                 <Share2 className="w-4 h-4 mr-2" /> Compartilhar
@@ -283,4 +286,3 @@ export default function Profile() {
     </div>
   )
 }
-

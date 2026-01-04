@@ -5,6 +5,7 @@ import { getUserProgress, getCurrentDay, getWorkoutByDay } from '../utils/workou
 import { Dumbbell, Trophy, Calendar, TrendingUp, Flame, Eye, X, Download } from 'lucide-react'
 import { UserProgress, Workout } from '../types'
 import { getSignedPlanUrl } from '../utils/plans'
+import { trackEvent } from '../utils/analytics'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -130,7 +131,10 @@ export default function Home() {
           <div className="text-sm text-gray-600">Dia {currentDay}: {workout?.title?.replace(/^T-[A-E]:\s*/, '') || 'Treino do Dia'}</div>
           <p className="text-gray-700 mt-4">{workout?.exercises?.[0]?.note || 'Fortalecimento do corpo com exercícios focados.'}</p>
           <button
-            onClick={() => navigate(`/workout/${currentDay}`)}
+            onClick={() => {
+              trackEvent('StartWorkout', { day: currentDay })
+              navigate(`/workout/${currentDay}`)
+            }}
             className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-purple-700 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
           >
             Iniciar Treino do Dia {currentDay}
