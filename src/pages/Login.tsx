@@ -61,9 +61,11 @@ export default function Login() {
       <div className="max-w-md w-full">
         {/* Header visual */}
         <div className="text-center mb-6">
-          <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center shadow-md animate-fade-in" aria-label="Ícone Musa Fit">
-            <Dumbbell className="w-9 h-9 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logo Musa Fit"
+            className="w-20 h-20 rounded-full mx-auto mb-3 shadow-md object-contain animate-fade-in"
+          />
           <div className="text-3xl font-bold text-purple-700">Musa Fit</div>
           <div className="flex items-center justify-center text-sm text-gray-600 mt-1">
             <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
@@ -145,26 +147,11 @@ export default function Login() {
             <div className="mt-2 text-right">
               <button
                 type="button"
-                onClick={async () => {
-                  setFieldErrors({})
-                  if (!email) {
-                    setFieldErrors({ reset: 'Informe seu email para recuperar a senha' })
-                    return
-                  }
-                  try {
-                    const { supabase } = await import('../lib/supabase')
-                    await supabase.auth.resetPasswordForEmail(email.trim())
-                    setFieldErrors({ success: 'Verifique seu email para redefinir a senha' })
-                  } catch {
-                    setFieldErrors({ reset: 'Não foi possível enviar o link de redefinição' })
-                  }
-                }}
+                onClick={() => navigate('/forgot')}
                 className="text-sm text-purple-700 hover:text-purple-800 underline underline-offset-2"
               >
                 Esqueci minha senha
               </button>
-              {fieldErrors.reset && <p className="text-sm text-red-600 mt-1">{fieldErrors.reset}</p>}
-              {fieldErrors.success && <p className="text-sm text-green-600 mt-1">{fieldErrors.success}</p>}
             </div>
           </div>
 

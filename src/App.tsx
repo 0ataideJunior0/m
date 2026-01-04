@@ -9,6 +9,9 @@ import Progress from './pages/Progress'
 import Profile from './pages/Profile'
 import Home from './pages/Home'
 import HIIT from './pages/HIIT'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetConfirm from './pages/ResetConfirm'
+import ResetPassword from './pages/ResetPassword'
 import PageTransition from './components/PageTransition'
 
 function App() {
@@ -47,6 +50,9 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
+        <Route path="/reset-confirm" element={<ResetConfirm />} />
+        <Route path="/reset" element={<ResetPassword />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/home" element={<Home />} />
         <Route path="/hiit" element={<HIIT />} />
