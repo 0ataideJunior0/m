@@ -16,10 +16,9 @@ Implementação de Vercel Web Analytics
   - Profile: DayCompleted ao aumentar dias concluídos; ShareAchievements ao compartilhar.
 
 4. Desenvolvimento e Produção
-- O script reporta no ambiente Vercel (produção); localmente não coleta.
+- O script coleta no ambiente Vercel; localmente pode não haver ingestão. Verifique Network por chamadas a /_vercel/insights/view após deploy.
 - Valide no Dashboard (Analytics) após visitas em produção.
 
 5. Privacidade e desempenho
 - Web Analytics é first-party, sem cookies e leve.
 - Não armazenar PII em eventos; usar chaves simples em data.
-

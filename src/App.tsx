@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetConfirm from './pages/ResetConfirm'
 import ResetPassword from './pages/ResetPassword'
 import PageTransition from './components/PageTransition'
+import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 
 function App() {
   const { setUser, setIsLoading } = useAuthStore()
@@ -30,8 +31,20 @@ function App() {
             } catch {}
           }
           setUser({ ...user, username })
+          await persistCurrentSession()
         } else {
-          setUser(null)
+          const restored = await tryRestoreSession()
+          if (restored) {
+            const u = await getCurrentUser()
+            if (u) {
+              setUser(u)
+              await persistCurrentSession()
+            } else {
+              setUser(null)
+            }
+          } else {
+            setUser(null)
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
@@ -43,6 +56,29 @@ function App() {
 
     checkAuth()
   }, [setUser, setIsLoading])
+
+  useEffect(() => {
+    let timer: any
+    const INACTIVITY_MS = 30 * 60 * 1000
+    const reset = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(async () => {
+        try {
+          await (await import('./utils/auth')).signOut()
+          clearPersistedSession()
+        } finally {
+          useAuthStore.getState().logout()
+        }
+      }, INACTIVITY_MS)
+    }
+    const events = ['mousemove','keydown','touchstart','click'] as const
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }))
+    reset()
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset))
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 
   return (
     <BrowserRouter>
