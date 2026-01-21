@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getWorkoutByDay, markDayComplete, getUserProgress } from '../utils/workouts'
 import { Workout as WorkoutType, UserProgress } from '../types'
 import { Check, ArrowLeft, Play, X } from 'lucide-react'
+import ExerciseItem from '../components/ExerciseItem'
+import { getExerciseKey } from '../utils/exerciseKeys'
+import { loadLocalProgress, saveLocalProgress, mergeServerLocal } from '../utils/exerciseProgress'
+import { fetchExerciseProgress, upsertExerciseProgress } from '../utils/exerciseProgressRemote'
 
 export default function WorkoutDay() {
   const { day } = useParams<{ day: string }>()
@@ -93,6 +97,14 @@ export default function WorkoutDay() {
   }
 
   const isDayCompleted = progress.some(p => p.day_number === dayNumber && p.completed)
+  const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, dayNumber)
+  const pendingRef = useRef<{ key: string; completed: boolean } | null>(null)
+  const debounceRef = useRef<any>(null)
+  const toggleExercise = useMemo(
+    () => toggleExerciseFactory(user?.id, dayNumber, exProgress, setExProgress, pendingRef, debounceRef),
+    [user?.id, dayNumber, exProgress]
+  )
+  const lastActionRef = useRef<{ key: string; prev: boolean } | null>(null)
 
   if (loading) {
     return (
@@ -138,6 +150,7 @@ export default function WorkoutDay() {
             <p className="text-gray-600">Dia {dayNumber} do desafio</p>
           </div>
         </div>
+        
 
         {/* Video geral do treino */}
         {workout.video_url && (
@@ -156,6 +169,48 @@ export default function WorkoutDay() {
             </div>
           </div>
         )}
+
+        {/* Progresso exercícios */}
+        {workout.exercises?.length ? (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            {(() => {
+              const total = workout.exercises.length
+              const done = workout.exercises.reduce((acc, ex, i) => {
+                const k = getExerciseKey(ex, i)
+                return acc + (exProgress[k]?.completed ? 1 : 0)
+              }, 0)
+              const pct = Math.round((done / total) * 100)
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xl font-bold text-gray-900">Progresso dos exercícios</div>
+                    <div className="text-sm text-gray-600">{done}/{total}</div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
+                  </div>
+                  {/* {lastActionRef.current && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => {
+                          const la = lastActionRef.current
+                          if (!la || !user?.id) return
+                          const updated = { ...exProgress, [la.key]: { completed: la.prev, ts: Date.now() } }
+                          setExProgress(updated)
+                          saveLocalProgress(user.id, dayNumber, updated)
+                          pendingRef.current = { key: la.key, completed: la.prev }
+                        }}
+                        className="text-sm px-3 py-1 rounded bg-white border border-gray-300 hover:bg-gray-50"
+                      >
+                        Desfazer última marcação
+                      </button>
+                    </div>
+                  )} */}
+                </>
+              )
+            })()}
+          </div>
+        ) : null}
 
         {/* Exercises */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
@@ -185,32 +240,33 @@ export default function WorkoutDay() {
                         <span className="text-xs text-purple-600">Grupo {g}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {groupItems.map((exercise, idx) => (
-                          <div
-                            key={`pair-${g}-${idx}`}
-                            className="bg-purple-50 rounded-md p-3"
-                          >
-                            <h3 className="font-medium text-gray-900">{exercise.exercise}</h3>
-                            <p className="text-gray-600 text-sm">
-                              {exercise.sets ? `${exercise.sets} séries` : ''}
-                              {exercise.sets && exercise.reps ? ' • ' : ''}
-                              {exercise.reps}
-                            </p>
-                            {exercise.note && (
-                              <p className="text-xs text-purple-700 mt-1">{exercise.note}</p>
-                            )}
-                            {(exercise.video || workout.video_url) ? (
-                              <button
-                                onClick={() => openExerciseVideo(exercise)}
-                                className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
-                              >
-                                <Play className="w-4 h-4 mr-1" /> Assistir vídeo
-                              </button>
-                            ) : (
-                              <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
-                            )}
-                          </div>
-                        ))}
+                        {groupItems.map((exercise, idx) => {
+                          const k = getExerciseKey(exercise, idx)
+                          const completed = !!exProgress[k]?.completed
+                          return (
+                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 rounded-md p-3">
+                              <ExerciseItem
+                                exercise={exercise}
+                                isCompleted={completed}
+                                onToggle={() => {
+                                  const k = getExerciseKey(exercise, idx)
+                                  lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
+                                  toggleExercise(exercise, idx)
+                                }}
+                              />
+                              {(exercise.video || workout.video_url) ? (
+                                <button
+                                  onClick={() => openExerciseVideo(exercise)}
+                                  className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
+                                >
+                                  <Play className="w-4 h-4 mr-1" /> Assistir vídeo
+                                </button>
+                              ) : (
+                                <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )
@@ -221,33 +277,26 @@ export default function WorkoutDay() {
                 const isWarmup = ex.type === 'warmup'
                 const isDrop = ex.type === 'drop_set'
                 cards.push(
-                  <div
-                    key={`single-${i}`}
-                    className={`border rounded-lg p-4 ${isWarmup ? 'border-yellow-300 bg-yellow-50' : isDrop ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{ex.exercise}</h3>
-                        <p className="text-gray-600 text-sm">
-                          {ex.sets ? `${ex.sets} séries` : ''}
-                          {ex.sets && ex.reps ? ' • ' : ''}
-                          {ex.reps}
-                        </p>
-                        {ex.note && (
-                          <p className={`${isDrop ? 'text-red-700' : isWarmup ? 'text-yellow-700' : 'text-gray-600'} text-xs mt-1`}>{ex.note}</p>
-                        )}
-                        {(ex.video || workout.video_url) ? (
-                          <button
-                            onClick={() => openExerciseVideo(ex)}
-                            className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
-                          >
-                            <Play className="w-4 h-4 mr-1" /> Assistir vídeo
-                          </button>
-                        ) : (
-                          <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
-                        )}
-                      </div>
-                    </div>
+                  <div key={`single-${i}`} className="p-1">
+                    <ExerciseItem
+                      exercise={ex}
+                      isCompleted={!!exProgress[getExerciseKey(ex, i)]?.completed}
+                      onToggle={() => {
+                        const k = getExerciseKey(ex, i)
+                        lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
+                        toggleExercise(ex, i)
+                      }}
+                    />
+                    {/*  video de exercício indidual {(ex.video || workout.video_url) ? (
+                      <button
+                        onClick={() => openExerciseVideo(ex)}
+                        className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
+                      >
+                        <Play className="w-4 h-4 mr-1" /> Assistir vídeo
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
+                    )} */}
                   </div>
                 )
               }
@@ -335,6 +384,63 @@ export default function WorkoutDay() {
     </div>
   )
 }
+
+// Estado e sincronização
+function useExerciseProgressState(userId: string | undefined, dayNumber: number) {
+  const [state, setState] = useState<Record<string, { completed: boolean; ts: number }>>({})
+  useEffect(() => {
+    if (!userId) return
+    const local = loadLocalProgress(userId, dayNumber)
+    setState(local)
+    ;(async () => {
+      const remote = await fetchExerciseProgress(userId, dayNumber)
+      setState(s => {
+        const merged = mergeServerLocal(remote, s)
+        saveLocalProgress(userId, dayNumber, merged)
+        return merged
+      })
+    })()
+  }, [userId, dayNumber])
+  return { state, setState }
+}
+
+function toggleExerciseFactory(
+  userId: string | undefined,
+  dayNumber: number,
+  exProgress: Record<string, { completed: boolean; ts: number }>,
+  setExProgress: (v: any) => void,
+  pendingRef: React.MutableRefObject<{ key: string; completed: boolean } | null>,
+  debounceRef: React.MutableRefObject<any>,
+) {
+  return (exercise: WorkoutType['exercises'][number], index: number) => {
+    if (!userId) return
+    const key = getExerciseKey(exercise, index)
+    const next = !exProgress[key]?.completed
+    const ts = Date.now()
+    const updated = { ...exProgress, [key]: { completed: next, ts } }
+    setExProgress(updated)
+    saveLocalProgress(userId, dayNumber, updated)
+    pendingRef.current = { key, completed: next }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      const p = pendingRef.current
+      if (!p) return
+      try {
+        await upsertExerciseProgress(userId, dayNumber, p.key, p.completed)
+        pendingRef.current = null
+      } catch (e) {
+        // retry simples
+        setTimeout(async () => {
+          try {
+            await upsertExerciseProgress(userId, dayNumber, p.key, p.completed)
+            pendingRef.current = null
+          } catch {}
+        }, 2000)
+      }
+    }, 300)
+  }
+}
+
 
 function openExerciseVideoFactory(
   workout: WorkoutType | null,
