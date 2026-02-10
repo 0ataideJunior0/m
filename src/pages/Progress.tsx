@@ -65,6 +65,11 @@ export default function Progress() {
       isLocked: dayNumber > currentDay,
     }
   })
+  const weeks = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, w) => {
+    const start = w * 7
+    return allDays.slice(start, start + 7)
+  })
+  const dayNames = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo']
 
   const getDayIcon = (day: typeof allDays[0]) => {
     if (day.completed) {
@@ -134,54 +139,58 @@ export default function Progress() {
           </div>
         </div>
 
-        {/* Timeline */}
+        {/* Timeline agrupada por semanas */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Timeline do Desafio</h2>
-          
-          <div className="space-y-4">
-            {allDays.map((day) => (
-              <div key={day.dayNumber} className="flex items-center">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 mr-4">
-                  <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${getDayStyle(day)}`}>
-                    {getDayIcon(day)}
-                  </div>
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className={`font-medium ${
-                        day.completed ? 'text-green-700' : 
-                        day.isCurrent ? 'text-purple-700' : 
-                        day.isLocked ? 'text-gray-400' : 'text-gray-700'
-                      }`}>
-                        Dia {day.dayNumber}
-                      </h3>
-                      <p className={`text-sm ${
-                        day.completed ? 'text-green-600' : 
-                        day.isCurrent ? 'text-purple-600' : 
-                        day.isLocked ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        {day.completed && 'Concluído ✓'}
-                        {day.isCurrent && 'Dia atual →'}
-                        {day.isLocked && 'Bloqueado'}
-                        {!day.completed && !day.isCurrent && !day.isLocked && 'Pendente'}
-                      </p>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Semanas do Desafio</h2>
+          <div className="space-y-8">
+            {weeks.map((week, wi) => (
+              <div key={`week-${wi+1}`}>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Semana {wi+1}</h3>
+                <div className="space-y-4">
+                  {week.map((day, di) => (
+                    <div key={day.dayNumber} className="flex items-center">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 mr-4">
+                        <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${getDayStyle(day)}`}>
+                          {getDayIcon(day)}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className={`font-medium ${
+                              day.completed ? 'text-green-700' : 
+                              day.isCurrent ? 'text-purple-700' : 
+                              day.isLocked ? 'text-gray-400' : 'text-gray-700'
+                            }`}>
+                              {dayNames[di]} • Dia {day.dayNumber}
+                            </h4>
+                            <p className={`text-sm ${
+                              day.completed ? 'text-green-600' : 
+                              day.isCurrent ? 'text-purple-600' : 
+                              day.isLocked ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              {day.completed && 'Concluído ✓'}
+                              {day.isCurrent && 'Dia atual →'}
+                              {day.isLocked && 'Bloqueado'}
+                              {!day.completed && !day.isCurrent && !day.isLocked && 'Pendente'}
+                            </p>
+                          </div>
+                          {!day.isLocked && (
+                            <button
+                              onClick={() => navigate(`/workout/${day.dayNumber}`)}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                                day.completed 
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                              }`}
+                            >
+                              {day.completed ? 'Ver Treino' : 'Iniciar'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    
-                    {!day.isLocked && (
-                      <button
-                        onClick={() => navigate(`/workout/${day.dayNumber}`)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                          day.completed 
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        }`}
-                      >
-                        {day.completed ? 'Ver Treino' : 'Iniciar'}
-                      </button>
-                    )}
-                  </div>
+                  ))}
                 </div>
               </div>
             ))}

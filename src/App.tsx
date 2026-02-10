@@ -1,19 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import WorkoutDay from './pages/WorkoutDay'
-import Progress from './pages/Progress'
-import Profile from './pages/Profile'
-import Home from './pages/Home'
-import HIIT from './pages/HIIT'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetConfirm from './pages/ResetConfirm'
-import ResetPassword from './pages/ResetPassword'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
+
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const WorkoutDay = lazy(() => import('./pages/WorkoutDay'))
+const Progress = lazy(() => import('./pages/Progress'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Home = lazy(() => import('./pages/Home'))
+const HIIT = lazy(() => import('./pages/HIIT'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 function App() {
   const { setUser, setIsLoading } = useAuthStore()
@@ -83,19 +84,21 @@ function App() {
   return (
     <BrowserRouter>
       <PageTransition />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot" element={<ForgotPassword />} />
-        <Route path="/reset-confirm" element={<ResetConfirm />} />
-        <Route path="/reset" element={<ResetPassword />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/hiit" element={<HIIT />} />
-        <Route path="/workout/:day" element={<WorkoutDay />} />
-        <Route path="/progress" element={<Progress />} />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center"><div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin" /></div>}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
+          <Route path="/reset-confirm" element={<ResetConfirm />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/hiit" element={<HIIT />} />
+          <Route path="/workout/:day" element={<WorkoutDay />} />
+          <Route path="/progress" element={<Progress />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

@@ -8,6 +8,13 @@ export default defineConfig({
   build: {
     sourcemap: 'hidden',
     target: 'es2019',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'lucide-react'],
+        },
+      },
+    },
   },
   esbuild: {
     target: 'es2019',

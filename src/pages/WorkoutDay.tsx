@@ -146,7 +146,9 @@ export default function WorkoutDay() {
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{workout.title}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
+              {workout.title}
+            </h1>
             <p className="text-gray-600">Dia {dayNumber} do desafio</p>
           </div>
         </div>
