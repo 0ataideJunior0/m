@@ -53,6 +53,17 @@ export default function Home() {
   const currentDay = getCurrentDay(progress)
   const remainingDays = Math.max(TOTAL_DAYS - completedDays, 0)
   const progressPct = Math.round((completedDays / TOTAL_DAYS) * 100)
+  const weekdayName = useMemo(() => {
+    const names = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+    const n = Number(currentDay)
+    if (Number.isFinite(n)) {
+      if (n >= 0 && n <= 6) return names[n]
+      if (n >= 1 && n <= 7) return names[n % 7]
+      const idx = ((n - 1) % 7) + 1
+      return names[idx % 7]
+    }
+    return 'Dia'
+  }, [currentDay])
 
   if (isLoading || loading) {
     return (
@@ -137,7 +148,7 @@ export default function Home() {
             }}
             className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-purple-700 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
           >
-            Iniciar Treino do Dia {currentDay}
+            Iniciar Treino do Dia {weekdayName}
           </button>
         </div>
 
