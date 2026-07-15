@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target, Share2, Info, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target, Share2, Info, CheckCircle2, Shield } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isAdmin } = useAuthStore()
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [clicked, setClicked] = useState(false)
@@ -215,7 +215,7 @@ export default function Profile() {
         </div>
 
         {/* Atividade recente e estatísticas */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-24 animate-slide-up">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <div>
               <div className="text-lg font-semibold text-gray-900">Atividade recente</div>
@@ -266,6 +266,15 @@ export default function Profile() {
             )}
           </div>
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="w-full bg-white rounded-2xl shadow-lg p-4 mb-24 flex items-center justify-center text-purple-700 hover:bg-purple-50 font-medium"
+          >
+            <Shield className="w-5 h-5 mr-2" /> Painel Admin
+          </button>
+        )}
 
         <div className="fixed left-0 right-0 bottom-0 bg-transparent p-4">
           <div className="max-w-4xl mx-auto">

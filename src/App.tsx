@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
+import { getIsAdmin } from './utils/profile'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
+import RequireAdmin from './components/RequireAdmin'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -15,9 +17,13 @@ const HIIT = lazy(() => import('./pages/HIIT'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
+const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 
 function App() {
-  const { setUser, setIsLoading } = useAuthStore()
+  const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,6 +38,7 @@ function App() {
             } catch {}
           }
           setUser({ ...user, username })
+          setIsAdmin(await getIsAdmin(user.id))
           await persistCurrentSession()
         } else {
           const restored = await tryRestoreSession()
@@ -39,24 +46,28 @@ function App() {
             const u = await getCurrentUser()
             if (u) {
               setUser(u)
+              setIsAdmin(await getIsAdmin(u.id))
               await persistCurrentSession()
             } else {
               setUser(null)
+              setIsAdmin(false)
             }
           } else {
             setUser(null)
+            setIsAdmin(false)
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         setUser(null)
+        setIsAdmin(false)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
-  }, [setUser, setIsLoading])
+  }, [setUser, setIsLoading, setIsAdmin])
 
   useEffect(() => {
     let timer: any
@@ -96,6 +107,10 @@ function App() {
           <Route path="/hiit" element={<HIIT />} />
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+          <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
+          <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
+          <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
