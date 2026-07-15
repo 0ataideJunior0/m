@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let the app owner (identified as `ataide.junior.uiux@gmail.com`) edit workout content (title, day video, and per-exercise fields) and view a read-only list of non-admin users, from inside the existing Musa Fit30 SPA.
+**Goal:** Let the app owner (identified as `ataide.junior.mg@gmail.com`) edit workout content (title, day video, and per-exercise fields) and view a read-only list of non-admin users, from inside the existing Musa Fit30 SPA.
 
 **Architecture:** A new `public.profiles` table (populated by an `auth.users` trigger + one-time backfill) stores the `is_admin` flag and is the sole source of truth for authorization — enforced by Postgres RLS on `profiles`, `workouts` (UPDATE), and `user_progress` (SELECT). The React app reads `is_admin` into `authStore` after login and uses it only for UX (hiding the admin link, redirecting non-admins away from `/admin/*`); the database is what actually blocks unauthorized writes/reads.
 
@@ -129,7 +129,7 @@ Then delete the file: `rm _tmp_check_profiles_anon.mjs`
 
 - [ ] **Step 5: Promote the initial admin account**
 
-Run: `supabase db query --linked "UPDATE public.profiles SET is_admin = true WHERE email = 'ataide.junior.uiux@gmail.com' RETURNING email, is_admin;"`
+Run: `supabase db query --linked "UPDATE public.profiles SET is_admin = true WHERE email = 'ataide.junior.mg@gmail.com' RETURNING email, is_admin;"`
 Expected: one row returned with `is_admin: true`. If zero rows are returned, STOP — it means no `auth.users` row exists yet for that email (the account hasn't signed up in this Supabase project); ask the user to confirm the correct email or sign up first before continuing.
 
 - [ ] **Step 6: Commit the migration**
@@ -1507,7 +1507,7 @@ Expected: server starts on `http://localhost:5174` (or the next free port).
 
 - [ ] **Step 2: Verify admin access**
 
-In the browser, log in with `ataide.junior.uiux@gmail.com` (the account promoted in Task 1, Step 5). Open `/profile` and confirm the "Painel Admin" button is visible. Click it, confirm `/admin` shows the two option cards.
+In the browser, log in with `ataide.junior.mg@gmail.com` (the account promoted in Task 1, Step 5). Open `/profile` and confirm the "Painel Admin" button is visible. Click it, confirm `/admin` shows the two option cards.
 
 - [ ] **Step 3: Verify the workout editor round-trip**
 
@@ -1519,7 +1519,7 @@ From `/admin`, click "Usuárias" and confirm the table renders with email, usern
 
 - [ ] **Step 5: Verify non-admin users are blocked**
 
-Log out, then log in with any account that is **not** `ataide.junior.uiux@gmail.com` (or register a throwaway test account). Confirm the "Painel Admin" button does **not** appear on `/profile`. Manually navigate the browser to `/admin/workouts` and confirm it redirects to `/home`.
+Log out, then log in with any account that is **not** `ataide.junior.mg@gmail.com` (or register a throwaway test account). Confirm the "Painel Admin" button does **not** appear on `/profile`. Manually navigate the browser to `/admin/workouts` and confirm it redirects to `/home`.
 
 - [ ] **Step 6: Report results**
 

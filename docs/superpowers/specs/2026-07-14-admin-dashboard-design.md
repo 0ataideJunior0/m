@@ -60,7 +60,7 @@ ON CONFLICT (id) DO NOTHING;
 
 Depois de aplicar a migration, promover manualmente via CLI:
 ```sql
-UPDATE profiles SET is_admin = true WHERE email = 'ataide.junior.uiux@gmail.com';
+UPDATE profiles SET is_admin = true WHERE email = 'ataide.junior.mg@gmail.com';
 ```
 (A trigger só popula `profiles` em *novos* cadastros; para a conta já existente do dono do produto, o insert/update é feito manualmente uma única vez.)
 
@@ -143,7 +143,7 @@ Tabela somente-leitura: Email | Username | Cadastro | Progresso (`X/30`). Sem a�
   - `UPDATE` em `workouts` deve falhar.
   - `SELECT` em `profiles`/`user_progress` de outro `user_id` deve retornar vazio.
   - Um novo cadastro de teste deve gerar automaticamente uma linha em `profiles` (confirma o trigger).
-- Promover `ataide.junior.uiux@gmail.com` para `is_admin = true` e repetir as mesmas verificações autenticado como essa conta — devem passar.
+- Promover `ataide.junior.mg@gmail.com` para `is_admin = true` e repetir as mesmas verificações autenticado como essa conta — devem passar.
 
 ### Testes automatizados (Vitest, seguindo o padrão de `src/__tests__/`)
 
