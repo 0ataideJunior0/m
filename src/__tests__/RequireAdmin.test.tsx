@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
@@ -21,7 +20,7 @@ describe('RequireAdmin', () => {
         </Routes>
       </MemoryRouter>
     )
-    expect(await screen.findByText('Home Page')).toBeInTheDocument()
+    expect(await screen.findByText('Home Page')).not.toBeNull()
   })
 
   it('renderiza o conteúdo quando é admin', async () => {
@@ -35,6 +34,6 @@ describe('RequireAdmin', () => {
         </Routes>
       </MemoryRouter>
     )
-    expect(await screen.findByText('Admin Content')).toBeInTheDocument()
+    expect(await screen.findByText('Admin Content')).not.toBeNull()
   })
 })
