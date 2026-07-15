@@ -17,6 +17,7 @@ const HIIT = lazy(() => import('./pages/HIIT'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
@@ -106,6 +107,7 @@ function App() {
           <Route path="/hiit" element={<HIIT />} />
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
           <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
           <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
