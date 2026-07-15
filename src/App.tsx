@@ -5,6 +5,7 @@ import { getCurrentUser } from './utils/auth'
 import { getIsAdmin } from './utils/profile'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
+import RequireAdmin from './components/RequireAdmin'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -16,6 +17,7 @@ const HIIT = lazy(() => import('./pages/HIIT'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 
 function App() {
   const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
@@ -102,6 +104,7 @@ function App() {
           <Route path="/hiit" element={<HIIT />} />
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
