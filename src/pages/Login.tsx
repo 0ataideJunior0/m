@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { signIn } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
+import { getIsAdmin } from '../utils/profile'
 import { Mail, Lock, Eye, EyeOff, Dumbbell, Sparkles } from 'lucide-react'
 
 export default function Login() {
@@ -13,7 +14,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
   
   const navigate = useNavigate()
-  const { setUser } = useAuthStore()
+  const { setUser, setIsAdmin } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,6 +48,7 @@ export default function Login() {
           if (uname) localStorage.setItem('musa_username', uname)
         } catch {}
         setUser(user)
+        setIsAdmin(await getIsAdmin(user.id))
         navigate('/home')
       }
     } catch (err) {

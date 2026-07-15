@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { signUp } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
+import { getIsAdmin } from '../utils/profile'
 import { Eye, EyeOff, Lock, Mail, User, CheckCircle2 } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
 
@@ -18,7 +19,7 @@ export default function Register() {
   const [touched, setTouched] = useState<{ username?: boolean; email?: boolean; password?: boolean; confirmPassword?: boolean }>({})
   
   const navigate = useNavigate()
-  const { setUser } = useAuthStore()
+  const { setUser, setIsAdmin } = useAuthStore()
 
   const validateFields = (forSubmit: boolean = false) => {
     const errs: typeof fieldErrors = {}
@@ -87,6 +88,7 @@ export default function Register() {
           } catch {}
         }
         setUser(user)
+        setIsAdmin(await getIsAdmin(user.id))
         navigate('/home')
       }
     } catch (err) {
