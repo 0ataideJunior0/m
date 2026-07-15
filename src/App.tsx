@@ -18,6 +18,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
+const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 
 function App() {
   const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
@@ -105,6 +106,7 @@ function App() {
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
+          <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
       </Suspense>
