@@ -101,4 +101,26 @@ describe('POST /api/cancel-subscription', () => {
     expect(preApprovalUpdateMock).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
+
+  it('ainda retorna 200 e loga erro se a atualização local falhar após cancelar no Mercado Pago', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+    selectSingleMock.mockResolvedValueOnce({
+      data: { preapproval_id: 'preapproval-999', status: 'authorized' },
+      error: null,
+    })
+    preApprovalUpdateMock.mockResolvedValueOnce({ id: 'preapproval-999', status: 'cancelled' })
+    updateEqMock.mockResolvedValueOnce({ error: new Error('db down') })
+
+    const req: any = { method: 'POST', headers: { authorization: 'Bearer good-token' } }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.json).toHaveBeenCalledWith({ ok: true, status: 'cancelled' })
+    expect(consoleErrorSpy).toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
+  })
 })

@@ -48,10 +48,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  await supabaseAdmin
+  const { error: updateError } = await supabaseAdmin
     .from('subscriptions')
     .update({ status: 'cancelled', updated_at: new Date().toISOString() })
     .eq('user_id', userData.user.id)
+
+  if (updateError) {
+    console.error('cancel-subscription local DB update error:', {
+      userId: userData.user.id,
+      preapprovalId: subscription.preapproval_id,
+      error: updateError,
+    })
+  }
 
   res.status(200).json({ ok: true, status: 'cancelled' })
 }
