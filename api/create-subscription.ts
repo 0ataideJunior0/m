@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
     res.status(200).json({ init_point: result.init_point })
   } catch (error) {
-    console.error('create-subscription error:', error)
+    console.error('create-subscription error:', JSON.stringify(error, Object.getOwnPropertyNames(error as object)))
     res.status(500).json({ error: 'Failed to create subscription' })
   }
 }
