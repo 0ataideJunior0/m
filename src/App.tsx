@@ -111,11 +111,11 @@ function App() {
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset-confirm" element={<ResetConfirm />} />
           <Route path="/reset" element={<ResetPassword />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/hiit" element={<HIIT />} />
-          <Route path="/workout/:day" element={<WorkoutDay />} />
-          <Route path="/progress" element={<Progress />} />
+          <Route path="/profile" element={<RequireSubscription><Profile /></RequireSubscription>} />
+          <Route path="/home" element={<RequireSubscription><Home /></RequireSubscription>} />
+          <Route path="/hiit" element={<RequireSubscription><HIIT /></RequireSubscription>} />
+          <Route path="/workout/:day" element={<RequireSubscription><WorkoutDay /></RequireSubscription>} />
+          <Route path="/progress" element={<RequireSubscription><Progress /></RequireSubscription>} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/minha-assinatura" element={<RequireSubscription><MySubscription /></RequireSubscription>} />
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
