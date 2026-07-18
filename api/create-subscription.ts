@@ -24,7 +24,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = userData.user
-  const planId = process.env.MERCADOPAGO_PREAPPROVAL_PLAN_ID || ''
   const host = (req.headers['x-forwarded-host'] as string) || (req.headers.host as string) || ''
   const protocol = host.includes('localhost') ? 'http' : 'https'
   const backUrl = `${protocol}://${host}/subscribe`
@@ -33,10 +32,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const result = await preApproval.create({
       body: {
-        preapproval_plan_id: planId,
+        reason: 'Musa Fit30 - Assinatura mensal',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: 59.90,
+          currency_id: 'BRL',
+        },
         payer_email: user.email || '',
         external_reference: user.id,
         back_url: backUrl,
+        status: 'pending',
       },
     })
     res.status(200).json({ init_point: result.init_point })

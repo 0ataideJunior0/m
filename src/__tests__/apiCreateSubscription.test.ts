@@ -27,10 +27,6 @@ function createMockRes() {
 }
 
 describe('POST /api/create-subscription', () => {
-  beforeEach(() => {
-    vi.stubEnv('MERCADOPAGO_PREAPPROVAL_PLAN_ID', 'plan-123')
-  })
-
   it('retorna 405 se não for POST', async () => {
     const req: any = { method: 'GET', headers: {} }
     const res = createMockRes()
@@ -69,10 +65,17 @@ describe('POST /api/create-subscription', () => {
 
     expect(preApprovalCreateMock).toHaveBeenCalledWith({
       body: {
-        preapproval_plan_id: 'plan-123',
+        reason: 'Musa Fit30 - Assinatura mensal',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: 59.90,
+          currency_id: 'BRL',
+        },
         payer_email: 'ana@example.com',
         external_reference: 'user-1',
         back_url: 'https://traemusa20lfmz.vercel.app/subscribe',
+        status: 'pending',
       },
     })
     expect(res.status).toHaveBeenCalledWith(200)
