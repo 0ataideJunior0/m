@@ -22,6 +22,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const Subscribe = lazy(() => import('./pages/Subscribe'))
 
 function App() {
   const { setUser, setIsLoading, setIsAdmin, setHasActiveSubscription } = useAuthStore()
@@ -113,6 +114,7 @@ function App() {
           <Route path="/hiit" element={<HIIT />} />
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
           <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
