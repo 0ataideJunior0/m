@@ -7,6 +7,7 @@ import { getHasActiveSubscription } from './utils/subscription'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 import RequireAdmin from './components/RequireAdmin'
+import RequireSubscription from './components/RequireSubscription'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -23,6 +24,7 @@ const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const Subscribe = lazy(() => import('./pages/Subscribe'))
+const MySubscription = lazy(() => import('./pages/MySubscription'))
 
 function App() {
   const { setUser, setIsLoading, setIsAdmin, setHasActiveSubscription } = useAuthStore()
@@ -115,6 +117,7 @@ function App() {
           <Route path="/workout/:day" element={<WorkoutDay />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/minha-assinatura" element={<RequireSubscription><MySubscription /></RequireSubscription>} />
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
           <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
