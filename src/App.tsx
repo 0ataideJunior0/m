@@ -3,6 +3,7 @@ import { useEffect, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
 import { getIsAdmin } from './utils/profile'
+import { getHasActiveSubscription } from './utils/subscription'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 import RequireAdmin from './components/RequireAdmin'
@@ -23,7 +24,7 @@ const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 
 function App() {
-  const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
+  const { setUser, setIsLoading, setIsAdmin, setHasActiveSubscription } = useAuthStore()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,6 +40,7 @@ function App() {
           }
           setUser({ ...user, username })
           setIsAdmin(await getIsAdmin(user.id))
+          setHasActiveSubscription(await getHasActiveSubscription(user.id))
           await persistCurrentSession()
         } else {
           const restored = await tryRestoreSession()
@@ -47,27 +49,31 @@ function App() {
             if (u) {
               setUser(u)
               setIsAdmin(await getIsAdmin(u.id))
+              setHasActiveSubscription(await getHasActiveSubscription(u.id))
               await persistCurrentSession()
             } else {
               setUser(null)
               setIsAdmin(false)
+              setHasActiveSubscription(false)
             }
           } else {
             setUser(null)
             setIsAdmin(false)
+            setHasActiveSubscription(false)
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         setUser(null)
         setIsAdmin(false)
+        setHasActiveSubscription(false)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
-  }, [setUser, setIsLoading, setIsAdmin])
+  }, [setUser, setIsLoading, setIsAdmin, setHasActiveSubscription])
 
   useEffect(() => {
     let timer: any
