@@ -9,10 +9,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const dataId = (req.query['data.id'] as string) || (req.body?.data?.id as string) || ''
+  const dataId = (req.query['data.id'] as string) || ''
   const xSignature = (req.headers['x-signature'] as string) || ''
   const xRequestId = (req.headers['x-request-id'] as string) || ''
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET || ''
+
+  if (!secret) {
+    console.error('MERCADOPAGO_WEBHOOK_SECRET is not configured')
+    res.status(500).json({ error: 'Webhook is not configured' })
+    return
+  }
 
   try {
     WebhookSignatureValidator.validate({ xSignature, xRequestId, dataId, secret })

@@ -52,6 +52,20 @@ describe('POST /api/mercadopago-webhook', () => {
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
+  it('retorna 500 quando MERCADOPAGO_WEBHOOK_SECRET não está configurado', async () => {
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', '')
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': '999', type: 'subscription_preapproval' },
+      body: {},
+    }
+    const res = createMockRes()
+    await handler(req, res)
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(validateMock).not.toHaveBeenCalled()
+  })
+
   it('retorna 401 quando a assinatura é inválida', async () => {
     validateMock.mockImplementationOnce(() => {
       throw new FakeInvalidWebhookSignatureError('bad signature')
