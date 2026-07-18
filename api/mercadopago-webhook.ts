@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { PreApproval, WebhookSignatureValidator, InvalidWebhookSignatureError } from 'mercadopago'
-import { createMercadoPagoConfig } from './_lib/mercadopagoConfig'
-import { createSupabaseAdmin } from './_lib/supabaseAdmin'
+import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
+import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
