@@ -24,6 +24,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     WebhookSignatureValidator.validate({ xSignature, xRequestId, dataId, secret })
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) {
+      console.error('mercadopago-webhook signature mismatch:', {
+        headerKeys: Object.keys(req.headers),
+        xSignaturePresent: Boolean(xSignature),
+        xSignatureValue: xSignature,
+        xRequestIdPresent: Boolean(xRequestId),
+        xRequestIdValue: xRequestId,
+        dataId,
+        secretLength: secret.length,
+      })
       res.status(401).json({ error: 'Invalid signature' })
       return
     }
