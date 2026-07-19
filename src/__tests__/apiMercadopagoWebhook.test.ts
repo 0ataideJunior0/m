@@ -143,4 +143,67 @@ describe('POST /api/mercadopago-webhook', () => {
     expect(upsertMock).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
+
+  it('processa quando body.type é subscription_preapproval mesmo com query.type divergente', async () => {
+    validateMock.mockImplementationOnce(() => undefined)
+    preApprovalGetMock.mockResolvedValueOnce({
+      id: 'preapproval-999',
+      external_reference: 'user-1',
+      status: 'authorized',
+      next_payment_date: '2026-08-18T00:00:00.000Z',
+    })
+
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': 'preapproval-999', type: 'subscription_authorized_payment' },
+      body: { type: 'subscription_preapproval', entity: 'preapproval', data: { id: 'preapproval-999' } },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(preApprovalGetMock).toHaveBeenCalledWith({ id: 'preapproval-999' })
+    expect(upsertMock).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('processa quando body.entity é preapproval mesmo sem body.type', async () => {
+    validateMock.mockImplementationOnce(() => undefined)
+    preApprovalGetMock.mockResolvedValueOnce({
+      id: 'preapproval-999',
+      external_reference: 'user-1',
+      status: 'authorized',
+      next_payment_date: null,
+    })
+
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': 'preapproval-999' },
+      body: { entity: 'preapproval', data: { id: 'preapproval-999' } },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(preApprovalGetMock).toHaveBeenCalledWith({ id: 'preapproval-999' })
+    expect(upsertMock).toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('retorna 500 e não deixa exceção sem tratamento quando a busca no Mercado Pago falha', async () => {
+    validateMock.mockImplementationOnce(() => undefined)
+    preApprovalGetMock.mockRejectedValueOnce(new Error('not found'))
+
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': '123456', type: 'subscription_preapproval' },
+      body: {},
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
 })
