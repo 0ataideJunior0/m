@@ -30,8 +30,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     throw error
   }
 
-  const type = (req.query.type as string) || (req.body?.type as string) || (req.body?.topic as string) || ''
-  if (type !== 'subscription_preapproval') {
+  const type =
+    (req.query.type as string) ||
+    (req.query.topic as string) ||
+    (req.body?.type as string) ||
+    (req.body?.topic as string) ||
+    ''
+  if (type !== 'subscription_preapproval' && type !== 'preapproval') {
+    console.log('mercadopago-webhook ignored event:', {
+      query: req.query,
+      body: req.body,
+      resolvedType: type,
+    })
     res.status(200).json({ ignored: true })
     return
   }
