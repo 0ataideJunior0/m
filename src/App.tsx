@@ -3,11 +3,9 @@ import { useEffect, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
 import { getIsAdmin } from './utils/profile'
-import { getHasActiveSubscription } from './utils/subscription'
 import PageTransition from './components/PageTransition'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 import RequireAdmin from './components/RequireAdmin'
-import RequireSubscription from './components/RequireSubscription'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -23,11 +21,9 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
-const Subscribe = lazy(() => import('./pages/Subscribe'))
-const MySubscription = lazy(() => import('./pages/MySubscription'))
 
 function App() {
-  const { setUser, setIsLoading, setIsAdmin, setHasActiveSubscription } = useAuthStore()
+  const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -43,7 +39,6 @@ function App() {
           }
           setUser({ ...user, username })
           setIsAdmin(await getIsAdmin(user.id))
-          setHasActiveSubscription(await getHasActiveSubscription(user.id))
           await persistCurrentSession()
         } else {
           const restored = await tryRestoreSession()
@@ -52,31 +47,27 @@ function App() {
             if (u) {
               setUser(u)
               setIsAdmin(await getIsAdmin(u.id))
-              setHasActiveSubscription(await getHasActiveSubscription(u.id))
               await persistCurrentSession()
             } else {
               setUser(null)
               setIsAdmin(false)
-              setHasActiveSubscription(false)
             }
           } else {
             setUser(null)
             setIsAdmin(false)
-            setHasActiveSubscription(false)
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         setUser(null)
         setIsAdmin(false)
-        setHasActiveSubscription(false)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
-  }, [setUser, setIsLoading, setIsAdmin, setHasActiveSubscription])
+  }, [setUser, setIsLoading, setIsAdmin])
 
   useEffect(() => {
     let timer: any
@@ -111,13 +102,11 @@ function App() {
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset-confirm" element={<ResetConfirm />} />
           <Route path="/reset" element={<ResetPassword />} />
-          <Route path="/profile" element={<RequireSubscription><Profile /></RequireSubscription>} />
-          <Route path="/home" element={<RequireSubscription><Home /></RequireSubscription>} />
-          <Route path="/hiit" element={<RequireSubscription><HIIT /></RequireSubscription>} />
-          <Route path="/workout/:day" element={<RequireSubscription><WorkoutDay /></RequireSubscription>} />
-          <Route path="/progress" element={<RequireSubscription><Progress /></RequireSubscription>} />
-          <Route path="/subscribe" element={<Subscribe />} />
-          <Route path="/minha-assinatura" element={<RequireSubscription><MySubscription /></RequireSubscription>} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/hiit" element={<HIIT />} />
+          <Route path="/workout/:day" element={<WorkoutDay />} />
+          <Route path="/progress" element={<Progress />} />
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
           <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
           <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />

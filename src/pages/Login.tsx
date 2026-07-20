@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signIn } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
-import { getHasActiveSubscription } from '../utils/subscription'
 import { Mail, Lock, Eye, EyeOff, Dumbbell, Sparkles } from 'lucide-react'
 
 export default function Login() {
@@ -15,7 +14,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
   
   const navigate = useNavigate()
-  const { setUser, setIsAdmin, setHasActiveSubscription } = useAuthStore()
+  const { setUser, setIsAdmin } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +49,6 @@ export default function Login() {
         } catch {}
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
-        setHasActiveSubscription(await getHasActiveSubscription(user.id))
         navigate('/home')
       }
     } catch (err) {

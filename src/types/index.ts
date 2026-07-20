@@ -38,15 +38,3 @@ export interface AuthError {
   message: string
   code?: string
 }
-
-export type SubscriptionStatus = 'pending' | 'authorized' | 'paused' | 'cancelled'
-
-export interface Subscription {
-  id: string
-  user_id: string
-  preapproval_id: string
-  status: SubscriptionStatus
-  next_payment_date: string | null
-  created_at: string
-  updated_at: string
-}
