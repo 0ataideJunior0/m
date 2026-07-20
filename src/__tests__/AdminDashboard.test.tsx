@@ -4,12 +4,12 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import AdminDashboard from '../pages/admin/AdminDashboard'
 
 describe('AdminDashboard', () => {
-  it('navega para /admin/workouts ao clicar em Treinos', () => {
+  it('navega para /admin/programs ao clicar em Treinos', () => {
     render(
       <MemoryRouter initialEntries={['/admin']}>
         <Routes>
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/workouts" element={<div>Workouts Page</div>} />
+          <Route path="/admin/programs" element={<div>Workouts Page</div>} />
         </Routes>
       </MemoryRouter>
     )

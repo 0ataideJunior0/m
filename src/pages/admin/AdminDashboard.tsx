@@ -16,7 +16,7 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
-            onClick={() => navigate('/admin/workouts')}
+            onClick={() => navigate('/admin/programs')}
             className="bg-white rounded-2xl shadow-lg p-6 text-left hover:shadow-xl transition"
           >
             <Dumbbell className="w-8 h-8 text-purple-600 mb-3" />

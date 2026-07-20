@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase'
 
-export async function fetchExerciseProgress(userId: string, dayNumber: number): Promise<Record<string, boolean>> {
+export async function fetchExerciseProgress(userId: string, workoutId: string): Promise<Record<string, boolean>> {
   try {
     const { data, error } = await supabase
       .from('user_exercise_progress')
       .select('exercise_key, completed')
       .eq('user_id', userId)
-      .eq('day_number', dayNumber)
+      .eq('workout_id', workoutId)
     if (error) throw error
     const out: Record<string, boolean> = {}
     ;(data || []).forEach((row: any) => {
@@ -20,14 +20,14 @@ export async function fetchExerciseProgress(userId: string, dayNumber: number): 
 
 export async function upsertExerciseProgress(
   userId: string,
-  dayNumber: number,
+  workoutId: string,
   exercise_key: string,
   completed: boolean
 ) {
   const now = new Date().toISOString()
   const payload = {
     user_id: userId,
-    day_number: dayNumber,
+    workout_id: workoutId,
     exercise_key,
     completed,
     completed_at: completed ? now : null,
@@ -35,7 +35,7 @@ export async function upsertExerciseProgress(
   }
   const { error } = await supabase
     .from('user_exercise_progress')
-    .upsert(payload, { onConflict: 'user_id,day_number,exercise_key' })
+    .upsert(payload, { onConflict: 'user_id,workout_id,exercise_key' })
   if (error) throw error
 }
 

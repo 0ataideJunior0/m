@@ -10,7 +10,7 @@ import RequireAdmin from './components/RequireAdmin'
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const WorkoutDay = lazy(() => import('./pages/WorkoutDay'))
-const Progress = lazy(() => import('./pages/Progress'))
+const ProgramDays = lazy(() => import('./pages/ProgramDays'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Home = lazy(() => import('./pages/Home'))
 const HIIT = lazy(() => import('./pages/HIIT'))
@@ -18,6 +18,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminProgramList = lazy(() => import('./pages/admin/AdminProgramList'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
@@ -105,11 +106,12 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/home" element={<Home />} />
           <Route path="/hiit" element={<HIIT />} />
-          <Route path="/workout/:day" element={<WorkoutDay />} />
-          <Route path="/progress" element={<Progress />} />
+          <Route path="/program/:slug" element={<ProgramDays />} />
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
           <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
-          <Route path="/admin/workouts" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
-          <Route path="/admin/workouts/:day" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
+          <Route path="/admin/programs" element={<RequireAdmin><AdminProgramList /></RequireAdmin>} />
+          <Route path="/admin/programs/:slug" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
+          <Route path="/admin/programs/:slug/day/:weekday" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
           <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>

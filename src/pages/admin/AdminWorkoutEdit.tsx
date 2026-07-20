@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, ArrowUp, ArrowDown, Plus } from 'lucide-react'
-import { getWorkoutByDay } from '../../utils/workouts'
-import { updateWorkoutAdmin } from '../../utils/adminWorkouts'
-import { Exercise } from '../../types'
+import { getProgramBySlug, getWorkoutByProgramAndWeekday } from '../../utils/workouts'
+import { updateWorkoutAdmin, createWorkoutAdmin } from '../../utils/adminWorkouts'
+import { Exercise, Program } from '../../types'
 
 const EMPTY_EXERCISE: Exercise = { exercise: '', reps: '', sets: '', note: '', group: '', type: 'normal', video: '' }
+const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
 export default function AdminWorkoutEdit() {
-  const { day } = useParams<{ day: string }>()
+  const { slug, weekday } = useParams<{ slug: string; weekday: string }>()
   const navigate = useNavigate()
-  const dayNumber = parseInt(day || '1')
+  const weekdayNumber = parseInt(weekday || '1')
 
+  const [program, setProgram] = useState<Program | null>(null)
+  const [workoutId, setWorkoutId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState('')
@@ -20,16 +23,27 @@ export default function AdminWorkoutEdit() {
 
   useEffect(() => {
     load()
-  }, [dayNumber])
+  }, [slug, weekdayNumber])
 
   const load = async () => {
+    if (!slug) return
     setLoading(true)
     try {
-      const workout = await getWorkoutByDay(dayNumber)
+      const prog = await getProgramBySlug(slug)
+      setProgram(prog)
+      if (!prog) return
+
+      const workout = await getWorkoutByProgramAndWeekday(prog.id, weekdayNumber)
       if (workout) {
+        setWorkoutId(workout.id)
         setTitle(workout.title)
         setVideoUrl(workout.video_url || '')
         setExercises(workout.exercises || [])
+      } else {
+        setWorkoutId(null)
+        setTitle('')
+        setVideoUrl('')
+        setExercises([])
       }
     } catch (error) {
       console.error('Error loading workout:', error)
@@ -61,10 +75,16 @@ export default function AdminWorkoutEdit() {
   }
 
   const handleSave = async () => {
+    if (!program) return
     setSaving(true)
     try {
-      await updateWorkoutAdmin(dayNumber, { title, video_url: videoUrl, exercises })
-      alert('Treino atualizado com sucesso!')
+      if (workoutId) {
+        await updateWorkoutAdmin(workoutId, { title, video_url: videoUrl, exercises })
+      } else {
+        const created = await createWorkoutAdmin(program.id, weekdayNumber, { title, video_url: videoUrl, exercises })
+        setWorkoutId(created.id)
+      }
+      alert('Treino salvo com sucesso!')
     } catch (error: any) {
       alert(`Erro ao salvar treino. ${error?.message || ''}`)
     } finally {
@@ -80,14 +100,18 @@ export default function AdminWorkoutEdit() {
     )
   }
 
+  const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       <div className="max-w-4xl mx-auto px-4 py-8 pb-32">
         <div className="flex items-center mb-8">
-          <button onClick={() => navigate('/admin/workouts')} className="mr-4 p-2 rounded-lg hover:bg-white/50 transition">
+          <button onClick={() => navigate(`/admin/programs/${slug}`)} className="mr-4 p-2 rounded-lg hover:bg-white/50 transition">
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Editar Dia {dayNumber}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            {workoutId ? 'Editar' : 'Criar'} {weekdayLabel} — {program?.name}
+          </h1>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 space-y-4">
@@ -205,7 +229,7 @@ export default function AdminWorkoutEdit() {
               disabled={saving}
               className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition font-medium text-lg"
             >
-              {saving ? 'Salvando...' : 'Salvar alterações'}
+              {saving ? 'Salvando...' : workoutId ? 'Salvar alterações' : 'Criar treino'}
             </button>
           </div>
         </div>

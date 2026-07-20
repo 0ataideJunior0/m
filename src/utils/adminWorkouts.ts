@@ -1,11 +1,22 @@
 import { supabase } from '../lib/supabase'
-import { Workout, Exercise } from '../types'
+import { Workout, Exercise, Program } from '../types'
 
-export const listWorkoutsAdmin = async (): Promise<Workout[]> => {
+export const listProgramsAdmin = async (): Promise<Program[]> => {
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .order('sort_order', { ascending: true })
+
+  if (error) throw error
+  return (data || []) as Program[]
+}
+
+export const listWorkoutsForProgramAdmin = async (programId: string): Promise<Workout[]> => {
   const { data, error } = await supabase
     .from('workouts')
     .select('*')
-    .order('day_number', { ascending: true })
+    .eq('program_id', programId)
+    .order('weekday', { ascending: true })
 
   if (error) throw error
   return (data || []) as Workout[]
@@ -17,11 +28,26 @@ export interface WorkoutUpdatePayload {
   exercises: Exercise[]
 }
 
-export const updateWorkoutAdmin = async (day: number, payload: WorkoutUpdatePayload): Promise<void> => {
+export const updateWorkoutAdmin = async (workoutId: string, payload: WorkoutUpdatePayload): Promise<void> => {
   const { error } = await supabase
     .from('workouts')
     .update(payload)
-    .eq('day_number', day)
+    .eq('id', workoutId)
 
   if (error) throw error
+}
+
+export const createWorkoutAdmin = async (
+  programId: string,
+  weekday: number,
+  payload: WorkoutUpdatePayload
+): Promise<Workout> => {
+  const { data, error } = await supabase
+    .from('workouts')
+    .insert({ program_id: programId, weekday, ...payload })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Workout
 }

@@ -4,11 +4,14 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import AdminWorkoutEdit from '../pages/admin/AdminWorkoutEdit'
 
 const updateWorkoutAdminMock = vi.fn(async () => {})
+const createWorkoutAdminMock = vi.fn(async () => ({ id: 'w-new' }))
 
 vi.mock('../utils/workouts', () => ({
-  getWorkoutByDay: vi.fn(async () => ({
+  getProgramBySlug: vi.fn(async () => ({ id: 'p1', slug: 'avancado', name: 'Avançado', sort_order: 1, created_at: '' })),
+  getWorkoutByProgramAndWeekday: vi.fn(async () => ({
     id: 'w1',
-    day_number: 1,
+    program_id: 'p1',
+    weekday: 1,
     title: 'Treino Dia 1',
     video_url: 'https://example.com/video.mp4',
     exercises: [
@@ -20,6 +23,7 @@ vi.mock('../utils/workouts', () => ({
 
 vi.mock('../utils/adminWorkouts', () => ({
   updateWorkoutAdmin: (...args: unknown[]) => updateWorkoutAdminMock(...args),
+  createWorkoutAdmin: (...args: unknown[]) => createWorkoutAdminMock(...args),
 }))
 
 describe('AdminWorkoutEdit', () => {
@@ -27,9 +31,9 @@ describe('AdminWorkoutEdit', () => {
     window.alert = vi.fn()
 
     render(
-      <MemoryRouter initialEntries={['/admin/workouts/1']}>
+      <MemoryRouter initialEntries={['/admin/programs/avancado/day/1']}>
         <Routes>
-          <Route path="/admin/workouts/:day" element={<AdminWorkoutEdit />} />
+          <Route path="/admin/programs/:slug/day/:weekday" element={<AdminWorkoutEdit />} />
         </Routes>
       </MemoryRouter>
     )
@@ -40,7 +44,7 @@ describe('AdminWorkoutEdit', () => {
     fireEvent.click(screen.getByText('Salvar alterações'))
 
     await waitFor(() => {
-      expect(updateWorkoutAdminMock).toHaveBeenCalledWith(1, {
+      expect(updateWorkoutAdminMock).toHaveBeenCalledWith('w1', {
         title: 'Treino Atualizado',
         video_url: 'https://example.com/video.mp4',
         exercises: [{ exercise: 'Agachamento', reps: '12', sets: '3', type: 'normal' }],
@@ -50,9 +54,9 @@ describe('AdminWorkoutEdit', () => {
 
   it('adiciona um novo exercício vazio ao clicar em Adicionar exercício', async () => {
     render(
-      <MemoryRouter initialEntries={['/admin/workouts/1']}>
+      <MemoryRouter initialEntries={['/admin/programs/avancado/day/1']}>
         <Routes>
-          <Route path="/admin/workouts/:day" element={<AdminWorkoutEdit />} />
+          <Route path="/admin/programs/:slug/day/:weekday" element={<AdminWorkoutEdit />} />
         </Routes>
       </MemoryRouter>
     )

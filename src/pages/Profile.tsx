@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Ribbon, Sparkles, Target, Share2, Info, CheckCircle2, Shield } from 'lucide-react'
+import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Share2, Info, CheckCircle2, Shield } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
 
@@ -44,10 +44,8 @@ export default function Profile() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const TOTAL_DAYS = 30
+  const CONSISTENCY_TARGET = 30
   const completedDays = progress.filter(p => p.completed).length
-  const remainingDays = Math.max(TOTAL_DAYS - completedDays, 0)
-  const progressPct = Math.round((completedDays / TOTAL_DAYS) * 100)
 
   useEffect(() => {
     try {
@@ -143,41 +141,25 @@ export default function Profile() {
           <div className="text-gray-600">{user?.email}</div>
         </div>
 
-        {/* Progresso 30 dias */}
+        {/* Progresso geral */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
           <div className="flex items-center mb-2">
             <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span id="progress-title" className="text-lg font-bold text-gray-900">Desafio de 30 dias</span>
+            <span id="progress-title" className="text-lg font-bold text-gray-900">Seu progresso</span>
           </div>
-          <p className="text-sm text-gray-600 mb-4">Acompanhe seu progresso e conquistas</p>
+          <p className="text-sm text-gray-600 mb-4">Acompanhe seus treinos concluídos e conquistas</p>
 
-          <div className="mb-4" role="progressbar" aria-valuenow={completedDays} aria-valuemin={0} aria-valuemax={TOTAL_DAYS} aria-label="Progresso dos dias">
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div id="progress-bar-fill" className="bg-purple-600 h-3 rounded-full transition-all duration-700" style={{ width: `${progressPct}%` }}></div>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
-              <span>{completedDays}/{TOTAL_DAYS} dias</span>
-              <span>Restantes: {remainingDays}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-xl p-6 text-center bg-purple-50 transition-transform duration-300 hover:scale-[1.02]">
               <Calendar className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-              <div className="text-4xl font-bold text-gray-900">{completedDays}</div>
-              <div className="text-gray-600 text-sm">Dias Completos</div>
-            </div>
-
-            <div className="rounded-xl p-6 text-center bg-pink-50 transition-transform duration-300 hover:scale-[1.02]">
-              <Ribbon className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-              <div className="text-4xl font-bold text-gray-900">{remainingDays}</div>
-              <div className="text-gray-600 text-sm">Dias Restantes</div>
+              <div id="progress-bar-fill" className="text-4xl font-bold text-gray-900">{completedDays}</div>
+              <div className="text-gray-600 text-sm">Treinos Concluídos</div>
             </div>
 
             <div className="rounded-xl p-6 text-center bg-green-50 transition-transform duration-300 hover:scale-[1.02]">
               <Sparkles className="w-6 h-6 text-green-500 mx-auto mb-2" />
-              <div className="text-4xl font-bold text-gray-900">{progressPct}%</div>
-              <div className="text-gray-600 text-sm">Progresso</div>
+              <div className="text-4xl font-bold text-gray-900">{timeUsingApp}</div>
+              <div className="text-gray-600 text-sm">Usando o Musa Fit</div>
             </div>
           </div>
         </div>
@@ -193,7 +175,7 @@ export default function Profile() {
             {[
               { name: 'Frequência', target: 10 },
               { name: 'Desempenho', target: 20 },
-              { name: 'Consistência', target: TOTAL_DAYS },
+              { name: 'Consistência', target: CONSISTENCY_TARGET },
             ].map((c) => {
               const partial = Math.min(completedDays, c.target)
               const pct = Math.round((partial / c.target) * 100)
@@ -223,14 +205,8 @@ export default function Profile() {
             </div>
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
               <button
-                onClick={() => navigate('/progress')}
-                className="w-full md:w-auto px-4 py-2 rounded-full bg-white border border-gray-300 shadow-sm text-purple-700 hover:bg-purple-50"
-              >
-                Ver Cronograma
-              </button>
-              <button
                 onClick={() => {
-                  const text = `Completei ${completedDays}/${TOTAL_DAYS} dias no Musa Fit!`;
+                  const text = `Completei ${completedDays} treinos no Musa Fit!`;
                   if (navigator.share) {
                     navigator.share({ title: 'Minhas Conquistas', text })
                   } else {
@@ -256,7 +232,7 @@ export default function Profile() {
                 <div key={p.id} className="rounded-xl p-4 bg-gray-50 flex items-start md:items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900">Dia {p.day_number} concluído</div>
+                    <div className="font-medium text-gray-900">{p.workout?.title || 'Treino'} concluído</div>
                     <div className="text-xs text-gray-600 truncate">{p.completed_at ? new Date(p.completed_at).toLocaleString() : ''}</div>
                   </div>
                 </div>

@@ -4,9 +4,11 @@ import WorkoutDay from '../pages/WorkoutDay'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 vi.mock('../utils/workouts', () => ({
-  getWorkoutByDay: vi.fn(async () => ({
+  getProgramBySlug: vi.fn(async () => ({ id: 'p1', slug: 'avancado', name: 'Avançado', sort_order: 1, created_at: '' })),
+  getWorkoutByProgramAndWeekday: vi.fn(async () => ({
     id: 'w1',
-    day_number: 1,
+    program_id: 'p1',
+    weekday: 1,
     title: 'Treino A',
     video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     created_at: new Date().toISOString(),
@@ -15,7 +17,7 @@ vi.mock('../utils/workouts', () => ({
       { exercise: 'Prancha', reps: '30s', sets: '3', type: 'core' },
     ],
   })),
-  markDayComplete: vi.fn(async () => true),
+  markWorkoutComplete: vi.fn(async () => true),
   getUserProgress: vi.fn(async () => []),
 }))
 
@@ -30,9 +32,9 @@ describe('WorkoutDay videos', () => {
 
   it('abre modal e carrega iframe ao clicar no exercício com vídeo', async () => {
     render(
-      <MemoryRouter initialEntries={["/workout/1"]}>
+      <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
         <Routes>
-          <Route path="/workout/:day" element={<WorkoutDay />} />
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
         </Routes>
       </MemoryRouter>
     )

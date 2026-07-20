@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getUserProgress, getCurrentDay, getWorkoutByDay } from '../utils/workouts'
-import { Dumbbell, Trophy, Calendar, TrendingUp, Flame, Eye, X, Download } from 'lucide-react'
-import { UserProgress, Workout } from '../types'
+import { getPrograms } from '../utils/workouts'
+import { Dumbbell, Trophy, Flame, Eye, X, Download } from 'lucide-react'
+import { Program } from '../types'
 import { getSignedPlanUrl } from '../utils/plans'
-import { trackEvent } from '../utils/analytics'
 
 export default function Home() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading } = useAuthStore()
-  const [progress, setProgress] = useState<UserProgress[]>([])
-  const [workout, setWorkout] = useState<Workout | null>(null)
+  const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [modalUrl, setModalUrl] = useState<string | null>(null)
   const [opening, setOpening] = useState<'mass_gain' | 'fat_loss' | null>(null)
@@ -33,11 +31,8 @@ export default function Home() {
   const load = async () => {
     if (!user) return
     try {
-      const userProgress = await getUserProgress(user.id)
-      setProgress(userProgress)
-      const day = getCurrentDay(userProgress)
-      const w = await getWorkoutByDay(day)
-      setWorkout(w)
+      const data = await getPrograms()
+      setPrograms(data)
     } finally {
       setLoading(false)
     }
@@ -47,23 +42,6 @@ export default function Home() {
     const name = (user?.username || user?.email.split('@')[0] || '').trim()
     return name || 'Usuária Musa'
   }, [user])
-
-  const TOTAL_DAYS = 30
-  const completedDays = progress.filter(p => p.completed).length
-  const currentDay = getCurrentDay(progress)
-  const remainingDays = Math.max(TOTAL_DAYS - completedDays, 0)
-  const progressPct = Math.round((completedDays / TOTAL_DAYS) * 100)
-  const weekdayName = useMemo(() => {
-    const names = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
-    const n = Number(currentDay)
-    if (Number.isFinite(n)) {
-      if (n >= 0 && n <= 6) return names[n]
-      if (n >= 1 && n <= 7) return names[n % 7]
-      const idx = ((n - 1) % 7) + 1
-      return names[idx % 7]
-    }
-    return 'Dia'
-  }, [currentDay])
 
   if (isLoading || loading) {
     return (
@@ -102,54 +80,20 @@ export default function Home() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="text-xl font-bold text-gray-900">Seu Progresso</div>
-            <div className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 flex items-center">
-              <Trophy className="w-4 h-4 mr-1" />
-              <span className="font-semibold">{completedDays}/{TOTAL_DAYS}</span>
-            </div>
+          <div className="text-xl font-bold text-gray-900 mb-4">Treinos</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {programs.map((program) => (
+              <button
+                key={program.id}
+                onClick={() => navigate(`/program/${program.slug}`)}
+                className="bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition transform hover:scale-[1.01]"
+              >
+                <Dumbbell className="w-8 h-8 text-purple-600 mb-3" />
+                <div className="text-lg font-bold text-gray-900 mb-1">{program.name}</div>
+                <div className="text-sm text-gray-600">Ver os 7 dias da semana</div>
+              </button>
+            ))}
           </div>
-          <div className="text-sm text-gray-600 mt-1">{completedDays} de {TOTAL_DAYS} dias concluídos</div>
-          <div className="mt-4">
-            <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Progresso</span>
-              <span>{progressPct}%</span>
-            </div>
-            <div className="w-full h-3 bg-pink-100 rounded-full">
-              <div className="h-3 bg-purple-500 rounded-full transition-all" style={{ width: `${progressPct}%` }}></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mt-6">
-            <div className="flex items-center space-x-3">
-              <Calendar className="w-5 h-5 text-gray-700" />
-              <div>
-                <div className="text-sm text-gray-600">Dia Atual</div>
-                <div className="text-xl font-bold text-purple-700">{currentDay <= TOTAL_DAYS ? currentDay : TOTAL_DAYS}</div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <TrendingUp className="w-5 h-5 text-gray-700" />
-              <div>
-                <div className="text-sm text-gray-600">Dias Restantes</div>
-                <div className="text-xl font-bold text-pink-600">{remainingDays}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-xl font-bold text-gray-900 mb-1">Treino de Hoje</div>
-          <div className="text-sm text-gray-600">Dia {currentDay}: {workout?.title?.replace(/^T-[A-E]:\s*/, '') || 'Treino do Dia'}</div>
-          <p className="text-gray-700 mt-4">{workout?.exercises?.[0]?.note || 'Fortalecimento do corpo com exercícios focados.'}</p>
-          <button
-            onClick={() => {
-              trackEvent('StartWorkout', { day: currentDay })
-              navigate(`/workout/${currentDay}`)
-            }}
-            className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-purple-700 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
-          >
-            Iniciar Treino do Dia {weekdayName}
-          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -227,14 +171,7 @@ export default function Home() {
           
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => navigate('/progress')}
-            className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition text-center flex items-center justify-center space-x-2"
-          >
-            <Calendar className="w-5 h-5 text-gray-700" />
-            <span className="font-medium text-gray-900">Ver Cronograma</span>
-          </button>
+        <div className="grid grid-cols-1 gap-4">
           <button
             onClick={() => navigate('/profile')}
             className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition text-center flex items-center justify-center space-x-2"

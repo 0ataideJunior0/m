@@ -2,8 +2,8 @@ type ProgressMap = Record<string, { completed: boolean; ts: number }>
 
 const LS_PREFIX = 'exerciseProgress:'
 
-export function loadLocalProgress(userId: string, dayNumber: number): ProgressMap {
-  const key = `${LS_PREFIX}${userId}:${dayNumber}`
+export function loadLocalProgress(userId: string, workoutId: string): ProgressMap {
+  const key = `${LS_PREFIX}${userId}:${workoutId}`
   try {
     const raw = localStorage.getItem(key)
     return raw ? JSON.parse(raw) : {}
@@ -12,8 +12,8 @@ export function loadLocalProgress(userId: string, dayNumber: number): ProgressMa
   }
 }
 
-export function saveLocalProgress(userId: string, dayNumber: number, data: ProgressMap) {
-  const key = `${LS_PREFIX}${userId}:${dayNumber}`
+export function saveLocalProgress(userId: string, workoutId: string, data: ProgressMap) {
+  const key = `${LS_PREFIX}${userId}:${workoutId}`
   try {
     localStorage.setItem(key, JSON.stringify(data))
   } catch {}

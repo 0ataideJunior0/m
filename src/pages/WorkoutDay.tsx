@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getWorkoutByDay, markDayComplete, getUserProgress } from '../utils/workouts'
-import { Workout as WorkoutType, UserProgress } from '../types'
+import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete, getUserProgress } from '../utils/workouts'
+import { Workout as WorkoutType, UserProgress, Program } from '../types'
 import { Check, ArrowLeft, Play, X } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
 import { getExerciseKey } from '../utils/exerciseKeys'
 import { loadLocalProgress, saveLocalProgress, mergeServerLocal } from '../utils/exerciseProgress'
 import { fetchExerciseProgress, upsertExerciseProgress } from '../utils/exerciseProgressRemote'
 
+const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
+
 export default function WorkoutDay() {
-  const { day } = useParams<{ day: string }>()
+  const { slug, weekday } = useParams<{ slug: string; weekday: string }>()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuthStore()
-  
+
+  const [program, setProgram] = useState<Program | null>(null)
   const [workout, setWorkout] = useState<WorkoutType | null>(null)
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,7 +27,8 @@ export default function WorkoutDay() {
   const [videoLoading, setVideoLoading] = useState(false)
   const videoCache = useState<Map<string, string>>(() => new Map())[0]
 
-  const dayNumber = parseInt(day || '1')
+  const weekdayNumber = parseInt(weekday || '1')
+  const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -33,17 +37,21 @@ export default function WorkoutDay() {
     }
 
     loadWorkoutAndProgress()
-  }, [isAuthenticated, day, navigate])
+  }, [isAuthenticated, slug, weekday, navigate])
 
   const loadWorkoutAndProgress = async () => {
-    if (!user) return
+    if (!user || !slug) return
 
     try {
+      const prog = await getProgramBySlug(slug)
+      setProgram(prog)
+      if (!prog) return
+
       const [workoutData, userProgress] = await Promise.all([
-        getWorkoutByDay(dayNumber),
+        getWorkoutByProgramAndWeekday(prog.id, weekdayNumber),
         getUserProgress(user.id)
       ])
-      
+
       setWorkout(workoutData)
       setProgress(userProgress)
       // Prefetch first exercise video if available
@@ -81,13 +89,13 @@ export default function WorkoutDay() {
   )
 
   const handleCompleteWorkout = async () => {
-    if (!user || !workout) return
+    if (!user || !workout || !slug) return
 
     setCompleting(true)
     try {
-      const success = await markDayComplete(user.id, dayNumber)
+      const success = await markWorkoutComplete(user.id, workout.id)
       if (success) {
-        navigate('/home')
+        navigate(`/program/${slug}`)
       }
     } catch (error) {
       console.error('Error completing workout:', error)
@@ -96,13 +104,13 @@ export default function WorkoutDay() {
     }
   }
 
-  const isDayCompleted = progress.some(p => p.day_number === dayNumber && p.completed)
-  const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, dayNumber)
+  const isDayCompleted = progress.some(p => p.workout_id === workout?.id && p.completed)
+  const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, workout?.id)
   const pendingRef = useRef<{ key: string; completed: boolean } | null>(null)
   const debounceRef = useRef<any>(null)
   const toggleExercise = useMemo(
-    () => toggleExerciseFactory(user?.id, dayNumber, exProgress, setExProgress, pendingRef, debounceRef),
-    [user?.id, dayNumber, exProgress]
+    () => toggleExerciseFactory(user?.id, workout?.id, exProgress, setExProgress, pendingRef, debounceRef),
+    [user?.id, workout?.id, exProgress]
   )
   const lastActionRef = useRef<{ key: string; prev: boolean } | null>(null)
 
@@ -140,7 +148,7 @@ export default function WorkoutDay() {
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
-            onClick={() => navigate('/home')}
+            onClick={() => navigate(`/program/${slug}`)}
             className="mr-4 p-2 rounded-lg hover:bg-white/50 transition"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -149,10 +157,10 @@ export default function WorkoutDay() {
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
               {workout.title}
             </h1>
-            <p className="text-gray-600">Dia {dayNumber} do desafio</p>
+            <p className="text-gray-600">{weekdayLabel} • {program?.name}</p>
           </div>
         </div>
-        
+
 
         {/* Video geral do treino */}
         {workout.video_url && (
@@ -191,23 +199,6 @@ export default function WorkoutDay() {
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
                   </div>
-                  {/* {lastActionRef.current && (
-                    <div className="mt-3">
-                      <button
-                        onClick={() => {
-                          const la = lastActionRef.current
-                          if (!la || !user?.id) return
-                          const updated = { ...exProgress, [la.key]: { completed: la.prev, ts: Date.now() } }
-                          setExProgress(updated)
-                          saveLocalProgress(user.id, dayNumber, updated)
-                          pendingRef.current = { key: la.key, completed: la.prev }
-                        }}
-                        className="text-sm px-3 py-1 rounded bg-white border border-gray-300 hover:bg-gray-50"
-                      >
-                        Desfazer última marcação
-                      </button>
-                    </div>
-                  )} */}
                 </>
               )
             })()}
@@ -276,8 +267,6 @@ export default function WorkoutDay() {
                   continue
                 }
 
-                const isWarmup = ex.type === 'warmup'
-                const isDrop = ex.type === 'drop_set'
                 cards.push(
                   <div key={`single-${i}`} className="p-1">
                     <ExerciseItem
@@ -289,16 +278,6 @@ export default function WorkoutDay() {
                         toggleExercise(ex, i)
                       }}
                     />
-                    {/*  video de exercício indidual {(ex.video || workout.video_url) ? (
-                      <button
-                        onClick={() => openExerciseVideo(ex)}
-                        className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
-                      >
-                        <Play className="w-4 h-4 mr-1" /> Assistir vídeo
-                      </button>
-                    ) : (
-                      <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
-                    )} */}
                   </div>
                 )
               }
@@ -378,7 +357,7 @@ export default function WorkoutDay() {
               <span className="text-green-800 font-medium">Treino concluído!</span>
             </div>
             <p className="text-green-600 text-sm">
-              Parabéns! Você completou o dia {dayNumber} do desafio.
+              Parabéns! Você completou o treino de {weekdayLabel}.
             </p>
           </div>
         )}
@@ -388,53 +367,53 @@ export default function WorkoutDay() {
 }
 
 // Estado e sincronização
-function useExerciseProgressState(userId: string | undefined, dayNumber: number) {
+function useExerciseProgressState(userId: string | undefined, workoutId: string | undefined) {
   const [state, setState] = useState<Record<string, { completed: boolean; ts: number }>>({})
   useEffect(() => {
-    if (!userId) return
-    const local = loadLocalProgress(userId, dayNumber)
+    if (!userId || !workoutId) return
+    const local = loadLocalProgress(userId, workoutId)
     setState(local)
     ;(async () => {
-      const remote = await fetchExerciseProgress(userId, dayNumber)
+      const remote = await fetchExerciseProgress(userId, workoutId)
       setState(s => {
         const merged = mergeServerLocal(remote, s)
-        saveLocalProgress(userId, dayNumber, merged)
+        saveLocalProgress(userId, workoutId, merged)
         return merged
       })
     })()
-  }, [userId, dayNumber])
+  }, [userId, workoutId])
   return { state, setState }
 }
 
 function toggleExerciseFactory(
   userId: string | undefined,
-  dayNumber: number,
+  workoutId: string | undefined,
   exProgress: Record<string, { completed: boolean; ts: number }>,
   setExProgress: (v: any) => void,
   pendingRef: React.MutableRefObject<{ key: string; completed: boolean } | null>,
   debounceRef: React.MutableRefObject<any>,
 ) {
   return (exercise: WorkoutType['exercises'][number], index: number) => {
-    if (!userId) return
+    if (!userId || !workoutId) return
     const key = getExerciseKey(exercise, index)
     const next = !exProgress[key]?.completed
     const ts = Date.now()
     const updated = { ...exProgress, [key]: { completed: next, ts } }
     setExProgress(updated)
-    saveLocalProgress(userId, dayNumber, updated)
+    saveLocalProgress(userId, workoutId, updated)
     pendingRef.current = { key, completed: next }
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       const p = pendingRef.current
       if (!p) return
       try {
-        await upsertExerciseProgress(userId, dayNumber, p.key, p.completed)
+        await upsertExerciseProgress(userId, workoutId, p.key, p.completed)
         pendingRef.current = null
       } catch (e) {
         // retry simples
         setTimeout(async () => {
           try {
-            await upsertExerciseProgress(userId, dayNumber, p.key, p.completed)
+            await upsertExerciseProgress(userId, workoutId, p.key, p.completed)
             pendingRef.current = null
           } catch {}
         }, 2000)

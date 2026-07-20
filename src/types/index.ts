@@ -9,15 +9,29 @@ export interface User {
 export interface UserProgress {
   id: string
   user_id: string
-  day_number: number
+  workout_id: string
   completed: boolean
   completed_at: string | null
+  created_at: string
+  workout?: {
+    title: string
+    weekday: number
+    program_id: string
+  } | null
+}
+
+export interface Program {
+  id: string
+  slug: string
+  name: string
+  sort_order: number
   created_at: string
 }
 
 export interface Workout {
   id: string
-  day_number: number
+  program_id: string
+  weekday: number
   title: string
   exercises: Exercise[]
   video_url: string
