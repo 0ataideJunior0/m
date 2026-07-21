@@ -8,6 +8,29 @@ export default {
       center: true,
     },
     extend: {
+      colors: {
+        brand: {
+          from: '#9333ea',
+          to: '#ec4899',
+        },
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        bg: 'rgb(var(--color-bg) / <alpha-value>)',
+        text: {
+          DEFAULT: 'rgb(var(--color-text) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+        },
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+      },
+      borderRadius: {
+        card: '1rem',
+      },
+      fontSize: {
+        display: ['2rem', { lineHeight: '2.25rem', fontWeight: '700' }],
+        h1: ['1.5rem', { lineHeight: '2rem', fontWeight: '700' }],
+        h2: ['1.25rem', { lineHeight: '1.75rem', fontWeight: '600' }],
+        body: ['1rem', { lineHeight: '1.5rem', fontWeight: '400' }],
+        small: ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }],
+      },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },

@@ -59,7 +59,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 pt-6 pb-24">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center">
             <img
@@ -79,7 +79,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div id="treinos" className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-xl font-bold text-gray-900 mb-4">Treinos</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {programs.map((program) => (

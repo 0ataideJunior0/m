@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Share2, Info, CheckCircle2, Shield } from 'lucide-react'
+import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Share2, Info, CheckCircle2, Shield, Sun, Moon } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
+import { useTheme } from '../hooks/useTheme'
 
 export default function Profile() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isAdmin } = useAuthStore()
+  const { theme, toggleTheme } = useTheme()
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [clicked, setClicked] = useState(false)
@@ -125,12 +127,19 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 animate-fade-in">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6 pb-40">
         <div className="flex items-center mb-4">
           <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-black/5">
             <ChevronLeft className="w-6 h-6 text-gray-800" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Meu Perfil</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex-1">Meu Perfil</h1>
+          <button
+            onClick={toggleTheme}
+            aria-label="Alternar tema claro/escuro"
+            className="p-2 rounded-lg hover:bg-black/5"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-gray-800" /> : <Moon className="w-5 h-5 text-gray-800" />}
+          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 text-center animate-slide-up" style={{ transform: `translateY(${offsetY}px)` }}>
@@ -246,13 +255,13 @@ export default function Profile() {
         {isAdmin && (
           <button
             onClick={() => navigate('/admin')}
-            className="w-full bg-white rounded-2xl shadow-lg p-4 mb-24 flex items-center justify-center text-purple-700 hover:bg-purple-50 font-medium"
+            className="w-full bg-white rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 hover:bg-purple-50 font-medium"
           >
             <Shield className="w-5 h-5 mr-2" /> Painel Admin
           </button>
         )}
 
-        <div className="fixed left-0 right-0 bottom-0 bg-transparent p-4">
+        <div className="fixed left-0 right-0 bottom-16 bg-transparent p-4">
           <div className="max-w-4xl mx-auto">
             <button
               onClick={async () => {

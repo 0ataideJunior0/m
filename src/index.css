@@ -11,6 +11,20 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --color-bg: 250 245 255;
+  --color-surface: 255 255 255;
+  --color-text: 17 24 39;
+  --color-text-muted: 75 85 99;
+  --color-border: 229 231 235;
+}
+
+.dark {
+  --color-bg: 24 16 32;
+  --color-surface: 39 29 51;
+  --color-text: 243 244 246;
+  --color-text-muted: 156 163 175;
+  --color-border: 63 51 78;
 }
 
 /* Custom scrollbar for better UX */
@@ -78,10 +92,7 @@
   .ui-shimmer {
     @apply animate-shimmer;
   }
-}
-
-#trae-badge-plugin,
-.trae-badge {
-  display: none !important;
-  pointer-events: none !important;
+  .brand-gradient {
+    @apply bg-gradient-to-r from-brand-from to-brand-to text-white;
+  }
 }
