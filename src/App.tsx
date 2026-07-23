@@ -8,9 +8,11 @@ import ThemeInit from './components/ThemeInit'
 import Layout from './components/Layout'
 import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 import RequireAdmin from './components/RequireAdmin'
+import RequireOnboarding from './components/RequireOnboarding'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
 const WorkoutDay = lazy(() => import('./pages/WorkoutDay'))
 const ProgramDays = lazy(() => import('./pages/ProgramDays'))
 const Profile = lazy(() => import('./pages/Profile'))
@@ -26,22 +28,16 @@ const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 
 function App() {
-  const { setUser, setIsLoading, setIsAdmin } = useAuthStore()
+  const { setUser, setIsLoading, setIsAdmin, setNeedsOnboarding } = useAuthStore()
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const user = await getCurrentUser()
         if (user) {
-          let username = user.username
-          if (!username) {
-            try {
-              const stored = localStorage.getItem('musa_username') || ''
-              username = stored || undefined
-            } catch {}
-          }
-          setUser({ ...user, username })
+          setUser(user)
           setIsAdmin(await getIsAdmin(user.id))
+          setNeedsOnboarding(!user.onboardingCompletedAt)
           await persistCurrentSession()
         } else {
           const restored = await tryRestoreSession()
@@ -50,27 +46,31 @@ function App() {
             if (u) {
               setUser(u)
               setIsAdmin(await getIsAdmin(u.id))
+              setNeedsOnboarding(!u.onboardingCompletedAt)
               await persistCurrentSession()
             } else {
               setUser(null)
               setIsAdmin(false)
+              setNeedsOnboarding(false)
             }
           } else {
             setUser(null)
             setIsAdmin(false)
+            setNeedsOnboarding(false)
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         setUser(null)
         setIsAdmin(false)
+        setNeedsOnboarding(false)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
-  }, [setUser, setIsLoading, setIsAdmin])
+  }, [setUser, setIsLoading, setIsAdmin, setNeedsOnboarding])
 
   useEffect(() => {
     let timer: any
@@ -107,16 +107,17 @@ function App() {
             <Route path="/forgot" element={<ForgotPassword />} />
             <Route path="/reset-confirm" element={<ResetConfirm />} />
             <Route path="/reset" element={<ResetPassword />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/hiit" element={<HIIT />} />
-            <Route path="/program/:slug" element={<ProgramDays />} />
-            <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
-            <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
-            <Route path="/admin/programs" element={<RequireAdmin><AdminProgramList /></RequireAdmin>} />
-            <Route path="/admin/programs/:slug" element={<RequireAdmin><AdminWorkoutList /></RequireAdmin>} />
-            <Route path="/admin/programs/:slug/day/:weekday" element={<RequireAdmin><AdminWorkoutEdit /></RequireAdmin>} />
-            <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
+            <Route path="/home" element={<RequireOnboarding><Home /></RequireOnboarding>} />
+            <Route path="/hiit" element={<RequireOnboarding><HIIT /></RequireOnboarding>} />
+            <Route path="/program/:slug" element={<RequireOnboarding><ProgramDays /></RequireOnboarding>} />
+            <Route path="/program/:slug/day/:weekday" element={<RequireOnboarding><WorkoutDay /></RequireOnboarding>} />
+            <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/programs" element={<RequireOnboarding><RequireAdmin><AdminProgramList /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/programs/:slug/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/users" element={<RequireOnboarding><RequireAdmin><AdminUsers /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </Suspense>

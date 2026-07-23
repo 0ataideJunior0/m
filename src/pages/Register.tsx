@@ -3,34 +3,25 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signUp } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
-import { Eye, EyeOff, Lock, Mail, User, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, CheckCircle2 } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
 
 export default function Register() {
-  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string; password?: string; confirmPassword?: string }>({})
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [touched, setTouched] = useState<{ username?: boolean; email?: boolean; password?: boolean; confirmPassword?: boolean }>({})
-  
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; confirmPassword?: boolean }>({})
+
   const navigate = useNavigate()
-  const { setUser, setIsAdmin } = useAuthStore()
+  const { setUser, setIsAdmin, setNeedsOnboarding } = useAuthStore()
 
   const validateFields = (forSubmit: boolean = false) => {
     const errs: typeof fieldErrors = {}
-    const uname = username.trim()
-    if (!uname) {
-      errs.username = 'Nome de usuário é obrigatório'
-    } else if (uname.length < 3) {
-      errs.username = 'Mínimo de 3 caracteres'
-    } else if (uname.length > 30) {
-      errs.username = 'Máximo de 30 caracteres'
-    }
 
     const em = email.trim()
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -58,11 +49,10 @@ export default function Register() {
     return Object.keys(errs).length === 0
   }
 
-  const usernameOk = !fieldErrors.username && !!username.trim() && username.trim().length >= 3
   const emailOk = !fieldErrors.email && !!email.trim()
   const passwordOk = !fieldErrors.password && !!password
   const confirmOk = !fieldErrors.confirmPassword && !!confirmPassword && confirmPassword === password
-  const progressPct = Math.round(([usernameOk, emailOk, passwordOk, confirmOk].filter(Boolean).length / 4) * 100)
+  const progressPct = Math.round(([emailOk, passwordOk, confirmOk].filter(Boolean).length / 3) * 100)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,23 +63,18 @@ export default function Register() {
     setLoading(true)
 
     try {
-      const safeUsername = username.trim()
-      const { user, error } = await signUp(email.trim(), password, safeUsername)
-      
+      const { user, error } = await signUp(email.trim(), password)
+
       if (error) {
         setError(error.message)
         return
       }
 
       if (user) {
-        if (safeUsername) {
-          try {
-            localStorage.setItem('musa_username', safeUsername)
-          } catch {}
-        }
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
-        navigate('/home')
+        setNeedsOnboarding(true)
+        navigate('/onboarding')
       }
     } catch (err) {
       setError('Erro ao criar conta. Tente novamente.')
@@ -122,40 +107,6 @@ export default function Register() {
               {error}
             </div>
           )}
-
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Nome de Usuária
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
-                <User className="w-5 h-5" />
-              </span>
-              <input
-                id="username"
-                type="text"
-                required
-                minLength={3}
-                maxLength={30}
-                autoComplete="username"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value)
-                  if (error) setError('')
-                  validateFields()
-                }}
-                onBlur={() => setTouched(t => ({ ...t, username: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                placeholder="ex: mariafit"
-              />
-              {usernameOk && touched.username && (
-                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" aria-hidden="true" />
-              )}
-            </div>
-            {fieldErrors.username && (
-              <p className="mt-1 text-sm text-red-600" role="alert" id="username-error">{fieldErrors.username}</p>
-            )}
-          </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -268,7 +219,9 @@ export default function Register() {
                 <CheckCircle2 className="absolute right-10 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" aria-hidden="true" />
               )}
             </div>
-            
+            {fieldErrors.confirmPassword && (
+              <p id="confirm-error" className="mt-1 text-sm text-red-600" role="alert">{fieldErrors.confirmPassword}</p>
+            )}
           </div>
 
           <button

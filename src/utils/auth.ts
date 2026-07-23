@@ -1,30 +1,40 @@
 import { supabase } from '../lib/supabase'
 import { User } from '../types'
+import { getProfile } from './profile'
+
+const buildUser = async (authUser: {
+  id: string
+  email?: string
+  created_at: string
+  updated_at?: string
+}): Promise<User> => {
+  const profile = await getProfile(authUser.id)
+  return {
+    id: authUser.id,
+    email: authUser.email!,
+    username: profile?.username ?? undefined,
+    age: profile?.age ?? null,
+    sex: profile?.sex ?? null,
+    goal: profile?.goal ?? null,
+    heightCm: profile?.height_cm ?? null,
+    weightKg: profile?.weight_kg ?? null,
+    onboardingCompletedAt: profile?.onboarding_completed_at ?? null,
+    created_at: authUser.created_at,
+    updated_at: authUser.updated_at || authUser.created_at,
+  }
+}
 
 export const signUp = async (
   email: string,
-  password: string,
-  username?: string
+  password: string
 ): Promise<{ user: User | null; error: Error | null }> => {
   try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: username ? { username } : undefined,
-      },
-    })
+    const { data, error } = await supabase.auth.signUp({ email, password })
 
     if (error) throw error
 
     if (data.user) {
-      const user: User = {
-        id: data.user.id,
-        email: data.user.email!,
-        username: (data.user.user_metadata as Record<string, unknown>)?.username as string | undefined,
-        created_at: data.user.created_at,
-        updated_at: data.user.updated_at || data.user.created_at,
-      }
+      const user = await buildUser(data.user)
       return { user, error: null }
     }
 
@@ -44,13 +54,7 @@ export const signIn = async (email: string, password: string): Promise<{ user: U
     if (error) throw error
 
     if (data.user) {
-      const user: User = {
-        id: data.user.id,
-        email: data.user.email!,
-        username: (data.user.user_metadata as Record<string, unknown>)?.username as string | undefined,
-        created_at: data.user.created_at,
-        updated_at: data.user.updated_at || data.user.created_at,
-      }
+      const user = await buildUser(data.user)
       return { user, error: null }
     }
 
@@ -73,17 +77,11 @@ export const signOut = async (): Promise<{ error: Error | null }> => {
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (user) {
-      return {
-        id: user.id,
-        email: user.email!,
-        username: (user.user_metadata as Record<string, unknown>)?.username as string | undefined,
-        created_at: user.created_at,
-        updated_at: user.updated_at || user.created_at,
-      }
+      return await buildUser(user)
     }
-    
+
     return null
   } catch (error) {
     return null

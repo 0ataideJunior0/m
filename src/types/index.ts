@@ -1,7 +1,16 @@
+export type Sex = 'feminino' | 'masculino'
+export type Goal = 'emagrecer' | 'ganhar_musculo' | 'manter'
+
 export interface User {
   id: string
   email: string
   username?: string
+  age?: number | null
+  sex?: Sex | null
+  goal?: Goal | null
+  heightCm?: number | null
+  weightKg?: number | null
+  onboardingCompletedAt: string | null
   created_at: string
   updated_at: string
 }
