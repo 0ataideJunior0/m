@@ -14,7 +14,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
   
   const navigate = useNavigate()
-  const { setUser, setIsAdmin } = useAuthStore()
+  const { setUser, setIsAdmin, setNeedsOnboarding } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,12 +43,9 @@ export default function Login() {
       }
 
       if (user) {
-        try {
-          const uname = user.username || ''
-          if (uname) localStorage.setItem('musa_username', uname)
-        } catch {}
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
+        setNeedsOnboarding(!user.onboardingCompletedAt)
         navigate('/home')
       }
     } catch (err) {

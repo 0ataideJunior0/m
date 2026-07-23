@@ -2,20 +2,115 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
-import { UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Share2, Info, CheckCircle2, Shield, Sun, Moon } from 'lucide-react'
+import { updateProfileFields } from '../utils/profile'
+import { Goal, Sex, UserProgress } from '../types'
+import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Shield, Sun, Moon, Pencil } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
 import { useTheme } from '../hooks/useTheme'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import FormField from '../components/ui/FormField'
+import Input from '../components/ui/Input'
+import ChoiceGroup from '../components/ui/ChoiceGroup'
+
+const SEX_LABELS: Record<Sex, string> = { feminino: 'Feminino', masculino: 'Masculino' }
+const GOAL_LABELS: Record<Goal, string> = { emagrecer: 'Emagrecer', ganhar_musculo: 'Ganhar músculo', manter: 'Manter' }
+const SEX_OPTIONS: { value: Sex; label: string }[] = [
+  { value: 'feminino', label: 'Feminino' },
+  { value: 'masculino', label: 'Masculino' },
+]
+const GOAL_OPTIONS: { value: Goal; label: string }[] = [
+  { value: 'emagrecer', label: 'Emagrecer' },
+  { value: 'ganhar_musculo', label: 'Ganhar músculo' },
+  { value: 'manter', label: 'Manter' },
+]
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, isAuthenticated, isAdmin } = useAuthStore()
+  const { user, isAuthenticated, isAdmin, setUser } = useAuthStore()
   const { theme, toggleTheme } = useTheme()
   const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [clicked, setClicked] = useState(false)
   const [offsetY, setOffsetY] = useState(0)
+
+  const [activeModal, setActiveModal] = useState<'personal' | 'goal' | 'measures' | null>(null)
+  const [savingModal, setSavingModal] = useState(false)
+  const [nomeEdit, setNomeEdit] = useState('')
+  const [idadeEdit, setIdadeEdit] = useState('')
+  const [sexoEdit, setSexoEdit] = useState<Sex | null>(null)
+  const [objetivoEdit, setObjetivoEdit] = useState<Goal | null>(null)
+  const [alturaEdit, setAlturaEdit] = useState('')
+  const [pesoEdit, setPesoEdit] = useState('')
+
+  const openPersonalModal = () => {
+    setNomeEdit(user?.username || '')
+    setIdadeEdit(user?.age ? String(user.age) : '')
+    setSexoEdit(user?.sex ?? null)
+    setActiveModal('personal')
+  }
+
+  const openGoalModal = () => {
+    setObjetivoEdit(user?.goal ?? null)
+    setActiveModal('goal')
+  }
+
+  const openMeasuresModal = () => {
+    setAlturaEdit(user?.heightCm ? String(user.heightCm) : '')
+    setPesoEdit(user?.weightKg ? String(user.weightKg) : '')
+    setActiveModal('measures')
+  }
+
+  const savePersonal = async () => {
+    if (!user) return
+    setSavingModal(true)
+    try {
+      const age = parseInt(idadeEdit, 10)
+      const { error } = await updateProfileFields(user.id, {
+        username: nomeEdit.trim(),
+        age,
+        sex: sexoEdit as Sex,
+      })
+      if (!error) {
+        setUser({ ...user, username: nomeEdit.trim(), age, sex: sexoEdit })
+        setActiveModal(null)
+      }
+    } finally {
+      setSavingModal(false)
+    }
+  }
+
+  const saveGoal = async () => {
+    if (!user || !objetivoEdit) return
+    setSavingModal(true)
+    try {
+      const { error } = await updateProfileFields(user.id, { goal: objetivoEdit })
+      if (!error) {
+        setUser({ ...user, goal: objetivoEdit })
+        setActiveModal(null)
+      }
+    } finally {
+      setSavingModal(false)
+    }
+  }
+
+  const saveMeasures = async () => {
+    if (!user) return
+    setSavingModal(true)
+    try {
+      const height_cm = parseInt(alturaEdit, 10)
+      const weight_kg = parseFloat(pesoEdit)
+      const { error } = await updateProfileFields(user.id, { height_cm, weight_kg })
+      if (!error) {
+        setUser({ ...user, heightCm: height_cm, weightKg: weight_kg })
+        setActiveModal(null)
+      }
+    } finally {
+      setSavingModal(false)
+    }
+  }
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -205,52 +300,118 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Atividade recente e estatísticas */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        {/* Dados pessoais */}
+        <Card className="mb-6 animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-lg font-bold text-gray-900 dark:text-text">Dados pessoais</span>
+            <Button variant="secondary" size="icon" onClick={openPersonalModal} aria-label="Editar dados pessoais">
+              <Pencil className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-lg font-semibold text-gray-900">Atividade recente</div>
-              <div className="text-sm text-gray-600">Tempo de uso: {timeUsingApp}</div>
+              <div className="text-sm text-gray-600 dark:text-text-muted">Nome</div>
+              <div className="font-medium text-gray-900 dark:text-text truncate">{user?.username || '—'}</div>
             </div>
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
-              <button
-                onClick={() => {
-                  const text = `Completei ${completedDays} treinos no Musa Fit!`;
-                  if (navigator.share) {
-                    navigator.share({ title: 'Minhas Conquistas', text })
-                  } else {
-                    navigator.clipboard?.writeText(text)
-                    alert('Texto de conquista copiado!')
-                  }
-                  trackEvent('ShareAchievements', { completedDays })
-                }}
-                className="px-4 py-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 flex items-center"
-                aria-label="Compartilhar conquistas"
-              >
-                <Share2 className="w-4 h-4 mr-2" /> Compartilhar
-              </button>
+            <div>
+              <div className="text-sm text-gray-600 dark:text-text-muted">Idade</div>
+              <div className="font-medium text-gray-900 dark:text-text">{user?.age ?? '—'}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 dark:text-text-muted">Sexo</div>
+              <div className="font-medium text-gray-900 dark:text-text">{user?.sex ? SEX_LABELS[user.sex] : '—'}</div>
             </div>
           </div>
+        </Card>
 
-          <div className="space-y-3" aria-live="polite">
-            {progress
-              .filter(p => p.completed)
-              .sort((a,b) => new Date(b.completed_at || '').getTime() - new Date(a.completed_at || '').getTime())
-              .slice(0,5)
-              .map((p) => (
-                <div key={p.id} className="rounded-xl p-4 bg-gray-50 flex items-start md:items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900">{p.workout?.title || 'Treino'} concluído</div>
-                    <div className="text-xs text-gray-600 truncate">{p.completed_at ? new Date(p.completed_at).toLocaleString() : ''}</div>
-                  </div>
-                </div>
-              ))}
-            {completedDays === 0 && (
-              <div className="text-sm text-gray-600">Ainda sem atividades concluídas — vamos começar!</div>
-            )}
+        {/* Objetivo */}
+        <Card className="mb-6 animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-lg font-bold text-gray-900 dark:text-text">Objetivo</span>
+            <Button variant="secondary" size="icon" onClick={openGoalModal} aria-label="Editar objetivo">
+              <Pencil className="w-4 h-4" />
+            </Button>
           </div>
-        </div>
+          <div className="text-center font-medium text-gray-900 dark:text-text">
+            {user?.goal ? GOAL_LABELS[user.goal] : '—'}
+          </div>
+        </Card>
+
+        {/* Medidas */}
+        <Card className="mb-6 animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-lg font-bold text-gray-900 dark:text-text">Medidas</span>
+            <Button variant="secondary" size="icon" onClick={openMeasuresModal} aria-label="Editar medidas">
+              <Pencil className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <div className="text-sm text-gray-600 dark:text-text-muted">Altura</div>
+              <div className="font-medium text-gray-900 dark:text-text">{user?.heightCm ? `${user.heightCm} cm` : '—'}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 dark:text-text-muted">Peso</div>
+              <div className="font-medium text-gray-900 dark:text-text">{user?.weightKg ? `${user.weightKg} kg` : '—'}</div>
+            </div>
+          </div>
+        </Card>
+
+        <Modal
+          open={activeModal === 'personal'}
+          onClose={() => setActiveModal(null)}
+          title="Editar dados pessoais"
+          footer={
+            <Button variant="primary" className="w-full" onClick={savePersonal} isLoading={savingModal}>
+              Salvar
+            </Button>
+          }
+        >
+          <div className="p-6 space-y-4">
+            <FormField label="Nome" htmlFor="edit-nome">
+              <Input id="edit-nome" type="text" value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
+            </FormField>
+            <FormField label="Idade" htmlFor="edit-idade">
+              <Input id="edit-idade" type="number" inputMode="numeric" value={idadeEdit} onChange={(e) => setIdadeEdit(e.target.value)} />
+            </FormField>
+            <ChoiceGroup label="Sexo" name="edit-sexo" options={SEX_OPTIONS} value={sexoEdit} onChange={(v) => setSexoEdit(v as Sex)} />
+          </div>
+        </Modal>
+
+        <Modal
+          open={activeModal === 'goal'}
+          onClose={() => setActiveModal(null)}
+          title="Editar objetivo"
+          footer={
+            <Button variant="primary" className="w-full" onClick={saveGoal} isLoading={savingModal}>
+              Salvar
+            </Button>
+          }
+        >
+          <div className="p-6">
+            <ChoiceGroup label="Objetivo" name="edit-objetivo" options={GOAL_OPTIONS} value={objetivoEdit} onChange={(v) => setObjetivoEdit(v as Goal)} />
+          </div>
+        </Modal>
+
+        <Modal
+          open={activeModal === 'measures'}
+          onClose={() => setActiveModal(null)}
+          title="Editar medidas"
+          footer={
+            <Button variant="primary" className="w-full" onClick={saveMeasures} isLoading={savingModal}>
+              Salvar
+            </Button>
+          }
+        >
+          <div className="p-6 space-y-4">
+            <FormField label="Altura (cm)" htmlFor="edit-altura">
+              <Input id="edit-altura" type="number" inputMode="numeric" value={alturaEdit} onChange={(e) => setAlturaEdit(e.target.value)} />
+            </FormField>
+            <FormField label="Peso (kg)" htmlFor="edit-peso">
+              <Input id="edit-peso" type="number" inputMode="decimal" step="0.1" value={pesoEdit} onChange={(e) => setPesoEdit(e.target.value)} />
+            </FormField>
+          </div>
+        </Modal>
 
         {isAdmin && (
           <button

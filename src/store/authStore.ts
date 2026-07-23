@@ -6,9 +6,11 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   isAdmin: boolean
+  needsOnboarding: boolean
   setUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
   setIsAdmin: (isAdmin: boolean) => void
+  setNeedsOnboarding: (needsOnboarding: boolean) => void
   logout: () => void
 }
 
@@ -17,8 +19,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
   isAdmin: false,
+  needsOnboarding: false,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setIsAdmin: (isAdmin) => set({ isAdmin }),
-  logout: () => set({ user: null, isAuthenticated: false, isAdmin: false }),
+  setNeedsOnboarding: (needsOnboarding) => set({ needsOnboarding }),
+  logout: () => set({ user: null, isAuthenticated: false, isAdmin: false, needsOnboarding: false }),
 }))
