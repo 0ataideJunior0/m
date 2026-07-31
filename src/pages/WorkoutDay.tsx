@@ -144,7 +144,7 @@ export default function WorkoutDay() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-28">
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
@@ -196,7 +196,7 @@ export default function WorkoutDay() {
                     <div className="text-xl font-bold text-text">Progresso dos exercícios</div>
                     <div className="text-sm text-text-muted">{done}/{total}</div>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
+                  <div className="w-full bg-border rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
                   </div>
                 </>
@@ -427,9 +427,10 @@ function openExerciseVideoFactory(
   resolveVideoUrl: (raw: string) => string,
 ) {
   return (exercise: WorkoutType['exercises'][number]) => {
-    const title = exercise.exercise
+    const ownVideo = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || ''
+    const title = ownVideo ? exercise.exercise : 'Vídeo do treino'
     setVideoTitle(title)
-    const raw = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || workout?.video_url || ''
+    const raw = ownVideo || workout?.video_url || ''
     if (!raw) {
       alert('Vídeo não disponível para este exercício.')
       return

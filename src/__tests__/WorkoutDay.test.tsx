@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom'
 import WorkoutDay from '../pages/WorkoutDay'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
@@ -63,5 +62,25 @@ describe('WorkoutDay videos', () => {
     await screen.findByText(/prancha/i)
     const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
     expect(watchButtons.length).toBe(2)
+  })
+
+  it('usa título genérico "Vídeo do treino" ao abrir o vídeo de fallback (exercício sem vídeo próprio)', async () => {
+    render(
+      <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
+        <Routes>
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    // "Prancha" não tem `video` próprio, então o botão abre o vídeo geral do treino.
+    await screen.findByText(/prancha/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    // watchButtons[1] corresponds to "Prancha" (second exercise in the mock data)
+    fireEvent.click(watchButtons[1])
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByText('Vídeo do treino')).toBeInTheDocument()
   })
 })

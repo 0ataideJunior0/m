@@ -66,6 +66,7 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
           <button
             type="button"
             onClick={onWatchVideo}
+            aria-label={`Ver execução de ${exercise.exercise}`}
             className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <Play className="w-4 h-4" />
