@@ -84,36 +84,36 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Musa Fit</h1>
-          <p className="text-gray-600">Crie sua conta para começar o desafio</p>
+          <h1 className="text-3xl font-bold text-text mb-2">Musa Fit</h1>
+          <p className="text-text-muted">Crie sua conta para começar o desafio</p>
         </div>
 
         <div className="mb-6">
-          <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+          <div className="flex justify-between items-center text-xs text-text-muted mb-1">
             <span>Progresso do cadastro</span>
             <span>{progressPct}%</span>
           </div>
-          <div className="w-full h-2 bg-pink-100 rounded-full">
+          <div className="w-full h-2 bg-pink-100 dark:bg-pink-950/30 rounded-full">
             <div className="h-2 bg-purple-500 rounded-full" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert" aria-live="polite">
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg" role="alert" aria-live="polite">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-2">
               Email
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true">
                 <Mail className="w-5 h-5" />
               </span>
               <input
@@ -129,7 +129,7 @@ export default function Register() {
                   validateFields()
                 }}
                 onBlur={() => setTouched(t => ({ ...t, email: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 placeholder="seu@email.com"
               />
               {emailOk && touched.email && (
@@ -142,11 +142,11 @@ export default function Register() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-2">
               Senha
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true">
                 <Lock className="w-5 h-5" />
               </span>
               <input
@@ -162,7 +162,7 @@ export default function Register() {
                 validateFields(false)
               }}
                 onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 placeholder="Digite sua senha"
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'password-error' : undefined}
@@ -170,7 +170,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition"
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -182,11 +182,11 @@ export default function Register() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-muted mb-2">
               Confirmar Senha
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true">
                 <Lock className="w-5 h-5" />
               </span>
               <input
@@ -202,7 +202,7 @@ export default function Register() {
                 validateFields(false)
               }}
                 onBlur={() => setTouched(t => ({ ...t, confirmPassword: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 placeholder="Confirme sua senha"
                 aria-invalid={!!fieldErrors.confirmPassword}
                 aria-describedby={fieldErrors.confirmPassword ? 'confirm-error' : undefined}
@@ -210,7 +210,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowConfirm(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition"
                 aria-label={showConfirm ? 'Ocultar confirmação' : 'Mostrar confirmação'}
               >
                 {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -233,9 +233,9 @@ export default function Register() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-text-muted mt-6">
           Já tem uma conta?{' '}
-          <Link to="/login" className="text-purple-600 hover:text-purple-700 font-medium">
+          <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium">
             Entrar
           </Link>
         </p>
