@@ -20,6 +20,7 @@ export interface UserProgress {
   user_id: string
   workout_id: string
   completed: boolean
+  completion_count: number
   completed_at: string | null
   created_at: string
   workout?: {

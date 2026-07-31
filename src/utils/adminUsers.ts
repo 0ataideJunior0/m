@@ -22,15 +22,14 @@ export const listNonAdminUsers = async (): Promise<AdminUserSummary[]> => {
   const ids = rows.map((p: any) => p.id)
   const { data: progress, error: progressError } = await supabase
     .from('user_progress')
-    .select('user_id')
+    .select('user_id, completion_count')
     .in('user_id', ids)
-    .eq('completed', true)
 
   if (progressError) throw progressError
 
   const counts = new Map<string, number>()
   for (const row of progress || []) {
-    counts.set(row.user_id, (counts.get(row.user_id) || 0) + 1)
+    counts.set(row.user_id, (counts.get(row.user_id) || 0) + (row.completion_count || 0))
   }
 
   return rows.map((p: any) => ({
