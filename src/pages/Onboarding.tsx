@@ -137,21 +137,21 @@ export default function Onboarding() {
   if (!isAuthenticated || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Vamos te conhecer</h1>
-          <p className="text-gray-600 text-sm">Passo {step + 1} de {TOTAL_STEPS}</p>
+          <h1 className="text-2xl font-bold text-text mb-1">Vamos te conhecer</h1>
+          <p className="text-text-muted text-sm">Passo {step + 1} de {TOTAL_STEPS}</p>
         </div>
 
         <div className="mb-8">
-          <div className="w-full h-2 bg-pink-100 rounded-full">
+          <div className="w-full h-2 bg-pink-100 dark:bg-pink-950/30 rounded-full">
             <div className="h-2 bg-purple-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert" aria-live="polite">
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6" role="alert" aria-live="polite">
             {error}
           </div>
         )}
