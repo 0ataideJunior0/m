@@ -89,8 +89,8 @@ export default function ProgramDays() {
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{program.name}</h1>
-            <p className="text-gray-600">Escolha o dia da semana</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-text">{program.name}</h1>
+            <p className="text-gray-600 dark:text-text-muted">Escolha o dia da semana</p>
           </div>
         </div>
 

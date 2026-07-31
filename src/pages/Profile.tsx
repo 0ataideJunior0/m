@@ -173,13 +173,6 @@ export default function Profile() {
     }
   }, [])
 
-  const firstAchievementDate = useMemo(() => {
-    const done = progress.filter(p => p.completed && p.completed_at)
-    if (done.length === 0) return null
-    const sorted = [...done].sort((a, b) => new Date(a.completed_at as string).getTime() - new Date(b.completed_at as string).getTime())
-    return new Date(sorted[0].completed_at as string)
-  }, [progress])
-
   const timeUsingApp = useMemo(() => {
     if (!user) return '—'
     const created = new Date(user.created_at)
