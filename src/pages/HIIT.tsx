@@ -35,24 +35,24 @@ export default function HIIT() {
   }, [videoUrl])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center mb-6">
-          <button onClick={() => navigate('/home')} className="mr-3 p-2 rounded-lg hover:bg-black/5 transition">
-            <ChevronLeft className="w-6 h-6 text-gray-800" />
+          <button onClick={() => navigate('/home')} className="mr-3 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
+            <ChevronLeft className="w-6 h-6 text-text" />
           </button>
           <div className="flex items-center">
             <Flame className="w-6 h-6 text-red-500 mr-2" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">HIIT Principal</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-text">HIIT Principal</h1>
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <div className="text-lg font-bold text-gray-900">{meta.title}</div>
-              <div className="text-sm text-gray-600">{meta.description}</div>
+              <div className="text-lg font-bold text-text">{meta.title}</div>
+              <div className="text-sm text-text-muted">{meta.description}</div>
             </div>
-            <div className="flex items-center text-gray-700">
+            <div className="flex items-center text-text-muted">
               <Timer className="w-5 h-5 mr-2" />
               <span>{meta.duration}</span>
             </div>
