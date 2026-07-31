@@ -116,11 +116,11 @@ export default function WorkoutDay() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-24 mx-auto"></div>
         </div>
       </div>
     )
@@ -128,12 +128,12 @@ export default function WorkoutDay() {
 
   if (!workout) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Treino não encontrado</h2>
+          <h2 className="text-2xl font-bold text-text mb-2">Treino não encontrado</h2>
           <button
             onClick={() => navigate('/home')}
-            className="text-purple-600 hover:text-purple-700"
+            className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
           >
             Voltar à Home
           </button>
@@ -143,29 +143,29 @@ export default function WorkoutDay() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate(`/program/${slug}`)}
-            className="mr-4 p-2 rounded-lg hover:bg-white/50 transition"
+            className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <ArrowLeft className="w-6 h-6 text-text" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-text leading-tight break-words">
               {workout.title}
             </h1>
-            <p className="text-gray-600">{weekdayLabel} • {program?.name}</p>
+            <p className="text-text-muted">{weekdayLabel} • {program?.name}</p>
           </div>
         </div>
 
 
         {/* Video geral do treino */}
         {workout.video_url && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <div className="bg-surface rounded-2xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-bold text-text mb-4 flex items-center">
               <Play className="w-5 h-5 mr-2" />
               Vídeo do Treino
             </h2>
@@ -182,7 +182,7 @@ export default function WorkoutDay() {
 
         {/* Progresso exercícios */}
         {workout.exercises?.length ? (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
             {(() => {
               const total = workout.exercises.length
               const done = workout.exercises.reduce((acc, ex, i) => {
@@ -193,10 +193,10 @@ export default function WorkoutDay() {
               return (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-xl font-bold text-gray-900">Progresso dos exercícios</div>
-                    <div className="text-sm text-gray-600">{done}/{total}</div>
+                    <div className="text-xl font-bold text-text">Progresso dos exercícios</div>
+                    <div className="text-sm text-text-muted">{done}/{total}</div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
                   </div>
                 </>
@@ -206,8 +206,8 @@ export default function WorkoutDay() {
         ) : null}
 
         {/* Exercises */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Exercícios</h2>
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-text mb-6">Exercícios</h2>
           <div className="space-y-4">
             {(() => {
               const ordered = [...workout.exercises]
@@ -284,11 +284,11 @@ export default function WorkoutDay() {
         {/* Modal de vídeo por exercício */}
         {modalOpen && videoUrl && (
           <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
-            <div className="bg-white/95 p-3 flex items-center justify-between">
-              <div className="font-semibold text-gray-900">{videoTitle || 'Vídeo do exercício'}</div>
+            <div className="bg-surface/95 p-3 flex items-center justify-between">
+              <div className="font-semibold text-text">{videoTitle || 'Vídeo do exercício'}</div>
               <button
                 onClick={() => { setModalOpen(false); setVideoLoading(false); }}
-                className="ui-hover bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-md flex items-center"
+                className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
                 aria-label="Fechar"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -324,7 +324,7 @@ export default function WorkoutDay() {
 
         {/* Complete Button */}
         {!isDayCompleted && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
             <div className="max-w-4xl mx-auto">
               <button
                 onClick={handleCompleteWorkout}
@@ -345,12 +345,12 @@ export default function WorkoutDay() {
         )}
 
         {isDayCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
             <div className="flex items-center justify-center mb-2">
-              <Check className="w-6 h-6 text-green-600 mr-2" />
-              <span className="text-green-800 font-medium">Treino concluído!</span>
+              <Check className="w-6 h-6 text-green-600 dark:text-green-400 mr-2" />
+              <span className="text-green-800 dark:text-green-300 font-medium">Treino concluído!</span>
             </div>
-            <p className="text-green-600 text-sm">
+            <p className="text-green-600 dark:text-green-400 text-sm">
               Parabéns! Você completou o treino de {weekdayLabel}.
             </p>
           </div>
