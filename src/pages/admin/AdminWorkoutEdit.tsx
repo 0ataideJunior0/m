@@ -145,13 +145,13 @@ export default function AdminWorkoutEdit() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-text-muted">Exercício {index + 1}</span>
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => moveExercise(index, -1)} aria-label="Mover para cima" className="p-1 rounded hover:bg-gray-100">
+                    <button type="button" onClick={() => moveExercise(index, -1)} aria-label="Mover para cima" className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10">
                       <ArrowUp className="w-4 h-4 text-text-muted" />
                     </button>
-                    <button type="button" onClick={() => moveExercise(index, 1)} aria-label="Mover para baixo" className="p-1 rounded hover:bg-gray-100">
+                    <button type="button" onClick={() => moveExercise(index, 1)} aria-label="Mover para baixo" className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10">
                       <ArrowDown className="w-4 h-4 text-text-muted" />
                     </button>
-                    <button type="button" onClick={() => removeExercise(index)} aria-label="Remover exercício" className="p-1 rounded hover:bg-red-50">
+                    <button type="button" onClick={() => removeExercise(index)} aria-label="Remover exercício" className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40">
                       <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </button>
                   </div>
