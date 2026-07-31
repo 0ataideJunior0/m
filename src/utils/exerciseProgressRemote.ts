@@ -39,3 +39,16 @@ export async function upsertExerciseProgress(
   if (error) throw error
 }
 
+export async function resetExerciseProgress(userId: string, workoutId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('user_exercise_progress')
+      .delete()
+      .eq('user_id', userId)
+      .eq('workout_id', workoutId)
+    if (error) throw error
+  } catch (error) {
+    console.error('Error resetting exercise progress:', error)
+  }
+}
+
