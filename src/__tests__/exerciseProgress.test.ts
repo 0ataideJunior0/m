@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getExerciseKey } from '../utils/exerciseKeys'
-import { mergeServerLocal } from '../utils/exerciseProgress'
+import { mergeServerLocal, loadLocalProgress, saveLocalProgress, clearLocalProgress } from '../utils/exerciseProgress'
 
 describe('exercise keys', () => {
   it('normaliza nomes com acentos e espaços', () => {
@@ -21,6 +21,17 @@ describe('merge server/local', () => {
     const server = {}
     const merged = mergeServerLocal(server, local)
     expect(merged['ex-1'].completed).toBe(true)
+  })
+})
+
+describe('clearLocalProgress', () => {
+  it('remove o progresso salvo daquela usuária e treino', () => {
+    saveLocalProgress('u1', 'w1', { 'ex-1': { completed: true, ts: 1 } })
+    expect(loadLocalProgress('u1', 'w1')).toEqual({ 'ex-1': { completed: true, ts: 1 } })
+
+    clearLocalProgress('u1', 'w1')
+
+    expect(loadLocalProgress('u1', 'w1')).toEqual({})
   })
 })
 

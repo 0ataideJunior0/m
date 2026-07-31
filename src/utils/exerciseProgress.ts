@@ -19,6 +19,13 @@ export function saveLocalProgress(userId: string, workoutId: string, data: Progr
   } catch {}
 }
 
+export function clearLocalProgress(userId: string, workoutId: string) {
+  const key = `${LS_PREFIX}${userId}:${workoutId}`
+  try {
+    localStorage.removeItem(key)
+  } catch {}
+}
+
 export function mergeServerLocal(server: Record<string, boolean>, local: ProgressMap): ProgressMap {
   const out: ProgressMap = { ...local }
   for (const k of Object.keys(server)) {
