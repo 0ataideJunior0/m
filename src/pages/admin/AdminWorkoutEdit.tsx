@@ -94,7 +94,7 @@ export default function AdminWorkoutEdit() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin" />
       </div>
     )
@@ -103,56 +103,56 @@ export default function AdminWorkoutEdit() {
   const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-4xl mx-auto px-4 py-8 pb-32">
         <div className="flex items-center mb-8">
-          <button onClick={() => navigate(`/admin/programs/${slug}`)} className="mr-4 p-2 rounded-lg hover:bg-white/50 transition">
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+          <button onClick={() => navigate(`/admin/programs/${slug}`)} className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
+            <ArrowLeft className="w-6 h-6 text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-text">
             {workoutId ? 'Editar' : 'Criar'} {weekdayLabel} — {program?.name}
           </h1>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 space-y-4">
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="workout-title">Título</label>
+            <label className="block text-sm font-medium text-text-muted mb-1" htmlFor="workout-title">Título</label>
             <input
               id="workout-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-border bg-surface text-text rounded-lg px-3 py-2"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="workout-video">Vídeo do dia (URL)</label>
+            <label className="block text-sm font-medium text-text-muted mb-1" htmlFor="workout-video">Vídeo do dia (URL)</label>
             <input
               id="workout-video"
               type="text"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-border bg-surface text-text rounded-lg px-3 py-2"
             />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Exercícios</h2>
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-text mb-4">Exercícios</h2>
           <div className="space-y-4">
             {exercises.map((ex, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div key={index} className="border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-500">Exercício {index + 1}</span>
+                  <span className="text-sm font-medium text-text-muted">Exercício {index + 1}</span>
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => moveExercise(index, -1)} aria-label="Mover para cima" className="p-1 rounded hover:bg-gray-100">
-                      <ArrowUp className="w-4 h-4 text-gray-600" />
+                      <ArrowUp className="w-4 h-4 text-text-muted" />
                     </button>
                     <button type="button" onClick={() => moveExercise(index, 1)} aria-label="Mover para baixo" className="p-1 rounded hover:bg-gray-100">
-                      <ArrowDown className="w-4 h-4 text-gray-600" />
+                      <ArrowDown className="w-4 h-4 text-text-muted" />
                     </button>
                     <button type="button" onClick={() => removeExercise(index)} aria-label="Remover exercício" className="p-1 rounded hover:bg-red-50">
-                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </button>
                   </div>
                 </div>
@@ -162,47 +162,47 @@ export default function AdminWorkoutEdit() {
                     placeholder="Nome do exercício"
                     value={ex.exercise}
                     onChange={(e) => updateExercise(index, { exercise: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <input
                     type="text"
                     placeholder="Repetições"
                     value={ex.reps}
                     onChange={(e) => updateExercise(index, { reps: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <input
                     type="text"
                     placeholder="Séries"
                     value={ex.sets || ''}
                     onChange={(e) => updateExercise(index, { sets: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <input
                     type="text"
                     placeholder="Nota"
                     value={ex.note || ''}
                     onChange={(e) => updateExercise(index, { note: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <input
                     type="text"
                     placeholder="Vídeo (URL)"
                     value={ex.video || ''}
                     onChange={(e) => updateExercise(index, { video: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <input
                     type="text"
                     placeholder="Grupo (bi-set)"
                     value={ex.group || ''}
                     onChange={(e) => updateExercise(index, { group: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2"
                   />
                   <select
                     value={ex.type || 'normal'}
                     onChange={(e) => updateExercise(index, { type: e.target.value as Exercise['type'] })}
-                    className="border border-gray-300 rounded-lg px-3 py-2 md:col-span-2"
+                    className="border border-border bg-surface text-text rounded-lg px-3 py-2 md:col-span-2"
                   >
                     <option value="normal">Normal</option>
                     <option value="warmup">Aquecimento</option>
@@ -216,13 +216,13 @@ export default function AdminWorkoutEdit() {
           <button
             type="button"
             onClick={addExercise}
-            className="mt-4 inline-flex items-center px-4 py-2 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50"
+            className="mt-4 inline-flex items-center px-4 py-2 rounded-lg border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40"
           >
             <Plus className="w-4 h-4 mr-1" /> Adicionar exercício
           </button>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
           <div className="max-w-4xl mx-auto">
             <button
               onClick={handleSave}
