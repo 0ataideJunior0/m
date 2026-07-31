@@ -18,11 +18,20 @@ describe('resetExerciseProgress', () => {
   it('apaga as linhas de user_exercise_progress daquele treino e usuária', async () => {
     eqMock2.mockResolvedValueOnce({ error: null })
 
-    await resetExerciseProgress('u1', 'w1')
+    const result = await resetExerciseProgress('u1', 'w1')
 
+    expect(result).toBe(true)
     expect(fromMock).toHaveBeenCalledWith('user_exercise_progress')
     expect(deleteMock).toHaveBeenCalled()
     expect(eqMock1).toHaveBeenCalledWith('user_id', 'u1')
     expect(eqMock2).toHaveBeenCalledWith('workout_id', 'w1')
+  })
+
+  it('retorna false quando a deleção falha', async () => {
+    eqMock2.mockResolvedValueOnce({ error: new Error('permission denied') })
+
+    const result = await resetExerciseProgress('u1', 'w1')
+
+    expect(result).toBe(false)
   })
 })

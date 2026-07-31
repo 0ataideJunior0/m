@@ -90,7 +90,10 @@ export default function WorkoutDay() {
     try {
       const success = await markWorkoutComplete(user.id, workout.id)
       if (success) {
-        await resetExerciseProgress(user.id, workout.id)
+        const resetOk = await resetExerciseProgress(user.id, workout.id)
+        if (!resetOk) {
+          console.error('Workout marked complete but exercise checklist reset failed for workout', workout.id)
+        }
         clearLocalProgress(user.id, workout.id)
         navigate(`/program/${slug}`)
       }
