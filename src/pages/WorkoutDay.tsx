@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete, getUserProgress } from '../utils/workouts'
-import { Workout as WorkoutType, UserProgress, Program } from '../types'
+import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete } from '../utils/workouts'
+import { Workout as WorkoutType, Program } from '../types'
 import { Check, ArrowLeft, Play, X } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
 import { getExerciseKey } from '../utils/exerciseKeys'
-import { loadLocalProgress, saveLocalProgress, mergeServerLocal } from '../utils/exerciseProgress'
-import { fetchExerciseProgress, upsertExerciseProgress } from '../utils/exerciseProgressRemote'
+import { loadLocalProgress, saveLocalProgress, mergeServerLocal, clearLocalProgress } from '../utils/exerciseProgress'
+import { fetchExerciseProgress, upsertExerciseProgress, resetExerciseProgress } from '../utils/exerciseProgressRemote'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
@@ -18,7 +18,6 @@ export default function WorkoutDay() {
 
   const [program, setProgram] = useState<Program | null>(null)
   const [workout, setWorkout] = useState<WorkoutType | null>(null)
-  const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
@@ -47,13 +46,9 @@ export default function WorkoutDay() {
       setProgram(prog)
       if (!prog) return
 
-      const [workoutData, userProgress] = await Promise.all([
-        getWorkoutByProgramAndWeekday(prog.id, weekdayNumber),
-        getUserProgress(user.id)
-      ])
+      const workoutData = await getWorkoutByProgramAndWeekday(prog.id, weekdayNumber)
 
       setWorkout(workoutData)
-      setProgress(userProgress)
       // Prefetch first exercise video if available
       if (workoutData?.exercises?.[0]?.video) {
         const url = resolveVideoUrl(workoutData.exercises[0].video)
@@ -95,6 +90,8 @@ export default function WorkoutDay() {
     try {
       const success = await markWorkoutComplete(user.id, workout.id)
       if (success) {
+        await resetExerciseProgress(user.id, workout.id)
+        clearLocalProgress(user.id, workout.id)
         navigate(`/program/${slug}`)
       }
     } catch (error) {
@@ -104,7 +101,6 @@ export default function WorkoutDay() {
     }
   }
 
-  const isDayCompleted = progress.some(p => p.workout_id === workout?.id && p.completed)
   const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, workout?.id)
   const pendingRef = useRef<{ key: string; completed: boolean } | null>(null)
   const debounceRef = useRef<any>(null)
@@ -329,38 +325,24 @@ export default function WorkoutDay() {
         )}
 
         {/* Complete Button */}
-        {!isDayCompleted && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-            <div className="max-w-4xl mx-auto">
-              <button
-                onClick={handleCompleteWorkout}
-                disabled={completing}
-                className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg flex items-center justify-center"
-              >
-                {completing ? (
-                  'Marcando...'
-                ) : (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Marcar como Concluído
-                  </>
-                )}
-              </button>
-            </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-4xl mx-auto">
+            <button
+              onClick={handleCompleteWorkout}
+              disabled={completing}
+              className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg flex items-center justify-center"
+            >
+              {completing ? (
+                'Marcando...'
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Marcar como Concluído
+                </>
+              )}
+            </button>
           </div>
-        )}
-
-        {isDayCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Check className="w-6 h-6 text-green-600 mr-2" />
-              <span className="text-green-800 font-medium">Treino concluído!</span>
-            </div>
-            <p className="text-green-600 text-sm">
-              Parabéns! Você completou o treino de {weekdayLabel}.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
