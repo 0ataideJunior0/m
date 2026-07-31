@@ -30,7 +30,7 @@ describe('WorkoutDay videos', () => {
     vi.resetModules()
   })
 
-  it('abre modal e carrega iframe ao clicar no exercício com vídeo', async () => {
+  it('abre modal e carrega iframe ao clicar em "Ver execução" no exercício com vídeo', async () => {
     render(
       <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
         <Routes>
@@ -39,12 +39,48 @@ describe('WorkoutDay videos', () => {
       </MemoryRouter>
     )
 
-    const card = await screen.findByText(/agachamento/i)
-    fireEvent.click(card)
+    await screen.findByText(/agachamento/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    fireEvent.click(watchButtons[0])
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toBeInTheDocument()
     const iframe = dialog.querySelector('iframe')
     expect(iframe).not.toBeNull()
+  })
+
+  it('mostra "Vídeo indisponível" para exercício sem vídeo próprio quando o treino não tem vídeo geral', async () => {
+    render(
+      <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
+        <Routes>
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    // "Prancha" não tem `video`, mas o treino tem `video_url`, então ainda deve ter botão.
+    await screen.findByText(/prancha/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    expect(watchButtons.length).toBe(2)
+  })
+
+  it('usa título genérico "Vídeo do treino" ao abrir o vídeo de fallback (exercício sem vídeo próprio)', async () => {
+    render(
+      <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
+        <Routes>
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    // "Prancha" não tem `video` próprio, então o botão abre o vídeo geral do treino.
+    await screen.findByText(/prancha/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    // watchButtons[1] corresponds to "Prancha" (second exercise in the mock data)
+    fireEvent.click(watchButtons[1])
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByText('Vídeo do treino')).toBeInTheDocument()
   })
 })

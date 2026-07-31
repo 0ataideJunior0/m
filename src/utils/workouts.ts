@@ -117,13 +117,23 @@ export const getUserProgress = async (userId: string): Promise<UserProgress[]> =
 
 export const markWorkoutComplete = async (userId: string, workoutId: string): Promise<boolean> => {
   try {
+    const { data: existing } = await supabase
+      .from('user_progress')
+      .select('completion_count')
+      .eq('user_id', userId)
+      .eq('workout_id', workoutId)
+      .maybeSingle()
+
+    const nextCount = (existing?.completion_count || 0) + 1
+
     const { error } = await supabase
       .from('user_progress')
       .upsert({
         user_id: userId,
         workout_id: workoutId,
-        completed: true,
+        completed: false,
         completed_at: new Date().toISOString(),
+        completion_count: nextCount,
       }, { onConflict: 'user_id,workout_id' })
 
     if (error) throw error
