@@ -73,7 +73,7 @@ export default function Home() {
               }}
             />
             <div>
-              <div className="text-2xl font-bold text-purple-800">Musa Fit</div>
+              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">Musa Fit</div>
               <div className="text-sm text-text-muted">Olá, {displayName}!</div>
             </div>
           </div>

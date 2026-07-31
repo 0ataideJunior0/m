@@ -65,7 +65,7 @@ export default function Login() {
             alt="Logo Musa Fit"
             className="w-20 h-20 rounded-full mx-auto mb-3 shadow-md object-contain animate-fade-in"
           />
-          <div className="text-3xl font-bold text-purple-700">Musa Fit</div>
+          <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">Musa Fit</div>
           <div className="flex items-center justify-center text-sm text-text-muted mt-1">
             <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
             20 Dias de Transformação

@@ -119,7 +119,7 @@ export default function ProgramDays() {
                       <h4 className={`font-medium ${day.completed ? 'text-green-700 dark:text-green-400' : day.workout ? 'text-text' : 'text-text-muted'}`}>
                         {WEEKDAY_NAMES[day.weekdayNumber - 1]}
                       </h4>
-                      <p className={`text-sm ${day.completed ? 'text-green-600 dark:text-green-400' : day.workout ? 'text-text-muted' : 'text-text-muted'}`}>
+                      <p className={`text-sm ${day.completed ? 'text-green-600 dark:text-green-400' : 'text-text-muted'}`}>
                         {day.workout ? day.workout.title : 'Em breve'}
                       </p>
                     </div>
