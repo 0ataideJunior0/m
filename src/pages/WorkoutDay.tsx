@@ -227,17 +227,17 @@ export default function WorkoutDay() {
                     j++
                   }
                   cards.push(
-                    <div key={`group-${g}-${i}`} className="border border-purple-300 rounded-lg p-4">
+                    <div key={`group-${g}-${i}`} className="border border-purple-300 dark:border-purple-800 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-purple-700 font-medium">Bi-set</span>
-                        <span className="text-xs text-purple-600">Grupo {g}</span>
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">Bi-set</span>
+                        <span className="text-xs text-purple-600 dark:text-purple-400">Grupo {g}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {groupItems.map((exercise, idx) => {
                           const k = getExerciseKey(exercise, idx)
                           const completed = !!exProgress[k]?.completed
                           return (
-                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 rounded-md p-3">
+                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
                               <ExerciseItem
                                 exercise={exercise}
                                 isCompleted={completed}
@@ -246,17 +246,9 @@ export default function WorkoutDay() {
                                   lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
                                   toggleExercise(exercise, idx)
                                 }}
+                                hasVideo={!!(exercise.video || workout.video_url)}
+                                onWatchVideo={() => openExerciseVideo(exercise)}
                               />
-                              {(exercise.video || workout.video_url) ? (
-                                <button
-                                  onClick={() => openExerciseVideo(exercise)}
-                                  className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
-                                >
-                                  <Play className="w-4 h-4 mr-1" /> Assistir vídeo
-                                </button>
-                              ) : (
-                                <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
-                              )}
                             </div>
                           )
                         })}
@@ -277,6 +269,8 @@ export default function WorkoutDay() {
                         lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
                         toggleExercise(ex, i)
                       }}
+                      hasVideo={!!(ex.video || workout.video_url)}
+                      onWatchVideo={() => openExerciseVideo(ex)}
                     />
                   </div>
                 )

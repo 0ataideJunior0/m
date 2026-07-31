@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import '@testing-library/jest-dom'
 import WorkoutDay from '../pages/WorkoutDay'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
@@ -30,7 +31,7 @@ describe('WorkoutDay videos', () => {
     vi.resetModules()
   })
 
-  it('abre modal e carrega iframe ao clicar no exercício com vídeo', async () => {
+  it('abre modal e carrega iframe ao clicar em "Ver execução" no exercício com vídeo', async () => {
     render(
       <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
         <Routes>
@@ -39,12 +40,28 @@ describe('WorkoutDay videos', () => {
       </MemoryRouter>
     )
 
-    const card = await screen.findByText(/agachamento/i)
-    fireEvent.click(card)
+    await screen.findByText(/agachamento/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    fireEvent.click(watchButtons[0])
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toBeInTheDocument()
     const iframe = dialog.querySelector('iframe')
     expect(iframe).not.toBeNull()
+  })
+
+  it('mostra "Vídeo indisponível" para exercício sem vídeo próprio quando o treino não tem vídeo geral', async () => {
+    render(
+      <MemoryRouter initialEntries={["/program/avancado/day/1"]}>
+        <Routes>
+          <Route path="/program/:slug/day/:weekday" element={<WorkoutDay />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    // "Prancha" não tem `video`, mas o treino tem `video_url`, então ainda deve ter botão.
+    await screen.findByText(/prancha/i)
+    const watchButtons = await screen.findAllByRole('button', { name: /ver execução/i })
+    expect(watchButtons.length).toBe(2)
   })
 })
