@@ -1,18 +1,17 @@
 import { describe, it, expect, vi } from 'vitest'
 
-const { profilesOrderMock, profilesEqMock, profilesSelectMock, progressEqMock, progressInMock, progressSelectMock, fromMock } = vi.hoisted(() => {
+const { profilesOrderMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock } = vi.hoisted(() => {
   const profilesOrderMock = vi.fn()
   const profilesEqMock = vi.fn(() => ({ order: profilesOrderMock }))
   const profilesSelectMock = vi.fn(() => ({ eq: profilesEqMock }))
-  const progressEqMock = vi.fn()
-  const progressInMock = vi.fn(() => ({ eq: progressEqMock }))
+  const progressInMock = vi.fn()
   const progressSelectMock = vi.fn(() => ({ in: progressInMock }))
   const fromMock = vi.fn((table: string) => {
     if (table === 'profiles') return { select: profilesSelectMock }
     if (table === 'user_progress') return { select: progressSelectMock }
     throw new Error(`unexpected table ${table}`)
   })
-  return { profilesOrderMock, profilesEqMock, profilesSelectMock, progressEqMock, progressInMock, progressSelectMock, fromMock }
+  return { profilesOrderMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock }
 })
 
 vi.mock('../lib/supabase', () => ({
@@ -33,8 +32,11 @@ describe('listNonAdminUsers', () => {
       ],
       error: null,
     })
-    progressEqMock.mockResolvedValueOnce({
-      data: [{ user_id: 'u1' }, { user_id: 'u1' }, { user_id: 'u2' }],
+    progressInMock.mockResolvedValueOnce({
+      data: [
+        { user_id: 'u1', completion_count: 2 },
+        { user_id: 'u2', completion_count: 1 },
+      ],
       error: null,
     })
 
