@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getProgramBySlug, getWorkoutsForProgram, getUserProgress } from '../utils/workouts'
-import { Program, Workout, UserProgress } from '../types'
-import { Check, Circle, ArrowLeft } from 'lucide-react'
+import { getProgramBySlug, getWorkoutsForProgram } from '../utils/workouts'
+import { Program, Workout } from '../types'
+import { ArrowLeft } from 'lucide-react'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
@@ -14,7 +16,6 @@ export default function ProgramDays() {
 
   const [program, setProgram] = useState<Program | null>(null)
   const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,12 +35,8 @@ export default function ProgramDays() {
       setProgram(prog)
       if (!prog) return
 
-      const [workoutsData, userProgress] = await Promise.all([
-        getWorkoutsForProgram(prog.id),
-        getUserProgress(user.id),
-      ])
+      const workoutsData = await getWorkoutsForProgram(prog.id)
       setWorkouts(workoutsData)
-      setProgress(userProgress)
     } catch (error) {
       console.error('Error loading program days:', error)
     } finally {
@@ -77,8 +74,7 @@ export default function ProgramDays() {
   const days = Array.from({ length: 7 }, (_, i) => {
     const weekdayNumber = i + 1
     const workout = workouts.find(w => w.weekday === weekdayNumber) || null
-    const completed = !!workout && progress.some(p => p.workout_id === workout.id && p.completed)
-    return { weekdayNumber, workout, completed }
+    return { weekdayNumber, workout }
   })
 
   return (
@@ -98,48 +94,26 @@ export default function ProgramDays() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="space-y-4">
-            {days.map((day) => (
-              <div key={day.weekdayNumber} className="flex items-center">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 mr-4">
-                  <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-                    day.completed ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'
-                  }`}>
-                    {day.completed ? (
-                      <Check className="w-6 h-6 text-white" />
-                    ) : (
-                      <Circle className="w-6 h-6 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className={`font-medium ${day.completed ? 'text-green-700' : day.workout ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {WEEKDAY_NAMES[day.weekdayNumber - 1]}
-                      </h4>
-                      <p className={`text-sm ${day.completed ? 'text-green-600' : day.workout ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {day.workout ? day.workout.title : 'Em breve'}
-                      </p>
-                    </div>
-                    {day.workout && (
-                      <button
-                        onClick={() => navigate(`/program/${slug}/day/${day.weekdayNumber}`)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                          day.completed
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        }`}
-                      >
-                        {day.completed ? 'Ver Treino' : 'Iniciar'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4">
+          {days.map((day) => (
+            <Card key={day.weekdayNumber}>
+              <h4 className="font-bold text-gray-900 dark:text-text">
+                {WEEKDAY_NAMES[day.weekdayNumber - 1]}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-text-muted mb-4">
+                {day.workout ? day.workout.title : 'Em breve'}
+              </p>
+              {day.workout && (
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={() => navigate(`/program/${slug}/day/${day.weekdayNumber}`)}
+                >
+                  Ver Treino
+                </Button>
+              )}
+            </Card>
+          ))}
         </div>
       </div>
     </div>
