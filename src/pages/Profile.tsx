@@ -142,7 +142,7 @@ export default function Profile() {
   }, [])
 
   const CONSISTENCY_TARGET = 30
-  const completedDays = progress.filter(p => p.completed).length
+  const completedDays = progress.reduce((sum, p) => sum + (p.completion_count || 0), 0)
 
   useEffect(() => {
     try {
