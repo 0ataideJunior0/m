@@ -56,7 +56,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Header visual */}
         <div className="text-center mb-6">
@@ -66,29 +66,29 @@ export default function Login() {
             className="w-20 h-20 rounded-full mx-auto mb-3 shadow-md object-contain animate-fade-in"
           />
           <div className="text-3xl font-bold text-purple-700">Musa Fit</div>
-          <div className="flex items-center justify-center text-sm text-gray-600 mt-1">
+          <div className="flex items-center justify-center text-sm text-text-muted mt-1">
             <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
             20 Dias de Transformação
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 animate-slide-up">
+        <div className="bg-surface rounded-2xl shadow-xl p-8 animate-slide-up">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Bem-vinda de Volta</h2>
-            <p className="text-gray-600 text-sm">Entre para continuar seu progresso</p>
+            <h2 className="text-2xl font-bold text-text">Bem-vinda de Volta</h2>
+            <p className="text-text-muted text-sm">Entre para continuar seu progresso</p>
           </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-2">Email</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="false" aria-label="Ícone de email">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de email">
                 <Mail className="w-5 h-5" />
               </span>
               <input
@@ -100,7 +100,7 @@ export default function Login() {
                   setEmail(e.target.value)
                   setFieldErrors((f) => ({ ...f, email: undefined }))
                 }}
-                className="w-full pl-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 placeholder="seu@email.com"
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? 'email-error' : undefined}
@@ -112,9 +112,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+            <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-2">Senha</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="false" aria-label="Ícone de senha">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de senha">
                 <Lock className="w-5 h-5" />
               </span>
               <input
@@ -126,7 +126,7 @@ export default function Login() {
                   setPassword(e.target.value)
                   setFieldErrors((f) => ({ ...f, password: undefined }))
                 }}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition tracking-widest"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition tracking-widest"
                 placeholder="Digite sua senha"
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'password-error' : undefined}
@@ -134,7 +134,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition"
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -147,7 +147,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => navigate('/forgot')}
-                className="text-sm text-purple-700 hover:text-purple-800 underline underline-offset-2"
+                className="text-sm text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 underline underline-offset-2"
               >
                 Esqueci minha senha
               </button>
@@ -163,9 +163,9 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="text-center text-sm text-gray-600 mt-6">
+        <div className="text-center text-sm text-text-muted mt-6">
           Não tem uma conta?
-          <Link to="/register" className="text-purple-600 hover:text-purple-700 font-medium ml-1">Cadastre-se</Link>
+          <Link to="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium ml-1">Cadastre-se</Link>
         </div>
       </div>
       </div>
