@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getPrograms } from '../utils/workouts'
-import { Dumbbell, Trophy, Flame, Eye, X, Download } from 'lucide-react'
+import { Trophy, Flame, Eye, X, Download } from 'lucide-react'
 import { Program } from '../types'
 import { getSignedPlanUrl } from '../utils/plans'
 
@@ -86,11 +86,14 @@ export default function Home() {
               <button
                 key={program.id}
                 onClick={() => navigate(`/program/${program.slug}`)}
-                className="bg-surface rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition transform hover:scale-[1.01]"
+                style={{ backgroundImage: `url(/programs/${program.slug}.jpg)` }}
+                className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
               >
-                <Dumbbell className="w-8 h-8 text-purple-600 mb-3" />
-                <div className="text-lg font-bold text-text mb-1">{program.name}</div>
-                <div className="text-sm text-text-muted">Ver os 7 dias da semana</div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Treino</div>
+                  <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">{program.name}</div>
+                </div>
               </button>
             ))}
           </div>
@@ -168,7 +171,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          
+
         </div>
 
         <div className="grid grid-cols-1 gap-4">

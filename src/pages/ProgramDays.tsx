@@ -48,9 +48,9 @@ export default function ProgramDays() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-md mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded-md w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded-md w-24 mx-auto"></div>
         </div>
       </div>
     )
@@ -84,7 +84,7 @@ export default function ProgramDays() {
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate('/home')}
-            className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition"
+            className="mr-4 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
             <ArrowLeft className="w-6 h-6 text-text" />
           </button>
@@ -105,8 +105,8 @@ export default function ProgramDays() {
               </p>
               {day.workout && (
                 <Button
-                  variant="primary"
-                  className="w-full"
+
+                  className="w-full rounded-lg"
                   onClick={() => navigate(`/program/${slug}/day/${day.weekdayNumber}`)}
                 >
                   Ver Treino
