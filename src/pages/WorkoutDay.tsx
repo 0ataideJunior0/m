@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete, getUserProgress } from '../utils/workouts'
-import { Workout as WorkoutType, UserProgress, Program } from '../types'
+import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete } from '../utils/workouts'
+import { Workout as WorkoutType, Program } from '../types'
 import { Check, ArrowLeft, Play, X } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
 import { getExerciseKey } from '../utils/exerciseKeys'
-import { loadLocalProgress, saveLocalProgress, mergeServerLocal } from '../utils/exerciseProgress'
-import { fetchExerciseProgress, upsertExerciseProgress } from '../utils/exerciseProgressRemote'
+import { loadLocalProgress, saveLocalProgress, mergeServerLocal, clearLocalProgress } from '../utils/exerciseProgress'
+import { fetchExerciseProgress, upsertExerciseProgress, resetExerciseProgress } from '../utils/exerciseProgressRemote'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
@@ -18,7 +18,6 @@ export default function WorkoutDay() {
 
   const [program, setProgram] = useState<Program | null>(null)
   const [workout, setWorkout] = useState<WorkoutType | null>(null)
-  const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
@@ -47,13 +46,9 @@ export default function WorkoutDay() {
       setProgram(prog)
       if (!prog) return
 
-      const [workoutData, userProgress] = await Promise.all([
-        getWorkoutByProgramAndWeekday(prog.id, weekdayNumber),
-        getUserProgress(user.id)
-      ])
+      const workoutData = await getWorkoutByProgramAndWeekday(prog.id, weekdayNumber)
 
       setWorkout(workoutData)
-      setProgress(userProgress)
       // Prefetch first exercise video if available
       if (workoutData?.exercises?.[0]?.video) {
         const url = resolveVideoUrl(workoutData.exercises[0].video)
@@ -95,6 +90,11 @@ export default function WorkoutDay() {
     try {
       const success = await markWorkoutComplete(user.id, workout.id)
       if (success) {
+        const resetOk = await resetExerciseProgress(user.id, workout.id)
+        if (!resetOk) {
+          console.error('Workout marked complete but exercise checklist reset failed for workout', workout.id)
+        }
+        clearLocalProgress(user.id, workout.id)
         navigate(`/program/${slug}`)
       }
     } catch (error) {
@@ -104,7 +104,6 @@ export default function WorkoutDay() {
     }
   }
 
-  const isDayCompleted = progress.some(p => p.workout_id === workout?.id && p.completed)
   const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, workout?.id)
   const pendingRef = useRef<{ key: string; completed: boolean } | null>(null)
   const debounceRef = useRef<any>(null)
@@ -116,11 +115,11 @@ export default function WorkoutDay() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-24 mx-auto"></div>
         </div>
       </div>
     )
@@ -128,12 +127,12 @@ export default function WorkoutDay() {
 
   if (!workout) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Treino não encontrado</h2>
+          <h2 className="text-2xl font-bold text-text mb-2">Treino não encontrado</h2>
           <button
             onClick={() => navigate('/home')}
-            className="text-purple-600 hover:text-purple-700"
+            className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
           >
             Voltar à Home
           </button>
@@ -143,29 +142,29 @@ export default function WorkoutDay() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-28">
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate(`/program/${slug}`)}
-            className="mr-4 p-2 rounded-lg hover:bg-white/50 transition"
+            className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <ArrowLeft className="w-6 h-6 text-text" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight break-words">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-text leading-tight break-words">
               {workout.title}
             </h1>
-            <p className="text-gray-600">{weekdayLabel} • {program?.name}</p>
+            <p className="text-text-muted">{weekdayLabel} • {program?.name}</p>
           </div>
         </div>
 
 
         {/* Video geral do treino */}
         {workout.video_url && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <div className="bg-surface rounded-2xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-bold text-text mb-4 flex items-center">
               <Play className="w-5 h-5 mr-2" />
               Vídeo do Treino
             </h2>
@@ -182,7 +181,7 @@ export default function WorkoutDay() {
 
         {/* Progresso exercícios */}
         {workout.exercises?.length ? (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
             {(() => {
               const total = workout.exercises.length
               const done = workout.exercises.reduce((acc, ex, i) => {
@@ -193,10 +192,10 @@ export default function WorkoutDay() {
               return (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-xl font-bold text-gray-900">Progresso dos exercícios</div>
-                    <div className="text-sm text-gray-600">{done}/{total}</div>
+                    <div className="text-xl font-bold text-text">Progresso dos exercícios</div>
+                    <div className="text-sm text-text-muted">{done}/{total}</div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-border rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
                   </div>
                 </>
@@ -206,8 +205,8 @@ export default function WorkoutDay() {
         ) : null}
 
         {/* Exercises */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Exercícios</h2>
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-text mb-6">Exercícios</h2>
           <div className="space-y-4">
             {(() => {
               const ordered = [...workout.exercises]
@@ -227,17 +226,17 @@ export default function WorkoutDay() {
                     j++
                   }
                   cards.push(
-                    <div key={`group-${g}-${i}`} className="border border-purple-300 rounded-lg p-4">
+                    <div key={`group-${g}-${i}`} className="border border-purple-300 dark:border-purple-800 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-purple-700 font-medium">Bi-set</span>
-                        <span className="text-xs text-purple-600">Grupo {g}</span>
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">Bi-set</span>
+                        <span className="text-xs text-purple-600 dark:text-purple-400">Grupo {g}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {groupItems.map((exercise, idx) => {
                           const k = getExerciseKey(exercise, idx)
                           const completed = !!exProgress[k]?.completed
                           return (
-                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 rounded-md p-3">
+                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
                               <ExerciseItem
                                 exercise={exercise}
                                 isCompleted={completed}
@@ -246,17 +245,9 @@ export default function WorkoutDay() {
                                   lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
                                   toggleExercise(exercise, idx)
                                 }}
+                                hasVideo={!!(exercise.video || workout.video_url)}
+                                onWatchVideo={() => openExerciseVideo(exercise)}
                               />
-                              {(exercise.video || workout.video_url) ? (
-                                <button
-                                  onClick={() => openExerciseVideo(exercise)}
-                                  className="mt-2 inline-flex items-center text-purple-700 hover:text-purple-800"
-                                >
-                                  <Play className="w-4 h-4 mr-1" /> Assistir vídeo
-                                </button>
-                              ) : (
-                                <p className="mt-2 text-xs text-gray-500">Vídeo indisponível</p>
-                              )}
                             </div>
                           )
                         })}
@@ -277,6 +268,8 @@ export default function WorkoutDay() {
                         lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
                         toggleExercise(ex, i)
                       }}
+                      hasVideo={!!(ex.video || workout.video_url)}
+                      onWatchVideo={() => openExerciseVideo(ex)}
                     />
                   </div>
                 )
@@ -290,11 +283,11 @@ export default function WorkoutDay() {
         {/* Modal de vídeo por exercício */}
         {modalOpen && videoUrl && (
           <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
-            <div className="bg-white/95 p-3 flex items-center justify-between">
-              <div className="font-semibold text-gray-900">{videoTitle || 'Vídeo do exercício'}</div>
+            <div className="bg-surface/95 p-3 flex items-center justify-between">
+              <div className="font-semibold text-text">{videoTitle || 'Vídeo do exercício'}</div>
               <button
                 onClick={() => { setModalOpen(false); setVideoLoading(false); }}
-                className="ui-hover bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-md flex items-center"
+                className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
                 aria-label="Fechar"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -329,38 +322,24 @@ export default function WorkoutDay() {
         )}
 
         {/* Complete Button */}
-        {!isDayCompleted && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-            <div className="max-w-4xl mx-auto">
-              <button
-                onClick={handleCompleteWorkout}
-                disabled={completing}
-                className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg flex items-center justify-center"
-              >
-                {completing ? (
-                  'Marcando...'
-                ) : (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Marcar como Concluído
-                  </>
-                )}
-              </button>
-            </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-4xl mx-auto">
+            <button
+              onClick={handleCompleteWorkout}
+              disabled={completing}
+              className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg flex items-center justify-center"
+            >
+              {completing ? (
+                'Marcando...'
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Marcar como Concluído
+                </>
+              )}
+            </button>
           </div>
-        )}
-
-        {isDayCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Check className="w-6 h-6 text-green-600 mr-2" />
-              <span className="text-green-800 font-medium">Treino concluído!</span>
-            </div>
-            <p className="text-green-600 text-sm">
-              Parabéns! Você completou o treino de {weekdayLabel}.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -433,9 +412,10 @@ function openExerciseVideoFactory(
   resolveVideoUrl: (raw: string) => string,
 ) {
   return (exercise: WorkoutType['exercises'][number]) => {
-    const title = exercise.exercise
+    const ownVideo = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || ''
+    const title = ownVideo ? exercise.exercise : 'Vídeo do treino'
     setVideoTitle(title)
-    const raw = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || workout?.video_url || ''
+    const raw = ownVideo || workout?.video_url || ''
     if (!raw) {
       alert('Vídeo não disponível para este exercício.')
       return

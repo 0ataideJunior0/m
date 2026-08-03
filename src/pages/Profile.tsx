@@ -142,7 +142,7 @@ export default function Profile() {
   }, [])
 
   const CONSISTENCY_TARGET = 30
-  const completedDays = progress.filter(p => p.completed).length
+  const completedDays = progress.reduce((sum, p) => sum + (p.completion_count || 0), 0)
 
   useEffect(() => {
     try {
@@ -172,13 +172,6 @@ export default function Profile() {
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
-
-  const firstAchievementDate = useMemo(() => {
-    const done = progress.filter(p => p.completed && p.completed_at)
-    if (done.length === 0) return null
-    const sorted = [...done].sort((a, b) => new Date(a.completed_at as string).getTime() - new Date(b.completed_at as string).getTime())
-    return new Date(sorted[0].completed_at as string)
-  }, [progress])
 
   const timeUsingApp = useMemo(() => {
     if (!user) return '—'

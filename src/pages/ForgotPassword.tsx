@@ -27,17 +27,17 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-md mx-auto px-4 py-6">
         <button onClick={() => navigate(-1)} className="mb-4 p-2 rounded-lg hover:bg-black/5">
-          <ChevronLeft className="w-6 h-6 text-gray-800" />
+          <ChevronLeft className="w-6 h-6 text-text" />
         </button>
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Recuperar senha</h1>
-          <p className="text-sm text-gray-600 mb-6">Informe seu email para receber o link de redefinição</p>
+        <div className="bg-surface rounded-2xl shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-text mb-2">Recuperar senha</h1>
+          <p className="text-sm text-text-muted mb-6">Informe seu email para receber o link de redefinição</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true">
                 <Mail className="w-5 h-5" />
               </span>
               <input
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
                 placeholder="seu@email.com"
               />
             </div>
@@ -60,7 +60,7 @@ export default function ForgotPassword() {
             </button>
           </form>
           {message && (
-            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600' : 'text-green-600'}`}>{message}</div>
+            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{message}</div>
           )}
         </div>
       </div>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getProgramBySlug, getWorkoutsForProgram, getUserProgress } from '../utils/workouts'
-import { Program, Workout, UserProgress } from '../types'
-import { Check, Circle, ArrowLeft } from 'lucide-react'
+import { getProgramBySlug, getWorkoutsForProgram } from '../utils/workouts'
+import { Program, Workout } from '../types'
+import { ArrowLeft } from 'lucide-react'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
@@ -14,7 +16,6 @@ export default function ProgramDays() {
 
   const [program, setProgram] = useState<Program | null>(null)
   const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [progress, setProgress] = useState<UserProgress[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,12 +35,8 @@ export default function ProgramDays() {
       setProgram(prog)
       if (!prog) return
 
-      const [workoutsData, userProgress] = await Promise.all([
-        getWorkoutsForProgram(prog.id),
-        getUserProgress(user.id),
-      ])
+      const workoutsData = await getWorkoutsForProgram(prog.id)
       setWorkouts(workoutsData)
-      setProgress(userProgress)
     } catch (error) {
       console.error('Error loading program days:', error)
     } finally {
@@ -49,11 +46,11 @@ export default function ProgramDays() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-24 mx-auto"></div>
         </div>
       </div>
     )
@@ -63,10 +60,10 @@ export default function ProgramDays() {
 
   if (!program) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Treino não encontrado</h2>
-          <button onClick={() => navigate('/home')} className="text-purple-600 hover:text-purple-700">
+          <h2 className="text-2xl font-bold text-text mb-2">Treino não encontrado</h2>
+          <button onClick={() => navigate('/home')} className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300">
             Voltar à Home
           </button>
         </div>
@@ -77,69 +74,46 @@ export default function ProgramDays() {
   const days = Array.from({ length: 7 }, (_, i) => {
     const weekdayNumber = i + 1
     const workout = workouts.find(w => w.weekday === weekdayNumber) || null
-    const completed = !!workout && progress.some(p => p.workout_id === workout.id && p.completed)
-    return { weekdayNumber, workout, completed }
+    return { weekdayNumber, workout }
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate('/home')}
-            className="mr-4 p-2 rounded-lg hover:bg-white/50 transition"
+            className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <ArrowLeft className="w-6 h-6 text-text" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{program.name}</h1>
-            <p className="text-gray-600">Escolha o dia da semana</p>
+            <h1 className="text-3xl font-bold text-text">{program.name}</h1>
+            <p className="text-text-muted">Escolha o dia da semana</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="space-y-4">
-            {days.map((day) => (
-              <div key={day.weekdayNumber} className="flex items-center">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 mr-4">
-                  <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-                    day.completed ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'
-                  }`}>
-                    {day.completed ? (
-                      <Check className="w-6 h-6 text-white" />
-                    ) : (
-                      <Circle className="w-6 h-6 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className={`font-medium ${day.completed ? 'text-green-700' : day.workout ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {WEEKDAY_NAMES[day.weekdayNumber - 1]}
-                      </h4>
-                      <p className={`text-sm ${day.completed ? 'text-green-600' : day.workout ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {day.workout ? day.workout.title : 'Em breve'}
-                      </p>
-                    </div>
-                    {day.workout && (
-                      <button
-                        onClick={() => navigate(`/program/${slug}/day/${day.weekdayNumber}`)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                          day.completed
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        }`}
-                      >
-                        {day.completed ? 'Ver Treino' : 'Iniciar'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4">
+          {days.map((day) => (
+            <Card key={day.weekdayNumber}>
+              <h4 className="font-bold text-text">
+                {WEEKDAY_NAMES[day.weekdayNumber - 1]}
+              </h4>
+              <p className="text-sm text-text-muted mb-4">
+                {day.workout ? day.workout.title : 'Em breve'}
+              </p>
+              {day.workout && (
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={() => navigate(`/program/${slug}/day/${day.weekdayNumber}`)}
+                >
+                  Ver Treino
+                </Button>
+              )}
+            </Card>
+          ))}
         </div>
       </div>
     </div>

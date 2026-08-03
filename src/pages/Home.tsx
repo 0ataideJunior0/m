@@ -45,11 +45,11 @@ export default function Home() {
 
   if (isLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-purple-200 dark:bg-purple-900/40 rounded w-24 mx-auto"></div>
         </div>
       </div>
     )
@@ -58,7 +58,7 @@ export default function Home() {
   if (!isAuthenticated || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-24">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center">
@@ -73,35 +73,35 @@ export default function Home() {
               }}
             />
             <div>
-              <div className="text-2xl font-bold text-purple-800">Musa Fit</div>
-              <div className="text-sm text-gray-600">Olá, {displayName}!</div>
+              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">Musa Fit</div>
+              <div className="text-sm text-text-muted">Olá, {displayName}!</div>
             </div>
           </div>
         </div>
 
-        <div id="treinos" className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-xl font-bold text-gray-900 mb-4">Treinos</div>
+        <div id="treinos" className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
+          <div className="text-xl font-bold text-text mb-4">Treinos</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {programs.map((program) => (
               <button
                 key={program.id}
                 onClick={() => navigate(`/program/${program.slug}`)}
-                className="bg-white rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition transform hover:scale-[1.01]"
+                className="bg-surface rounded-2xl shadow-md p-5 text-left hover:shadow-lg transition transform hover:scale-[1.01]"
               >
                 <Dumbbell className="w-8 h-8 text-purple-600 mb-3" />
-                <div className="text-lg font-bold text-gray-900 mb-1">{program.name}</div>
-                <div className="text-sm text-gray-600">Ver os 7 dias da semana</div>
+                <div className="text-lg font-bold text-text mb-1">{program.name}</div>
+                <div className="text-sm text-text-muted">Ver os 7 dias da semana</div>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center mb-2">
             <Flame className="w-5 h-5 text-red-500 mr-2" />
-            <div className="text-xl font-bold text-gray-900">HIIT Opcional • Gordura + Abdômen</div>
+            <div className="text-xl font-bold text-text">HIIT Opcional • Gordura + Abdômen</div>
           </div>
-          <p className="text-gray-700">30 minutos no formato 40s ON / 20s OFF. Ideal para quem deseja acelerar a queima de gordura.</p>
+          <p className="text-text-muted">30 minutos no formato 40s ON / 20s OFF. Ideal para quem deseja acelerar a queima de gordura.</p>
           <button
             onClick={() => navigate('/hiit')}
             className="mt-4 w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-xl shadow-md hover:from-red-600 hover:to-pink-600 transition transform hover:scale-[1.01] active:scale-95"
@@ -111,12 +111,12 @@ export default function Home() {
         </div>
 
         {/* Planos Alimentares */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-xl font-bold text-gray-900 mb-2">Planos Alimentares (PDF)</div>
+        <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
+          <div className="text-xl font-bold text-text mb-2">Planos Alimentares (PDF)</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
-              <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1">Ganho de Massa Muscular</div>
-              <p className="text-sm text-gray-600 mb-4">Plano com foco em hipertrofia e superávit calórico.</p>
+            <div className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+              <div className="text-lg md:text-xl font-semibold text-text mb-1">Ganho de Massa Muscular</div>
+              <p className="text-sm text-text-muted mb-4">Plano com foco em hipertrofia e superávit calórico.</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
@@ -133,7 +133,7 @@ export default function Home() {
                       setOpening(null)
                     }
                   }}
-                  className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
+                  className="ui-hover bg-surface border border-border text-text px-4 py-2 rounded-lg flex items-center"
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   {opening === 'mass_gain' ? 'Abrindo...' : 'Visualizar'}
@@ -141,9 +141,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
-              <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1">Perda de Gordura</div>
-              <p className="text-sm text-gray-600 mb-4">Plano com foco em déficit calórico e definição.</p>
+            <div className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+              <div className="text-lg md:text-xl font-semibold text-text mb-1">Perda de Gordura</div>
+              <p className="text-sm text-text-muted mb-4">Plano com foco em déficit calórico e definição.</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
@@ -160,7 +160,7 @@ export default function Home() {
                       setOpening(null)
                     }
                   }}
-                  className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg flex items-center"
+                  className="ui-hover bg-surface border border-border text-text px-4 py-2 rounded-lg flex items-center"
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   {opening === 'fat_loss' ? 'Abrindo...' : 'Visualizar'}
@@ -174,17 +174,17 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-4">
           <button
             onClick={() => navigate('/profile')}
-            className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition text-center flex items-center justify-center space-x-2"
+            className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition text-center flex items-center justify-center space-x-2"
           >
-            <Trophy className="w-5 h-5 text-gray-700" />
-            <span className="font-medium text-gray-900">Meu Perfil</span>
+            <Trophy className="w-5 h-5 text-text-muted" />
+            <span className="font-medium text-text">Meu Perfil</span>
           </button>
         </div>
       </div>
       {modalUrl && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
-          <div className="bg-white/95 p-3 flex items-center justify-between">
-            <div className="font-semibold text-gray-900">{modalTitle || 'Visualização do PDF'}</div>
+          <div className="bg-surface/95 p-3 flex items-center justify-between">
+            <div className="font-semibold text-text">{modalTitle || 'Visualização do PDF'}</div>
             <div className="flex items-center gap-2">
               <a
                 href={modalUrl}
@@ -197,7 +197,7 @@ export default function Home() {
               </a>
               <button
                 onClick={() => { setModalUrl(null); setPreviewLoading(false); }}
-                className="ui-hover bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-md flex items-center"
+                className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
                 aria-label="Fechar"
               >
                 <X className="w-4 h-4 mr-1" />
