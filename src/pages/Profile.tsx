@@ -203,7 +203,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
           <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
@@ -214,60 +214,60 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg animate-fade-in">
       <div className="max-w-4xl mx-auto px-4 pt-6 pb-40">
         <div className="flex items-center mb-4">
-          <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-black/5">
-            <ChevronLeft className="w-6 h-6 text-gray-800" />
+          <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+            <ChevronLeft className="w-6 h-6 text-gray-800 dark:text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex-1">Meu Perfil</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-text flex-1">Meu Perfil</h1>
           <button
             onClick={toggleTheme}
             aria-label="Alternar tema claro/escuro"
-            className="p-2 rounded-lg hover:bg-black/5"
+            className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-gray-800" /> : <Moon className="w-5 h-5 text-gray-800" />}
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-gray-800 dark:text-text" /> : <Moon className="w-5 h-5 text-gray-800 dark:text-text" />}
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 text-center animate-slide-up" style={{ transform: `translateY(${offsetY}px)` }}>
+        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-8 mb-6 text-center animate-slide-up" style={{ transform: `translateY(${offsetY}px)` }}>
           <div className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center shadow-md">
             <span className="text-white text-2xl md:text-3xl font-bold">{initials}</span>
           </div>
-          <div className="font-bold text-xl text-gray-900 mb-1">{displayName}</div>
-          <div className="text-gray-600">{user?.email}</div>
+          <div className="font-bold text-xl text-gray-900 dark:text-text mb-1">{displayName}</div>
+          <div className="text-gray-600 dark:text-text-muted">{user?.email}</div>
         </div>
 
         {/* Progresso geral */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
+        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
           <div className="flex items-center mb-2">
             <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span id="progress-title" className="text-lg font-bold text-gray-900">Seu progresso</span>
+            <span id="progress-title" className="text-lg font-bold text-gray-900 dark:text-text">Seu progresso</span>
           </div>
-          <p className="text-sm text-gray-600 mb-4">Acompanhe seus treinos concluídos e conquistas</p>
+          <p className="text-sm text-gray-600 dark:text-text-muted mb-4">Acompanhe seus treinos concluídos e conquistas</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl p-6 text-center bg-purple-50 transition-transform duration-300 hover:scale-[1.02]">
+            <div className="rounded-xl p-6 text-center bg-purple-50 dark:bg-purple-950/30 transition-transform duration-300 hover:scale-[1.02]">
               <Calendar className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-              <div id="progress-bar-fill" className="text-4xl font-bold text-gray-900">{completedDays}</div>
-              <div className="text-gray-600 text-sm">Treinos Concluídos</div>
+              <div id="progress-bar-fill" className="text-4xl font-bold text-gray-900 dark:text-text">{completedDays}</div>
+              <div className="text-gray-600 dark:text-text-muted text-sm">Treinos Concluídos</div>
             </div>
 
-            <div className="rounded-xl p-6 text-center bg-green-50 transition-transform duration-300 hover:scale-[1.02]">
+            <div className="rounded-xl p-6 text-center bg-green-50 dark:bg-green-950/30 transition-transform duration-300 hover:scale-[1.02]">
               <Sparkles className="w-6 h-6 text-green-500 mx-auto mb-2" />
-              <div className="text-4xl font-bold text-gray-900">{timeUsingApp}</div>
-              <div className="text-gray-600 text-sm">Usando o Musa Fit</div>
+              <div className="text-4xl font-bold text-gray-900 dark:text-text">{timeUsingApp}</div>
+              <div className="text-gray-600 dark:text-text-muted text-sm">Usando o Musa Fit</div>
             </div>
           </div>
         </div>
 
         {/* Conquistas por categorias */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
+        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
           <div className="flex items-center mb-2">
             <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span className="text-lg font-bold text-gray-900">Conquistas</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-text">Conquistas</span>
           </div>
-          <p className="text-sm text-gray-600 mb-6">Categorias: Frequência, Desempenho, Consistência</p>
+          <p className="text-sm text-gray-600 dark:text-text-muted mb-6">Categorias: Frequência, Desempenho, Consistência</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { name: 'Frequência', target: 10 },
@@ -277,16 +277,16 @@ export default function Profile() {
               const partial = Math.min(completedDays, c.target)
               const pct = Math.round((partial / c.target) * 100)
               return (
-                <button key={c.name} className="rounded-xl p-4 bg-gray-50 text-left hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label={`Detalhes da conquista ${c.name}`}
+                <button key={c.name} className="rounded-xl p-4 bg-gray-50 dark:bg-white/5 text-left hover:bg-gray-100 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label={`Detalhes da conquista ${c.name}`}
                   onClick={() => alert(`${c.name}: ${pct}% concluído`) }>
                   <div className="flex items-center mb-2">
                     <Target className="w-5 h-5 text-purple-600 mr-2" />
-                    <span className="font-medium text-gray-900">{c.name}</span>
+                    <span className="font-medium text-gray-900 dark:text-text">{c.name}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${pct}%` }}></div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-600">{partial}/{c.target}</div>
+                  <div className="mt-2 text-xs text-gray-600 dark:text-text-muted">{partial}/{c.target}</div>
                 </button>
               )
             })}
@@ -409,7 +409,7 @@ export default function Profile() {
         {isAdmin && (
           <button
             onClick={() => navigate('/admin')}
-            className="w-full bg-white rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 hover:bg-purple-50 font-medium"
+            className="w-full bg-white dark:bg-surface rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-medium"
           >
             <Shield className="w-5 h-5 mr-2" /> Painel Admin
           </button>
