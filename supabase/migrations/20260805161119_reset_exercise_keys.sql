@@ -1,0 +1,35 @@
+-- Fase 2 do docs/PLANO-CORRECOES.md — descarte do checklist em formato antigo.
+--
+-- CONTEXTO
+-- As chaves de exercício mudaram de formato para corrigir uma colisão: dois
+-- exercícios de mesmo nome no mesmo treino produziam a mesma exercise_key,
+-- então marcar um marcava o outro na tela e o índice único
+-- user_ex_progress_unique (user_id, workout_id, exercise_key) consolidava os
+-- dois no servidor — silenciosamente, sem aviso para a usuária.
+--
+--   formato antigo:  agachamento          (só o slug do nome)
+--   formato novo:    0-agachamento        (índice posicional + slug)
+--
+-- POR QUE DESCARTAR EM VEZ DE REMAPEAR
+-- Não há como remapear com segurança: a chave antiga não carrega a posição,
+-- que é justamente a informação que faltava. Qualquer tentativa de inferir a
+-- posição pelo nome erra exatamente nos casos homônimos que motivaram a
+-- correção.
+--
+-- CUSTO
+-- Esta tabela guarda apenas o checklist do treino EM ANDAMENTO — ela é zerada
+-- a cada conclusão de treino por resetExerciseProgress(). O histórico
+-- permanente vive em user_progress.completion_count e não é tocado aqui.
+-- O custo máximo é um treino parcialmente marcado por usuária.
+--
+-- VOLUME VERIFICADO (diagnóstico de 2026-08-05, docs/diagnostico-schema-2026-08.md)
+-- 8 linhas no total, distribuídas entre 20 usuárias. O plano mandava escalar
+-- ao humano se o volume fosse materialmente alto; não é.
+--
+-- OBSERVAÇÃO
+-- Como os dois formatos nunca colidem entre si (o novo sempre começa com
+-- dígito + hífen), as linhas antigas ficariam inertes mesmo sem este DELETE —
+-- elas simplesmente deixariam de ser lidas. Isto é higiene, não correção.
+-- O comportamento visível para a usuária é o mesmo com ou sem esta migration.
+
+DELETE FROM public.user_exercise_progress;

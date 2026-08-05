@@ -219,10 +219,16 @@ export default function WorkoutDay() {
                 const ex = finalOrder[i]
                 if (ex.group) {
                   const g = ex.group
-                  const groupItems: typeof workout.exercises = [ex]
+                  // Carrega o índice em finalOrder junto de cada item. A chave do
+                  // exercício precisa do índice GLOBAL — usar o índice local ao
+                  // grupo (0, 1) fazia dois bi-sets de mesmo rótulo produzirem
+                  // chaves idênticas.
+                  const groupItems: { exercise: typeof ex; globalIndex: number }[] = [
+                    { exercise: ex, globalIndex: i },
+                  ]
                   let j = i + 1
                   while (j < finalOrder.length && finalOrder[j].group === g) {
-                    groupItems.push(finalOrder[j])
+                    groupItems.push({ exercise: finalOrder[j], globalIndex: j })
                     j++
                   }
                   cards.push(
@@ -232,18 +238,18 @@ export default function WorkoutDay() {
                         <span className="text-xs text-purple-600 dark:text-purple-400">Grupo {g}</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {groupItems.map((exercise, idx) => {
-                          const k = getExerciseKey(exercise, idx)
+                        {groupItems.map(({ exercise, globalIndex }) => {
+                          const k = getExerciseKey(exercise, globalIndex)
                           const completed = !!exProgress[k]?.completed
                           return (
-                            <div key={`pair-${g}-${idx}`} className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
+                            <div key={`pair-${g}-${globalIndex}`} className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
                               <ExerciseItem
                                 exercise={exercise}
                                 isCompleted={completed}
                                 onToggle={() => {
-                                  const k = getExerciseKey(exercise, idx)
+                                  const k = getExerciseKey(exercise, globalIndex)
                                   lastActionRef.current = { key: k, prev: !!exProgress[k]?.completed }
-                                  toggleExercise(exercise, idx)
+                                  toggleExercise(exercise, globalIndex)
                                 }}
                                 hasVideo={!!(exercise.video || workout.video_url)}
                                 onWatchVideo={() => openExerciseVideo(exercise)}
