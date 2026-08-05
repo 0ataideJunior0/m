@@ -91,6 +91,18 @@ SELECT
 
 ### Tarefa 0.2 — Interpretar o resultado
 
+> ✅ **CONCLUÍDA em 2026-08-05 — resultado: CENÁRIO A.** Ver [diagnostico-schema-2026-08.md](diagnostico-schema-2026-08.md).
+>
+> A finalize **já estava aplicada em produção** — o arquivo de migration só nunca teve o aviso "NÃO RODAR AINDA" removido do cabeçalho. `day_number` está ausente das três tabelas, `workouts_program_weekday_unique` existe, e as cinco contagens de integridade deram zero.
+>
+> **Consequências imediatas:**
+> - **Tarefa 4.0 é desnecessária** — existia apenas para o cenário B. Fase 4 fica reduzida a 4.1 e 4.2
+> - **Tarefa 2.4 liberada sem escalar** — `user_exercise_progress` tem só 8 linhas, longe de "materialmente alta"
+> - **Tarefa 4.1 com pré-condição já satisfeita** — `completed = true AND completion_count = 0` retorna 0
+> - **Tarefa 6.1 confirmada e ampliada** — `workouts`, `programs` **e `pdf_plans`** têm `USING (true)`
+>
+> Execução feita via MCP Supabase em `--read-only`, não pelo fluxo manual descrito abaixo.
+
 O humano roda o script e cola a saída. O agente então grava `docs/diagnostico-schema-2026-08.md` classificando o estado em um de três cenários:
 
 | Cenário | Sinal | Consequência |
@@ -329,6 +341,10 @@ Adicionar teste em `src/__tests__/markWorkoutComplete.test.ts`: o payload do ups
 **Executar apenas conforme o cenário confirmado na Fase 0.** Todas as migrations desta fase são escritas como arquivo e entregues; o agente não executa nada no banco.
 
 ### Tarefa 4.0 — [Somente cenário B] Aplicar a finalize com verificação prévia
+
+> ⛔ **CANCELADA — não executar.** O diagnóstico de 2026-08-05 confirmou o **cenário A**: a finalize já está aplicada. Esta tarefa existia apenas para o cenário B.
+>
+> **Ação de limpeza no lugar dela:** remover o aviso *"Passo 4/4 (finalização — NÃO RODAR AINDA)"* do cabeçalho de `20260720160000_programs_constraints_finalize.sql` e substituir por uma nota de que foi aplicada em produção (data desconhecida, constatada em 2026-08-05). O aviso desatualizado é o que fez esta fase inteira parecer necessária.
 
 A migration `20260720160000_..._finalize.sql` assume nomes de constraint pela convenção padrão do Postgres. O item 2 do diagnóstico da Fase 0 traz os **nomes reais**. Reescrever a migration substituindo os nomes assumidos pelos confirmados, mantendo todos os `IF EXISTS`.
 

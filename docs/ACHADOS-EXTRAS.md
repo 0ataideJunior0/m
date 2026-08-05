@@ -44,3 +44,45 @@ O projeto está em `OneDrive/Documentos/musaApp`. O OneDrive sincroniza `node_mo
 A chave de exercício corrigida na Fase 2 passa a depender da **posição** do exercício no array. Editar a lista no painel admin (inserir, remover ou reordenar) desloca os índices e invalida as chaves já salvas.
 
 A solução definitiva é dar a cada exercício um `id` estável dentro do JSONB, gerado na criação e nunca reutilizado. Exige migração de dados e mudança no editor do admin — **declarado fora de escopo pelo próprio plano**.
+
+---
+
+## Fase 0 (Tarefa 0.2 — diagnóstico do schema)
+
+Todos encontrados ao interpretar o diagnóstico. Ver [diagnostico-schema-2026-08.md](diagnostico-schema-2026-08.md). Nenhum bloqueia qualquer fase.
+
+### A-5 — Índice redundante em `workouts`
+
+Existem dois índices sobre exatamente as mesmas colunas:
+
+```
+workouts_program_weekday_unique  UNIQUE btree (program_id, weekday)
+idx_workouts_program_weekday            btree (program_id, weekday)
+```
+
+O índice único atende sozinho qualquer consulta que o comum atenderia. O segundo é peso morto — custa escrita e armazenamento sem oferecer nada. Veio de `perf_indexes.sql` (anterior à finalize, que depois criou o único).
+
+Impacto hoje é desprezível: a tabela tem 8 linhas. Vale limpar junto da Fase 4, quando já se estiver mexendo em schema. `DROP INDEX public.idx_workouts_program_weekday;` é seguro e reversível.
+
+### A-6 — Funções `SECURITY DEFINER` expostas via RPC
+
+O linter de segurança do Supabase aponta duas funções chamáveis pelo papel `anon` através de `/rest/v1/rpc/`:
+
+| Função | Risco real |
+|---|---|
+| `is_admin()` | Baixo. Chamada sem sessão, `auth.uid()` é nulo e ela retorna falso. Não escala privilégio, mas expõe a existência do mecanismo |
+| `handle_new_user()` | Baixo. É uma trigger function; chamada fora de contexto de trigger não tem `NEW` e falha. Ainda assim, não deveria estar no schema exposto |
+
+Correção: `REVOKE EXECUTE ... FROM anon, authenticated`. Fica melhor na Fase 6, junto do trabalho de policies. Referência: <https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable>
+
+### A-7 — Proteção contra senhas vazadas desligada
+
+O Supabase Auth pode barrar senhas conhecidamente comprometidas checando contra o HaveIBeenPwned. Está desativado neste projeto.
+
+É um toggle no painel (Auth → Policies), **não é mudança de código**. Decisão do humano. <https://supabase.com/docs/guides/auth/password-security>
+
+### A-8 — `workouts` não tem policy de `DELETE`
+
+Há policies de `SELECT` (aberta), `INSERT` e `UPDATE` (ambas via `is_admin()`), mas nenhuma de `DELETE`. Com RLS ligada, isso significa que **ninguém consegue deletar treinos** — nem admin.
+
+Hoje é inofensivo: `grep -rn "\.delete()" src/pages/admin/` não encontra nada, o painel não oferece essa ação. Vira problema no dia em que alguém adicionar o botão de excluir treino e ele falhar em silêncio. Registrar como pré-requisito dessa feature futura.
