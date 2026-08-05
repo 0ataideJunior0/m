@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, Suspense, lazy } from 'react'
+import { useEffect, useRef, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
 import { getIsAdmin } from './utils/profile'
 import PageTransition from './components/PageTransition'
 import ThemeInit from './components/ThemeInit'
 import Layout from './components/Layout'
-import { persistCurrentSession, tryRestoreSession, clearPersistedSession } from './utils/authPersist'
 import RequireAdmin from './components/RequireAdmin'
 import RequireOnboarding from './components/RequireOnboarding'
 
@@ -27,10 +26,26 @@ const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 
+// Limpeza one-shot de chaves órfãs deixadas por mecanismos removidos:
+// - musa_auth_enc: cache de sessão cifrado (utils/authPersist.ts, removido
+//   na Fase 3 — o Supabase já persiste sessão nativamente via
+//   persistSession/autoRefreshToken, e a "criptografia" derivava a chave do
+//   próprio refresh token que estava protegendo, sem adicionar garantia)
+// - csrf_token: token de CSRF que nenhum servidor validava (utils/security.ts,
+//   removido na Fase 3 — o Supabase autentica por Bearer token, não por
+//   cookie, então CSRF não se aplica a essa arquitetura)
+function cleanupOrphanedStorage() {
+  try { localStorage.removeItem('musa_auth_enc') } catch {}
+  try { sessionStorage.removeItem('csrf_token') } catch {}
+}
+
 function App() {
   const { setUser, setIsLoading, setIsAdmin, setNeedsOnboarding } = useAuthStore()
+  const lastResetAt = useRef(0)
 
   useEffect(() => {
+    cleanupOrphanedStorage()
+
     const checkAuth = async () => {
       try {
         const user = await getCurrentUser()
@@ -38,26 +53,10 @@ function App() {
           setUser(user)
           setIsAdmin(await getIsAdmin(user.id))
           setNeedsOnboarding(!user.onboardingCompletedAt)
-          await persistCurrentSession()
         } else {
-          const restored = await tryRestoreSession()
-          if (restored) {
-            const u = await getCurrentUser()
-            if (u) {
-              setUser(u)
-              setIsAdmin(await getIsAdmin(u.id))
-              setNeedsOnboarding(!u.onboardingCompletedAt)
-              await persistCurrentSession()
-            } else {
-              setUser(null)
-              setIsAdmin(false)
-              setNeedsOnboarding(false)
-            }
-          } else {
-            setUser(null)
-            setIsAdmin(false)
-            setNeedsOnboarding(false)
-          }
+          setUser(null)
+          setIsAdmin(false)
+          setNeedsOnboarding(false)
         }
       } catch (error) {
         console.error('Auth check failed:', error)
@@ -75,12 +74,15 @@ function App() {
   useEffect(() => {
     let timer: any
     const INACTIVITY_MS = 30 * 60 * 1000
+    const RESET_THROTTLE_MS = 30 * 1000
     const reset = () => {
+      const now = Date.now()
+      if (now - lastResetAt.current < RESET_THROTTLE_MS) return
+      lastResetAt.current = now
       if (timer) clearTimeout(timer)
       timer = setTimeout(async () => {
         try {
           await (await import('./utils/auth')).signOut()
-          clearPersistedSession()
         } finally {
           useAuthStore.getState().logout()
         }
