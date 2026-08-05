@@ -165,10 +165,8 @@ export default function Profile() {
         load()
       }
     }
-    const id = setInterval(() => load(), 30000)
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
-      clearInterval(id)
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
