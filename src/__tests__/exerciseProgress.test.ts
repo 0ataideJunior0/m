@@ -1,13 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { getExerciseKey } from '../utils/exerciseKeys'
 import { mergeServerLocal, loadLocalProgress, saveLocalProgress, clearLocalProgress } from '../utils/exerciseProgress'
 
-describe('exercise keys', () => {
-  it('normaliza nomes com acentos e espaços', () => {
-    expect(getExerciseKey({ exercise: 'Agachamento Livre', reps: '12' })).toBe('agachamento-livre')
-    expect(getExerciseKey({ exercise: 'Búlgaro', reps: '12', group: 'A' })).toBe('a-bulgaro')
-  })
-})
+// A cobertura de getExerciseKey saiu daqui e virou src/__tests__/exerciseKeys.test.ts,
+// que testa normalização, unicidade posicional e estabilidade em profundidade.
 
 describe('merge server/local', () => {
   it('server tem prioridade sobre local', () => {
@@ -32,6 +27,26 @@ describe('clearLocalProgress', () => {
     clearLocalProgress('u1', 'w1')
 
     expect(loadLocalProgress('u1', 'w1')).toEqual({})
+  })
+})
+
+describe('cache local após a mudança de formato de chave', () => {
+  it('ignora o cache gravado no formato antigo de chave', () => {
+    // Cache de uma versão anterior do app, com chaves sem índice
+    // posicional. Lê-lo marcaria os exercícios errados na tela, então o
+    // prefixo do localStorage foi versionado para que ele seja ignorado.
+    localStorage.setItem(
+      'exerciseProgress:u1:w1',
+      JSON.stringify({ prancha: { completed: true, ts: 1 } }),
+    )
+
+    expect(loadLocalProgress('u1', 'w1')).toEqual({})
+  })
+
+  it('lê normalmente o cache gravado no formato novo', () => {
+    saveLocalProgress('u2', 'w2', { '0-prancha': { completed: true, ts: 1 } })
+
+    expect(loadLocalProgress('u2', 'w2')).toEqual({ '0-prancha': { completed: true, ts: 1 } })
   })
 })
 

@@ -45,6 +45,18 @@ A chave de exercício corrigida na Fase 2 passa a depender da **posição** do e
 
 A solução definitiva é dar a cada exercício um `id` estável dentro do JSONB, gerado na criação e nunca reutilizado. Exige migração de dados e mudança no editor do admin — **declarado fora de escopo pelo próprio plano**.
 
+### A-9 — `npm run check` não cobre os testes
+
+A Tarefa 2.2 previa que tornar `index` obrigatório faria *"o compilador apontar todos os call sites que hoje omitem"*. Isso **só vale para `src/`**: o `tsconfig.json` traz
+
+```json
+"exclude": ["src/__tests__"]
+```
+
+O typecheck passou limpo mesmo com `exerciseProgress.test.ts` ainda chamando `getExerciseKey({...})` sem índice. Quem pegou o problema foi o vitest, em tempo de execução.
+
+Consequência geral: **erros de tipo dentro de testes nunca são detectados**. Um teste pode chamar uma função com a assinatura errada e só quebrar ao rodar — ou pior, passar por acidente. Incluir `src/__tests__` no typecheck provavelmente revelaria outros casos, mas é mudança de configuração com alcance além da Fase 2.
+
 ---
 
 ## Fase 0 (Tarefa 0.2 — diagnóstico do schema)

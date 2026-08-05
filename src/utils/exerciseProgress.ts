@@ -1,6 +1,10 @@
 type ProgressMap = Record<string, { completed: boolean; ts: number }>
 
-const LS_PREFIX = 'exerciseProgress:'
+// Versionado em v2 quando as chaves de exercício passaram a incluir o índice
+// posicional (ver getExerciseKey). O cache gravado no formato antigo marcaria
+// os exercícios errados na tela; bumpar o prefixo faz o navegador simplesmente
+// ignorá-lo, sem migração e sem lixo ativo.
+const LS_PREFIX = 'exerciseProgress:v2:'
 
 export function loadLocalProgress(userId: string, workoutId: string): ProgressMap {
   const key = `${LS_PREFIX}${userId}:${workoutId}`
