@@ -14,6 +14,11 @@ dist-ssr
 .env
 supabase/.temp
 
+# Claude Code local config — pode conter tokens (ex.: SUPABASE_ACCESS_TOKEN).
+# .mcp.json É versionado de propósito: ele só referencia ${VARIAVEIS},
+# nunca os valores.
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
