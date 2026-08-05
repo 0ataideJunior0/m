@@ -5,17 +5,17 @@ import { useEffect, useMemo, useState } from 'react'
 export default function HIIT() {
   const navigate = useNavigate()
   const DEFAULT_URL = 'https://www.youtube.com/watch?v=oEPvWztSfk4'
-  const [videoUrl, setVideoUrl] = useState<string>('')
   const [loading, setLoading] = useState(true)
-  const [embedReady, setEmbedReady] = useState(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('musa_hiit_url')
-      setVideoUrl((saved !== null ? saved : DEFAULT_URL) || '')
-    } catch {
-      setVideoUrl(DEFAULT_URL)
-    }
+    // Limpeza one-shot de um resíduo: uma UI já removida gravava aqui,
+    // inclusive '' ao "desvincular" o vídeo. Como essa página nunca
+    // ofereceu (e nunca vai oferecer) forma de reconfigurar isso, a leitura
+    // condicionada a essa chave deixava a tela permanentemente sem vídeo
+    // pra quem tinha o resíduo — sem nenhum caminho de recuperação pela
+    // interface. Editar o vídeo de HIIT é responsabilidade da tabela
+    // `workouts`, não do localStorage de cada dispositivo.
+    try { localStorage.removeItem('musa_hiit_url') } catch {}
   }, [])
 
   const meta = useMemo(() => ({
@@ -25,14 +25,13 @@ export default function HIIT() {
   }), [])
 
   const embedUrl = useMemo(() => {
-    if (!videoUrl) return ''
-    const u = new URL(videoUrl)
+    const u = new URL(DEFAULT_URL)
     const id = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''
     if (!id) return ''
     const base = `https://www.youtube.com/embed/${id}`
     const params = new URLSearchParams({ rel: '0', modestbranding: '1' })
     return `${base}?${params.toString()}`
-  }, [videoUrl])
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
@@ -64,15 +63,13 @@ export default function HIIT() {
                 title="HIIT Principal"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                onLoad={() => { setLoading(false); setEmbedReady(true) }}
+                onLoad={() => setLoading(false)}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center text-white">
                   <p className="font-semibold mb-2">Vídeo não disponível</p>
-                  {videoUrl && (
-                    <a href={videoUrl} target="_blank" rel="noopener" className="underline">Abrir no YouTube</a>
-                  )}
+                  <a href={DEFAULT_URL} target="_blank" rel="noopener" className="underline">Abrir no YouTube</a>
                 </div>
               </div>
             )}
@@ -82,37 +79,7 @@ export default function HIIT() {
               </div>
             )}
           </div>
-         {/*  <div className="mt-3 flex items-center gap-2">
-            <a href={videoUrl || '#'} target="_blank" rel="noopener" className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg">Assistir no YouTube</a>
-            <button
-              onClick={() => {
-                try { localStorage.setItem('musa_hiit_url', '') } catch {}
-                setVideoUrl('')
-                setLoading(false)
-                setEmbedReady(false)
-              }}
-              className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg"
-            >
-              {' ${__web_page_1__.unlinkText} '}
-            </button>
-            {!embedReady && !videoUrl && (
-              <button
-                onClick={() => {
-                  try { localStorage.setItem('musa_hiit_url', DEFAULT_URL) } catch {}
-                  setVideoUrl(DEFAULT_URL)
-                  setLoading(true)
-                }}
-                className="ui-hover bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded-lg"
-              >
-                Restaurar link padrão
-              </button>
-            )}
-          </div> */}
         </div>
-
-        
-
-        
       </div>
     </div>
   )
