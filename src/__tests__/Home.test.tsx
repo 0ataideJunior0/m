@@ -1,15 +1,23 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import Dashboard from '../pages/Dashboard'
+import Home from '../pages/Home'
 import { MemoryRouter } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+
+vi.mock('../utils/workouts', () => ({
+  getPrograms: vi.fn(async () => []),
+}))
+
+vi.mock('../utils/plans', () => ({
+  getSignedPlanUrl: vi.fn(async () => ({ url: '', meta: { title: '' } })),
+}))
 
 beforeEach(() => {
   useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false })
 })
 
-describe('Dashboard welcome', () => {
-  it('exibe boas-vindas com username quando disponível', () => {
+describe('Home welcome', () => {
+  it('exibe boas-vindas com username quando disponível', async () => {
     useAuthStore.setState({
       user: {
         id: 'u1',
@@ -24,15 +32,14 @@ describe('Dashboard welcome', () => {
 
     render(
       <MemoryRouter>
-        <Dashboard />
+        <Home />
       </MemoryRouter>
     )
 
-    expect(screen.getByText(/olá, maria!/i)).toBeInTheDocument()
-    expect(screen.queryByText(/não encontramos seu nome/i)).toBeNull()
+    expect(await screen.findByText(/olá, maria!/i)).toBeInTheDocument()
   })
 
-  it('usa email como fallback e mostra aviso quando username ausente', () => {
+  it('usa o prefixo do e-mail como fallback quando não há username', async () => {
     useAuthStore.setState({
       user: {
         id: 'u1',
@@ -46,12 +53,10 @@ describe('Dashboard welcome', () => {
 
     render(
       <MemoryRouter>
-        <Dashboard />
+        <Home />
       </MemoryRouter>
     )
 
-    expect(screen.getByText(/olá, maria!/i)).toBeInTheDocument()
-    expect(screen.getByText(/não encontramos seu nome/i)).toBeInTheDocument()
+    expect(await screen.findByText(/olá, maria!/i)).toBeInTheDocument()
   })
 })
-
