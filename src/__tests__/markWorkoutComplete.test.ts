@@ -17,7 +17,7 @@ vi.mock('../lib/supabase', () => ({
 import { markWorkoutComplete } from '../utils/workouts'
 
 describe('markWorkoutComplete', () => {
-  it('começa o contador em 1 na primeira conclusão e grava completed=false', async () => {
+  it('começa o contador em 1 na primeira conclusão', async () => {
     maybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
     upsertMock.mockResolvedValueOnce({ error: null })
 
@@ -29,7 +29,6 @@ describe('markWorkoutComplete', () => {
       expect.objectContaining({
         user_id: 'u1',
         workout_id: 'w1',
-        completed: false,
         completion_count: 1,
       }),
       { onConflict: 'user_id,workout_id' }
@@ -43,7 +42,7 @@ describe('markWorkoutComplete', () => {
     await markWorkoutComplete('u1', 'w1')
 
     expect(upsertMock).toHaveBeenCalledWith(
-      expect.objectContaining({ completion_count: 4, completed: false }),
+      expect.objectContaining({ completion_count: 4 }),
       { onConflict: 'user_id,workout_id' }
     )
   })
@@ -54,5 +53,20 @@ describe('markWorkoutComplete', () => {
 
     const result = await markWorkoutComplete('u1', 'w1')
     expect(result).toBe(false)
+  })
+
+  it('não grava a chave completed no payload do upsert', async () => {
+    // `completed` foi substituído por `completion_count` na migration
+    // 20260727090000, mas continuava sendo escrito com valor incorreto
+    // (sempre false, inclusive para quem já tinha completed=true). A coluna
+    // ainda existe no banco por ora — o drop entra na Fase 4 — mas nada deve
+    // mais escrever nela.
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
+    upsertMock.mockResolvedValueOnce({ error: null })
+
+    await markWorkoutComplete('u1', 'w1')
+
+    const payload = upsertMock.mock.calls[0][0]
+    expect(payload).not.toHaveProperty('completed')
   })
 })

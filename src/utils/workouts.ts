@@ -131,7 +131,6 @@ export const markWorkoutComplete = async (userId: string, workoutId: string): Pr
       .upsert({
         user_id: userId,
         workout_id: workoutId,
-        completed: false,
         completed_at: new Date().toISOString(),
         completion_count: nextCount,
       }, { onConflict: 'user_id,workout_id' })
