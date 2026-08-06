@@ -14,6 +14,8 @@ import Modal from '../components/ui/Modal'
 import FormField from '../components/ui/FormField'
 import Input from '../components/ui/Input'
 import ChoiceGroup from '../components/ui/ChoiceGroup'
+import Toast from '../components/ui/Toast'
+import { useToast } from '../hooks/useToast'
 
 const SEX_LABELS: Record<Sex, string> = { feminino: 'Feminino', masculino: 'Masculino' }
 const GOAL_LABELS: Record<Goal, string> = { emagrecer: 'Emagrecer', ganhar_musculo: 'Ganhar músculo', manter: 'Manter' }
@@ -35,6 +37,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [clicked, setClicked] = useState(false)
   const [offsetY, setOffsetY] = useState(0)
+  const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
   const [activeModal, setActiveModal] = useState<'personal' | 'goal' | 'measures' | null>(null)
   const [savingModal, setSavingModal] = useState(false)
@@ -276,7 +279,7 @@ export default function Profile() {
               const pct = Math.round((partial / c.target) * 100)
               return (
                 <button key={c.name} className="rounded-xl p-4 bg-gray-50 dark:bg-white/5 text-left hover:bg-gray-100 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label={`Detalhes da conquista ${c.name}`}
-                  onClick={() => alert(`${c.name}: ${pct}% concluído`) }>
+                  onClick={() => showToast(`${c.name}: ${pct}% concluído`, 'success')}>
                   <div className="flex items-center mb-2">
                     <Target className="w-5 h-5 text-purple-600 mr-2" />
                     <span className="font-medium text-gray-900 dark:text-text">{c.name}</span>
@@ -429,6 +432,7 @@ export default function Profile() {
           </div>
         </div>
       </div>
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
 }

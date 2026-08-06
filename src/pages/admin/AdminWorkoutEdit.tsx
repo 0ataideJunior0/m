@@ -4,6 +4,8 @@ import { ArrowLeft, Trash2, ArrowUp, ArrowDown, Plus } from 'lucide-react'
 import { getProgramBySlug, getWorkoutByProgramAndWeekday } from '../../utils/workouts'
 import { updateWorkoutAdmin, createWorkoutAdmin } from '../../utils/adminWorkouts'
 import { Exercise, Program } from '../../types'
+import { useToast } from '../../hooks/useToast'
+import Toast from '../../components/ui/Toast'
 
 const EMPTY_EXERCISE: Exercise = { exercise: '', reps: '', sets: '', note: '', group: '', type: 'normal', video: '' }
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
@@ -20,6 +22,7 @@ export default function AdminWorkoutEdit() {
   const [title, setTitle] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
   const [exercises, setExercises] = useState<Exercise[]>([])
+  const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
   useEffect(() => {
     load()
@@ -84,9 +87,9 @@ export default function AdminWorkoutEdit() {
         const created = await createWorkoutAdmin(program.id, weekdayNumber, { title, video_url: videoUrl, exercises })
         setWorkoutId(created.id)
       }
-      alert('Treino salvo com sucesso!')
+      showToast('Treino salvo com sucesso!', 'success')
     } catch (error: any) {
-      alert(`Erro ao salvar treino. ${error?.message || ''}`)
+      showToast(`Erro ao salvar treino. ${error?.message || ''}`)
     } finally {
       setSaving(false)
     }
@@ -234,6 +237,7 @@ export default function AdminWorkoutEdit() {
           </div>
         </div>
       </div>
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
 }

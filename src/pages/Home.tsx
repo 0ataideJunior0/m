@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getPrograms } from '../utils/workouts'
 import { Trophy, Flame, Eye, X, Download } from 'lucide-react'
 import { Program } from '../types'
 import { getSignedPlanUrl } from '../utils/plans'
+import { useDialogA11y } from '../hooks/useDialogA11y'
+import { useToast } from '../hooks/useToast'
+import Toast from '../components/ui/Toast'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -17,6 +20,11 @@ export default function Home() {
   const [modalTitle, setModalTitle] = useState<string>('')
   const [logoSrc, setLogoSrc] = useState('/logo.png')
   const logoCandidates = useMemo(() => ['/logo.png', '/logo.svg', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
+  const { toast, show: showToast, dismiss: dismissToast } = useToast()
+  const pdfDialogRef = useRef<HTMLDivElement>(null)
+  const pdfCloseButtonRef = useRef<HTMLButtonElement>(null)
+  const closePdfModal = () => { setModalUrl(null); setPreviewLoading(false) }
+  useDialogA11y(!!modalUrl, closePdfModal, pdfDialogRef, pdfCloseButtonRef)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -131,7 +139,7 @@ export default function Home() {
                       setPreviewLoading(true)
                     } catch (e: any) {
                       const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      alert(`Pré-visualização indisponível no momento. ${msg}`)
+                      showToast(`Pré-visualização indisponível no momento. ${msg}`)
                     } finally {
                       setOpening(null)
                     }
@@ -158,7 +166,7 @@ export default function Home() {
                       setPreviewLoading(true)
                     } catch (e: any) {
                       const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      alert(`Pré-visualização indisponível no momento. ${msg}`)
+                      showToast(`Pré-visualização indisponível no momento. ${msg}`)
                     } finally {
                       setOpening(null)
                     }
@@ -185,7 +193,7 @@ export default function Home() {
         </div>
       </div>
       {modalUrl && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
+        <div ref={pdfDialogRef} role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
           <div className="bg-surface/95 p-3 flex items-center justify-between">
             <div className="font-semibold text-text">{modalTitle || 'Visualização do PDF'}</div>
             <div className="flex items-center gap-2">
@@ -199,7 +207,8 @@ export default function Home() {
                 Baixar
               </a>
               <button
-                onClick={() => { setModalUrl(null); setPreviewLoading(false); }}
+                ref={pdfCloseButtonRef}
+                onClick={closePdfModal}
                 className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
                 aria-label="Fechar"
               >
@@ -223,6 +232,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
 }

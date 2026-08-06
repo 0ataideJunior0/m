@@ -8,6 +8,9 @@ import ExerciseItem from '../components/ExerciseItem'
 import { getExerciseKey } from '../utils/exerciseKeys'
 import { loadLocalProgress, saveLocalProgress, mergeServerLocal, clearLocalProgress } from '../utils/exerciseProgress'
 import { fetchExerciseProgress, upsertExerciseProgress, resetExerciseProgress } from '../utils/exerciseProgressRemote'
+import { useDialogA11y } from '../hooks/useDialogA11y'
+import { useToast } from '../hooks/useToast'
+import Toast from '../components/ui/Toast'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
@@ -25,6 +28,10 @@ export default function WorkoutDay() {
   const [modalOpen, setModalOpen] = useState(false)
   const [videoLoading, setVideoLoading] = useState(false)
   const videoCache = useState<Map<string, string>>(() => new Map())[0]
+  const { toast, show: showToast, dismiss: dismissToast } = useToast()
+  const videoDialogRef = useRef<HTMLDivElement>(null)
+  const closeVideoModal = () => { setModalOpen(false); setVideoLoading(false) }
+  useDialogA11y(modalOpen && !!videoUrl, closeVideoModal, videoDialogRef)
 
   const weekdayNumber = parseInt(weekday || '1')
   const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
@@ -81,6 +88,7 @@ export default function WorkoutDay() {
     setModalOpen,
     setVideoLoading,
     resolveVideoUrl,
+    showToast,
   )
 
   const handleCompleteWorkout = async () => {
@@ -288,11 +296,11 @@ export default function WorkoutDay() {
 
         {/* Modal de vídeo por exercício */}
         {modalOpen && videoUrl && (
-          <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
+          <div ref={videoDialogRef} role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
             <div className="bg-surface/95 p-3 flex items-center justify-between">
               <div className="font-semibold text-text">{videoTitle || 'Vídeo do exercício'}</div>
               <button
-                onClick={() => { setModalOpen(false); setVideoLoading(false); }}
+                onClick={closeVideoModal}
                 className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
                 aria-label="Fechar"
               >
@@ -347,6 +355,7 @@ export default function WorkoutDay() {
           </div>
         </div>
       </div>
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
 }
@@ -416,6 +425,7 @@ function openExerciseVideoFactory(
   setModalOpen: (b: boolean) => void,
   setVideoLoading: (b: boolean) => void,
   resolveVideoUrl: (raw: string) => string,
+  showToast: (message: string, variant?: 'success' | 'error') => void,
 ) {
   return (exercise: WorkoutType['exercises'][number]) => {
     const ownVideo = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || ''
@@ -423,7 +433,7 @@ function openExerciseVideoFactory(
     setVideoTitle(title)
     const raw = ownVideo || workout?.video_url || ''
     if (!raw) {
-      alert('Vídeo não disponível para este exercício.')
+      showToast('Vídeo não disponível para este exercício.')
       return
     }
     const cached = videoCache.get(title)
