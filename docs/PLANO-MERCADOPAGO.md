@@ -169,7 +169,7 @@ As duas funções **estavam sendo executadas** — os logs de erro que motivaram
 - [x] Ambiente: **sandbox** primeiro (Access Token de teste já obtido e gravado em `.env.local`). Produção é passo separado — ver abaixo
 - [ ] `MERCADOPAGO_WEBHOOK_SECRET` — **não existe ainda**. Nenhum webhook está registrado nesta aplicação (`notifications_history` veio vazio). Só existe segredo depois de rodar `save_webhook` (tool do MCP) com uma URL pública — isso acontece dentro da M1.3, junto com o deploy mínimo necessário para receber a notificação real
 - [ ] Qual é o **e-mail da conta MP vendedora**? — ainda seu, para confirmar
-- [ ] **E-mail pagador**: já existe um usuário de teste comprador sobrevivente de julho (User ID `3549381055`, username `TESTUSER233439973195359974`). **Senha mascarada** — para revelar ou trocar: painel → aplicação → Contas de teste → ⋮ → "Gerar nova senha"
+- [x] **E-mail pagador**: usuário de teste comprador sobrevivente de julho (User ID `3549381055`). **E-mail confirmado:** `test_user_233439973195359974@testuser.com` — formato `test_user_<username>@testuser.com`
 
 > ⚠️ **Produção não está ativa.** O painel do MP pede para completar a configuração da aplicação antes de liberar credenciais de produção (`APP_USR-...` de produção). Isso é bloqueante só para a M5 (ativação real), não para a M1 (spike em sandbox).
 
@@ -188,7 +188,7 @@ As duas funções **estavam sendo executadas** — os logs de erro que motivaram
 
 **Critério de aceite:** checklist respondido; aplicação confirmada ✅; ambiente sandbox pronto ✅; as duas identidades definidas (vendedor ✅ auto-gerado, comprador ✅ existente com senha pendente de reset); `.env.local` atualizado com as credenciais novas ✅.
 
-**Falta para fechar o checkpoint:** confirmar que Assinaturas está habilitado (só se confirma na M1.1) e resetar a senha do comprador de teste (só bloqueia o passo manual da M1.2, não a escrita dos scripts).
+> ✅ **CHECKPOINT M0 fechado em 2026-08-08.** Assinaturas confirmado habilitado (a M1.1 rodou e criou a preapproval com sucesso — critério indireto que o próprio checklist previa). Senha do comprador de teste resetada pelo humano; e-mail confirmado.
 
 > ⛔ **CHECKPOINT M0**
 
@@ -231,6 +231,8 @@ Imprimir o objeto de erro **completo** em caso de falha — `JSON.stringify(err,
 5. só então suspeitar de conta sem Assinaturas habilitado
 
 **Critério de aceite:** o script imprime uma `init_point` válida, e abrir essa URL no navegador mostra a tela de autorização do Mercado Pago com R$ 59,90/mês.
+
+> ✅ **FECHADA em 2026-08-08.** `init_point` gerada (`https://www.mercadopago.com.br/subscriptions/checkout?preapproval_id=bc85fa0e36b2452bbd8da7af419cea70`), `status: "pending"`. Payer (`3549381055`) ≠ collector (`3549380673`) — a hipótese A não bloqueou a topologia real que o produto vai usar. Detalhes e anomalias observadas (ex.: `payer_email` volta vazio na resposta) em `docs/spike-mp-log.md`. Falta abrir a URL e autorizar manualmente — Tarefa M1.2.
 
 ### Tarefa M1.2 — Fazer a assinatura chegar a `authorized`
 
