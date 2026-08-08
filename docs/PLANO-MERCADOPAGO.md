@@ -30,6 +30,53 @@ Seis ajustes foram aplicados:
 
 ---
 
+## Registro de revisão 2 (2026-08-08, com MCP do Mercado Pago conectado)
+
+O MCP oficial do Mercado Pago (`mcp.mercadopago.com`, OAuth) foi conectado e usado para inspecionar a conta real e a documentação oficial. Dois resultados mudam o plano de forma material.
+
+### 🔴 A hipótese B do §5 (M1.3) está DERRUBADA — e a correção proposta quebraria o webhook
+
+A hipótese anterior era: `dataId` vem vazio porque o código só lê da query, e a correção seria `dataId || req.body?.data?.id`.
+
+**Isso está errado.** Verificação em duas camadas:
+
+1. **Documentação oficial** (via `search_documentation`), implementação de referência oficial em JS:
+   ```js
+   const parts = [];
+   if (dataId)     parts.push(`id:${dataId}`);      // ← condicional
+   if (xRequestId) parts.push(`request-id:${xRequestId}`);
+   parts.push(`ts:${ts}`);
+   ```
+   Quando `data.id` não vem na notificação, o segmento `id:` **não vira vazio — é omitido inteiro** do manifesto.
+
+2. **Código-fonte do SDK `mercadopago`, na versão exata que julho usava** (`3.2.0`, confirmada contra `git show 3db7a4f:package.json`, publicada 30/06, antes do revert de 20/07):
+   ```js
+   function buildManifest(dataId, requestId, ts) {
+       const parts = [];
+       if (dataId) parts.push(`id:${dataId}`);
+       if (requestId) parts.push(`request-id:${requestId}`);
+       parts.push(`ts:${ts}`);
+       return parts.join(';') + ';';
+   }
+   ```
+   Testado empiricamente contra essa versão instalada: `dataId=''` **valida corretamente** (o SDK normaliza para omitir o segmento, igual à doc). Um `dataId` presente onde o MP calculou sem ele **quebra** a assinatura (`SignatureMismatch`).
+
+**Conclusão:** o `|| ''` do código antigo era inofensivo — o SDK já tratava isso do jeito documentado, em julho. A correção `|| req.body?.data?.id` do plano **adicionaria** um segmento que o Mercado Pago não usou no cálculo, transformando uma validação correta em falha.
+
+**O blocker B continua sem causa conhecida.** A M1.3 muda de enquadramento: não é mais "aplicar a correção do `dataId`", é investigar do zero, sabendo que o SDK está correto. Hipóteses que continuam de pé: segredo de ambiente errado, algo na entrega da requisição pelo Vercel, ou o problema de plataforma que a sessão de julho já suspeitava.
+
+### M0 — progresso real via MCP
+
+- ✅ **Aplicação já existe:** `musaapp`, AppID `6869259522625752`, Owner ID `331578155`
+- ⚠️ **Credenciais de produção não ativadas** — o painel pede completar a configuração da aplicação antes de liberá-las (`https://www.mercadopago.com.br/developers/panel/app/6869259522625752`)
+- ✅ **Credenciais de sandbox obtidas e gravadas em `.env.local`** (`MERCADOPAGO_ACCESS_TOKEN` atualizado; valores não repetidos aqui nem no chat, por instrução da própria tool)
+- ❌ **Nenhum webhook configurado hoje** — `notifications_history` retornou vazio, pedindo para cadastrar via `save_webhook`. `MERCADOPAGO_WEBHOOK_SECRET` foi limpo do `.env.local` (o antigo é da aplicação excluída); só existe segredo novo depois de registrar o webhook
+- ✅ **Vendedor de teste**: auto-gerado junto da aplicação (seller user ID `3549380673`) — é o dono das credenciais de sandbox
+- ✅ **Comprador de teste já existe**, sobrevivente da tentativa de julho: User ID `3549381055`, username `TESTUSER233439973195359974`, perfil `buyer`, ativo. **Senha mascarada** — `create_test_user` não recria nem revela senha de usuário já existente. Para obter/resetar: painel → aplicação → Contas de teste → ⋮ → "Gerar nova senha". Não bloqueia a M1.1 (que só precisa do e-mail como argumento de linha de comando), só bloqueia o passo manual de autorização da M1.2
+- ⚠️ `quality_checklist` não responde à pergunta "Assinaturas está habilitado" — devolve uma lista genérica de boas práticas de Checkout. A confirmação real do produto Assinaturas continua sendo o próprio resultado da M1.1
+
+---
+
 ## 1. Contexto — isto já foi construído e abandonado
 
 Entre 18/07 e 20/07/2026, a integração foi implementada por inteiro, **mergeada no `main`**, e depois revertida. Ela **não vive num branch paralelo**: `origin/feature/mercadopago-billing` é ancestral do `main`. O código está no histórico, removido pelo commit `9d8ff44 revert: roll back Mercado Pago billing integration`. Há **71 commits** desde então.
@@ -115,12 +162,16 @@ As duas funções **estavam sendo executadas** — os logs de erro que motivaram
 
 ### Checklist para o humano responder por escrito
 
-- [ ] Aplicação criada em *Suas integrações*. Qual o **Application ID**?
-- [ ] A conta tem o produto **Assinaturas** (preapproval) habilitado para essa aplicação?
-- [ ] Vai usar credenciais de **teste** (`TEST-...`) ou de **produção** (`APP_USR-...`) na Fase M1? Escolher explicitamente
-- [ ] `MERCADOPAGO_WEBHOOK_SECRET` copiado da tela de **Webhooks** da aplicação nova, do **mesmo ambiente** escolhido acima
-- [ ] Qual é o **e-mail da conta MP vendedora**?
-- [ ] **Qual e-mail será usado como pagador no teste?** Precisa ser diferente do de cima — ver o bloco abaixo
+> ✅ **Progresso via MCP em 2026-08-08** — ver Registro de revisão 2 no topo do documento para os detalhes completos.
+
+- [x] Aplicação criada em *Suas integrações*. **AppID `6869259522625752`** (`musaapp`), confirmado via `application_list`
+- [ ] A conta tem o produto **Assinaturas** (preapproval) habilitado para essa aplicação? — **não confirmado ainda**; `quality_checklist` não responde isso. Fica para a M1.1: se o `PreApproval.create` funcionar, está habilitado
+- [x] Ambiente: **sandbox** primeiro (Access Token de teste já obtido e gravado em `.env.local`). Produção é passo separado — ver abaixo
+- [ ] `MERCADOPAGO_WEBHOOK_SECRET` — **não existe ainda**. Nenhum webhook está registrado nesta aplicação (`notifications_history` veio vazio). Só existe segredo depois de rodar `save_webhook` (tool do MCP) com uma URL pública — isso acontece dentro da M1.3, junto com o deploy mínimo necessário para receber a notificação real
+- [ ] Qual é o **e-mail da conta MP vendedora**? — ainda seu, para confirmar
+- [ ] **E-mail pagador**: já existe um usuário de teste comprador sobrevivente de julho (User ID `3549381055`, username `TESTUSER233439973195359974`). **Senha mascarada** — para revelar ou trocar: painel → aplicação → Contas de teste → ⋮ → "Gerar nova senha"
+
+> ⚠️ **Produção não está ativa.** O painel do MP pede para completar a configuração da aplicação antes de liberar credenciais de produção (`APP_USR-...` de produção). Isso é bloqueante só para a M5 (ativação real), não para a M1 (spike em sandbox).
 
 > 🔴 **Hipótese principal do blocker A.** O Mercado Pago **rejeita uma assinatura em que o pagador é o próprio vendedor**. O `create-subscription.ts` usa `payer_email: user.email` — o e-mail da conta Supabase logada. Se os testes de julho foram feitos com a sua própria conta (o `.env.local` e os commits são da mesma pessoa), o MP recusaria de forma legítima, e a mensagem de erro do SDK não deixa isso óbvio.
 >
@@ -135,7 +186,9 @@ As duas funções **estavam sendo executadas** — os logs de erro que motivaram
 >
 > Sem isso, a M5 passo 2 é impossível de executar como escrita.
 
-**Critério de aceite:** checklist respondido; aplicação nova criada; ambiente escolhido; as duas identidades definidas; `.env.local` atualizado com as credenciais novas.
+**Critério de aceite:** checklist respondido; aplicação confirmada ✅; ambiente sandbox pronto ✅; as duas identidades definidas (vendedor ✅ auto-gerado, comprador ✅ existente com senha pendente de reset); `.env.local` atualizado com as credenciais novas ✅.
+
+**Falta para fechar o checkpoint:** confirmar que Assinaturas está habilitado (só se confirma na M1.1) e resetar a senha do comprador de teste (só bloqueia o passo manual da M1.2, não a escrita dos scripts).
 
 > ⛔ **CHECKPOINT M0**
 
@@ -193,25 +246,22 @@ O blocker B. `api/mercadopago-webhook.ts` (versão `3db7a4f`) monta o manifesto 
 const dataId = (req.query['data.id'] as string) || ''
 ```
 
-> 🔴 **Hipótese principal do blocker B: `dataId` chega vazio.** Em eventos de assinatura (`subscription_preapproval`), o Mercado Pago envia o id **no corpo** (`body.data.id`), e o query param `data.id` pode não existir. Com `dataId = ''`, o manifesto `id:;request-id:...;ts:...;` é montado errado e o HMAC **nunca** vai bater — exatamente o sintoma dos commits `09a9ed5` e `39268df`, em que o autor já estava descobrindo divergências entre body e query para o *tipo* do evento, mas não aplicou o mesmo raciocínio ao *id*.
+> ❌ **Hipótese anterior DERRUBADA em 2026-08-08 (Registro de revisão 2).** A suspeita era que `dataId` chegava vazio e a correção seria `dataId || req.body?.data?.id`. Verificado contra a documentação oficial (via MCP) **e** contra o código-fonte do SDK `mercadopago@3.2.0` — a versão exata que julho usava: o `buildManifest` do SDK já **omite o segmento `id:` inteiro** quando `dataId` é vazio, que é exatamente o comportamento documentado. Testado empiricamente: `dataId=''` valida corretamente contra essa versão. **A correção proposta quebraria uma assinatura calculada certo**, adicionando um segmento que o Mercado Pago não usou no HMAC.
+>
+> O `dataId = ''` do código antigo **não era o bug**. O blocker B continua sem causa conhecida — esta tarefa parte do zero, não de uma correção pronta para aplicar.
 
-Correção a implementar e validar no spike:
+Hipóteses a investigar, nesta ordem (nenhuma delas é "aplicar `|| req.body?.data?.id`" — isso está descartado):
 
-```ts
-const dataId = (req.query['data.id'] as string) || req.body?.data?.id || ''
-```
+1. **Segredo do ambiente errado.** Teste e produção têm segredos diferentes, e a aplicação atual não tem webhook configurado ainda (M0) — o primeiro segredo real só existe depois de rodar `save_webhook`
+2. **`x-signature` mal parseado** — é `ts=...,v1=...` separado por vírgula; o SDK já faz esse parse corretamente, mas vale descartar uma implementação manual paralela
+3. **ids alfanuméricos precisam ser minúsculos no manifesto** — o SDK também já normaliza isso
+4. **o simulador do painel do MP assina de forma diferente de uma notificação real** — a memória do projeto registra exatamente essa assimetria em julho (simulador validava, notificação real não). **Validar com notificação real, nunca só com o simulador**
+5. **Algo específico do runtime do Vercel** na forma como o body chega à function (parsing, encoding) antes do SDK processar
 
-Manifesto (confirmar contra a documentação vigente antes de codificar):
-`id:{dataId};request-id:{x-request-id};ts:{ts};` → HMAC-SHA256 com o segredo → comparar com `v1` do header `x-signature`.
+Manifesto de referência (para instrumentar o log de diagnóstico, não para reescrever manualmente — o SDK já implementa isso):
+`id:{dataId};request-id:{x-request-id};ts:{ts};`, omitindo qualquer segmento cujo valor esteja ausente → HMAC-SHA256 com o segredo → comparar com `v1` do header `x-signature`.
 
-Hipóteses secundárias, na ordem:
-
-1. segredo do ambiente errado (teste vs produção são diferentes)
-2. `x-signature` mal parseado — é `ts=...,v1=...` separado por vírgula
-3. ids alfanuméricos precisam ser minúsculos no manifesto
-4. o simulador do painel do MP assina de forma diferente de uma notificação real — **validar com notificação real, nunca só com o simulador**
-
-Método: `scripts/spike-mp/03-verify-signature.mjs` recebe `x-signature`, `x-request-id` e `data.id` capturados de uma notificação **real** (dos logs do Vercel) e testa as variações de manifesto até bater. Assim você depura o HMAC offline, sem esperar a próxima notificação a cada tentativa.
+Método: `scripts/spike-mp/03-verify-signature.mjs` recebe `x-signature`, `x-request-id` e `data.id` capturados de uma notificação **real** (dos logs do Vercel) e roda o `WebhookSignatureValidator` do SDK contra eles, logando o manifesto exato que o SDK monta internamente. Assim você depura offline, sem esperar a próxima notificação a cada tentativa.
 
 **Critério de aceite:** uma notificação real do Mercado Pago passa na validação de assinatura. Registrar o manifesto vencedor em `docs/spike-mp-log.md`.
 
@@ -506,7 +556,8 @@ Como CPF, você não emite nota fiscal de serviço com facilidade. Cobrança rec
 
 | Risco | Probabilidade | Mitigação |
 |---|---|---|
-| Blockers A e B não se resolverem | **média** — mataram a tentativa anterior | Fase M1 isolada; se falhar, para antes de gastar as fases M2–M5 |
+| Blocker A não se resolver | **média** — matou a tentativa anterior | Fase M1.1 isolada; se falhar, para antes de gastar as fases M2–M5 |
+| Blocker B não se resolver | **alta** — matou a tentativa anterior, e a causa suposta (Registro de revisão 1) foi **derrubada** em 2026-08-08. Investigação volta à estaca zero, sem hipótese forte | Fase M1.3 isolada, com o SDK como fonte de verdade em vez de reescrever o manifesto manualmente; se falhar, reavaliar o gateway de verdade — não é mais "só corrigir uma linha" |
 | Perda das usuárias atuais no corte | **alta** | M6.1; reconsiderar `is_legacy` |
 | Webhook de cancelamento se perde → acesso vitalício grátis | média, e **invisível** | M4.1 (validade em `has_active_subscription()`) + query 2 da M6.2 |
 | Webhook de autorização se perde → pagou sem acesso | média | query 1 da M6.2 |
@@ -524,7 +575,7 @@ M0  Criar aplicação MP nova + 2 identidades   ← humano, ~20 min
 M1  Spike isolado (blockers A e B)            ← DECIDE O PROJETO
       ├── M1.1 criar preapproval  (payer_email ≠ vendedor: testar PRIMEIRO)
       ├── M1.2 chegar a authorized (coletar formato real de status/datas)
-      └── M1.3 validar assinatura webhook (dataId do body, não da query)
+      └── M1.3 validar assinatura webhook (causa desconhecida — hipótese antiga derrubada, ver spike-mp-log.md)
 M2  Recuperar backend do histórico + corrigir
 M3  Reancorar UI no app atual
 M4  Migrations do gate (sem aplicar)
