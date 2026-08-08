@@ -11,6 +11,9 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
       }
+    },
+    "mercadopago": {
+      "url": "https://mcp.mercadopago.com/mcp"
     }
   }
 }
