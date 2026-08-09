@@ -67,7 +67,60 @@ Usado o e-mail real do usuário de teste comprador (User ID `3549381055`), obtid
 
 - **Hipótese A não se confirmou como bloqueio nesta configuração.** `payer_id` (3549381055) e `collector_id` (3549380673) são contas distintas, e a criação funcionou sem erro. Isso não prova que payer=collector seria aceito (não foi testado, e não precisa ser — a topologia real de produção sempre terá pagador ≠ vendedor) — prova que o caminho **real** que o produto vai usar funciona.
 - `BACK_URL` continua o placeholder (`SUBSTITUA-PELO-DOMINIO-VERCEL`). Isso é aceitável para a M1.2: ao autorizar, o navegador vai tentar redirecionar para um domínio que não existe e mostrar erro — **isso é esperado e não invalida a autorização**. O estado real da assinatura se confirma consultando por id via `02-get-preapproval.mjs`, não pelo redirect.
+
+---
+
+## 2026-08-08 — 02-get-preapproval.mjs (após autorização manual — M1.2)
+
+**Comando:** `node --env-file=.env.local scripts/spike-mp/02-get-preapproval.mjs bc85fa0e36b2452bbd8da7af419cea70`
+
+Autorizado manualmente pela `init_point`, logado como o comprador de teste, pagando com o saldo fictício da conta (não cartão).
+
+**Resultado:** ✅ sucesso — `status` mudou de `"pending"` para `"authorized"`.
+
+**Campos confirmados (agora com significado real, não placeholder):**
+
+| Campo | Valor |
+|---|---|
+| `status` | `"authorized"` |
+| `next_payment_date` | `"2026-09-08T18:41:05.000-04:00"` — **exatamente 1 mês** depois de `date_created` (08/08 → 08/09), confirma `auto_recurring.frequency: 1, frequency_type: 'months'` funcionando como esperado |
+| `payment_method_id` | `"account_money"` — pago com saldo da conta MP, não cartão (esperado, dado o saldo fictício de 1000 na criação do usuário de teste) |
+| `last_modified` | atualizado para o momento da autorização |
+| `external_reference` | mantido |
+| `payer_email` | continua vazio na resposta — confirma que é anomalia persistente da API, não só do momento da criação |
+
+**Aprendizado:**
+
+- **M1.2 fechada.** O ciclo completo criar → autorizar → consultar funciona de ponta a ponta em sandbox.
+- **Consequência para a M4.1:** a defesa de "assinatura que expira" (checar `next_payment_date`) tem dado real pra se basear — o campo é confiável e previsível **depois** de `authorized`, não antes.
+- **Consequência para a M1.3:** o webhook de autorização deveria ter disparado agora — mas **nenhuma notificação foi recebida**, porque a aplicação não tem webhook configurado ainda (confirmado na M0: `notifications_history` veio vazio, sem `MERCADOPAGO_WEBHOOK_SECRET`). A M1.3 precisa de um endpoint HTTPS público real para receber e capturar essa notificação — isso não estava resolvido no plano original, que assumia "logs do Vercel" já existindo neste ponto. Decisão pendente: expor um endpoint mínimo (tunnel local, ou deploy isolado de uma única function) sem recuperar o app inteiro.
 - **M1.1 fechada.** Critério de aceite do plano satisfeito: script imprimiu `init_point` válida.
+
+---
+
+## 2026-08-08 — M1.3, tentativa 1: nenhuma notificação chegou
+
+**Setup:**
+1. Function isolada `api/spike-webhook-echo.js` (só loga headers/body, responde 200), deploy **preview** (não produção) em `musa20-j5wetpiwo-ataide-juniors-projects.vercel.app`
+2. Preview protegido pelo "Vercel Authentication" por padrão — testado e confirmado que bloquearia até a notificação do MP (`401 Protected deployment`)
+3. Contornado com "Protection Bypass for Automation" do Vercel (secret gerado pelo humano no painel), embutido na URL: `?x-vercel-protection-bypass=<secret>` — padrão oficialmente documentado pro Vercel pra webhooks de terceiros (Stripe, Slack, etc.)
+4. Bypass testado via curl direto: `200 OK`
+5. Webhook registrado via `save_webhook` (MCP), `callback_sandbox` apontando pra essa URL, tópico `subscription_preapproval`. Confirmado sucesso, segredo novo gerado (só os 7 primeiros caracteres visíveis: `d7f2a54...`)
+6. Disparado `scripts/spike-mp/04-cancel-preapproval.mjs bc85fa0e36b2452bbd8da7af419cea70` (script novo, auxiliar — ver arquivo) → `status: "cancelled"` confirmado
+
+**Resultado:** ❌ **nenhuma notificação chegou** em ~5 minutos de monitoramento (8 checagens a cada ~25s via `vercel logs --expand`, procurando pelo header `x-signature`). `notifications_history` (MCP) continua reportando "nenhuma notificação configurada", mesmo com o `save_webhook` tendo confirmado sucesso — suspeita de que essa tool só enxerga `callback` (produção), não `callback_sandbox`.
+
+**O que isso NÃO prova:**
+- Não prova que a hipótese B (agora sem candidato) está certa ou errada — nenhuma notificação chegou pra testar assinatura nenhuma.
+- Não prova que o endpoint está inacessível — o bypass foi testado e funcionou para uma chamada manual.
+
+**Hipóteses pra próxima tentativa, nesta ordem:**
+1. **Delay maior que 5 minutos é normal em sandbox.** Fila de notificação de teste pode ter prioridade mais baixa. Ação: checar de novo mais tarde (30min+), sem novo gatilho.
+2. **Cancelamento pode não ser um evento notificado**, mesmo estando no escopo do tópico `subscription_preapproval` — talvez só criação/autorização disparem. Ação: criar uma preapproval nova (com o webhook já registrado desta vez) e autorizar, em vez de cancelar uma existente.
+3. **`notifications_history` (MCP) só refletir callback de produção** — o registro em sandbox pode estar correto mas invisível pra essa tool específica de diagnóstico. Ação: conferir a tela de Webhooks no painel do MP diretamente (mostra tentativas de entrega, sucesso/falha), não só via MCP.
+4. **Algo na URL com query string embutida** (`?x-vercel-protection-bypass=...`) pode não estar sendo aceito como está pelo sistema de disparo de notificação do MP, mesmo o `save_webhook` tendo aceitado salvar. Ação: testar variação sem bypass, com proteção de preview desligada no painel (opção que foi preterida antes, mas vira plano B aqui).
+
+**Não fechado.** Decisão de como prosseguir pendente do humano.
 
 <!-- Próxima entrada:
 

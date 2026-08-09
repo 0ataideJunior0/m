@@ -240,6 +240,10 @@ Autorizar manualmente pelo `init_point` (com usuário de teste ou cartão real d
 
 **Registrar em `docs/spike-mp-log.md`:** o formato exato de `status`, `next_payment_date`, `external_reference` e `id`. A migration da Fase M4 depende desses valores reais, não do que a documentação promete.
 
+> ✅ **FECHADA em 2026-08-08.** Autorizado manualmente via `init_point`, `status` mudou para `"authorized"`, `next_payment_date` bateu exatamente 1 mês à frente de `date_created`. Detalhes completos em `docs/spike-mp-log.md`.
+
+> ⚠️ **Gap descoberto ao fechar a M1.2, não previsto no plano original:** a autorização deveria disparar um webhook de `subscription_preapproval`, mas **nenhuma notificação chegou** — a aplicação não tem webhook configurado (confirmado na M0). A M1.3, como escrita, assume "notificação real capturada dos logs do Vercel" — mas a Fase M1 inteira se define como "nada de Vercel" no parágrafo de abertura (§5). Essas duas frases se contradizem na prática: não dá para capturar uma notificação real sem *algum* endpoint HTTPS público recebendo-a, e isso não existia no momento em que o plano foi escrito. Resolvido na Tarefa M1.3 abaixo, com uma opção que preserva o espírito de isolamento (sem recuperar o app inteiro) mas reconhece que "zero infraestrutura" não é possível para esta tarefa específica.
+
 ### Tarefa M1.3 — Resolver a validação de assinatura do webhook
 
 O blocker B. `api/mercadopago-webhook.ts` (versão `3db7a4f`) monta o manifesto a partir de:
