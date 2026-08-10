@@ -353,7 +353,17 @@ Atualizar `.env.example` com as três novas chaves (sem valores).
 
 > ✅ **M2.1, M2.2 e M2.3 concluídas em 2026-08-10** (commit `e8ed18a`, branch `feat/mercadopago-billing-m2`). `npm run check` limpo, `npm run build` passa, **29 arquivos de teste / 112 testes** verdes (os 4 restaurados de `apiCreateSubscription`/`apiCancelSubscription`/`apiMercadopagoWebhook`/`apiLib`, mais `subscription.test.ts`, todos sem precisar de nenhum ajuste). Verificação de `grep -r "service_role" dist/` feita e investigada — o único hit era comentário JSDoc do próprio `@supabase/supabase-js`, não segredo nosso; confirmado com o valor completo da chave que nada vaza.
 >
-> **Falta só o deploy de preview com as 3 functions respondendo de verdade** — a parte do critério de aceite que exige testar contra infraestrutura real, não só localmente. Pendente de decisão do humano sobre quando fazer esse deploy.
+> ✅ **Deploy de preview feito em 2026-08-10.** `https://musa20-2326r1s4l-ataide-juniors-projects.vercel.app` (`target: null`, confirmado preview — não produção). As 3 functions testadas com `curl` (via o mesmo bypass de proteção da M1.3), sem sessão de usuária real:
+>
+> | Chamada | Esperado | Obtido |
+> |---|---|---|
+> | `GET create-subscription` | 405 | ✅ 405 |
+> | `POST create-subscription` sem auth | 401 "Missing authorization token" | ✅ |
+> | `POST cancel-subscription` sem auth | 401 "Missing authorization token" | ✅ |
+> | `GET mercadopago-webhook` | 405 | ✅ 405 |
+> | `POST mercadopago-webhook` sem assinatura | 401 "Invalid signature" (não 500) | ✅ — confirma `MERCADOPAGO_WEBHOOK_SECRET` configurado certo no Preview |
+>
+> As 3 functions estão deployadas, executando o código real, com tratamento de erro correto e acesso às env vars funcionando. Critério de aceite satisfeito por completo.
 >
 > **Achado de segurança durante a M2.3, corrigido antes de qualquer commit:** um `.env.local.vercel` não rastreado (de um `vercel env pull` sugerido nesta sessão) continha todos os segredos reais em texto puro, incluindo um `VERCEL_OIDC_TOKEN` ativo — e o padrão `*.local` do `.gitignore` não cobria esse nome (só cobre arquivos que *terminam* em `.local`). Arquivo deletado, `.gitignore` corrigido para `.env.*` com exceção explícita para `.env.example`, fechando essa lacuna para qualquer nome futuro nesse padrão.
 
