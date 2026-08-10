@@ -12,7 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
-  
+
   const navigate = useNavigate()
   const { setUser, setIsAdmin, setNeedsOnboarding } = useAuthStore()
 
@@ -36,7 +36,7 @@ export default function Login() {
         return
       }
       const { user, error } = await signIn(email, password)
-      
+
       if (error) {
         setError(error.message)
         return
@@ -68,7 +68,7 @@ export default function Login() {
           <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">Musa Fit</div>
           <div className="flex items-center justify-center text-sm text-text-muted mt-1">
             <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
-            20 Dias de Transformação
+            Destrave sua Transformação
           </div>
         </div>
 
@@ -78,96 +78,96 @@ export default function Login() {
             <p className="text-text-muted text-sm">Entre para continuar seu progresso</p>
           </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-2">Email</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de email">
-                <Mail className="w-5 h-5" />
-              </span>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  setFieldErrors((f) => ({ ...f, email: undefined }))
-                }}
-                className="w-full pl-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                placeholder="seu@email.com"
-                aria-invalid={!!fieldErrors.email}
-                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-              />
-            </div>
-            {fieldErrors.email && (
-              <p id="email-error" className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
+                {error}
+              </div>
             )}
-          </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-2">Senha</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de senha">
-                <Lock className="w-5 h-5" />
-              </span>
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  setFieldErrors((f) => ({ ...f, password: undefined }))
-                }}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition tracking-widest"
-                placeholder="Digite sua senha"
-                aria-invalid={!!fieldErrors.password}
-                aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-text-muted mb-2">Email</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de email">
+                  <Mail className="w-5 h-5" />
+                </span>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setFieldErrors((f) => ({ ...f, email: undefined }))
+                  }}
+                  className="w-full pl-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                  placeholder="seu@email.com"
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                />
+              </div>
+              {fieldErrors.email && (
+                <p id="email-error" className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
-            {fieldErrors.password && (
-              <p id="password-error" className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
-            )}
-            <div className="mt-2 text-right">
-              <button
-                type="button"
-                onClick={() => navigate('/forgot')}
-                className="text-sm text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 underline underline-offset-2"
-              >
-                Esqueci minha senha
-              </button>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-text-muted mb-2">Senha</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="false" aria-label="Ícone de senha">
+                  <Lock className="w-5 h-5" />
+                </span>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setFieldErrors((f) => ({ ...f, password: undefined }))
+                  }}
+                  className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition tracking-widest"
+                  placeholder="Digite sua senha"
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p id="password-error" className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot')}
+                  className="text-sm text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 underline underline-offset-2"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
             </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 px-4 rounded-full shadow-md hover:from-purple-700 hover:to-pink-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium transform hover:scale-[1.02] active:scale-95"
+            >
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+
+          <div className="text-center text-sm text-text-muted mt-6">
+            Não tem uma conta?
+            <Link to="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium ml-1">Cadastre-se</Link>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 px-4 rounded-full shadow-md hover:from-purple-700 hover:to-pink-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium transform hover:scale-[1.02] active:scale-95"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <div className="text-center text-sm text-text-muted mt-6">
-          Não tem uma conta?
-          <Link to="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium ml-1">Cadastre-se</Link>
         </div>
-      </div>
       </div>
     </div>
   )
