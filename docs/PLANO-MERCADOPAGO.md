@@ -319,7 +319,12 @@ Deletar `scripts/spike-mp/` — o conhecimento dele já está em `docs/spike-mp-
 
 ### Tarefa M2.2 — Aplicar as correções do spike
 
-Portar para `api/mercadopago-webhook.ts` o manifesto que funcionou na M1.3, e para `api/create-subscription.ts` qualquer ajuste de payload descoberto na M1.1. **O código do histórico está errado nesses dois pontos — restaurar sem corrigir é reintroduzir os blockers.**
+> 🔄 **Premissa revisada em 2026-08-10.** O texto original presumia que o código de `3db7a4f` estava errado em dois pontos (manifesto do webhook, payload do `create-subscription`) e que restaurar sem corrigir reintroduziria os blockers. **A M1 provou o contrário nos dois pontos:**
+>
+> - **Manifesto do webhook:** `api/mercadopago-webhook.ts` em `3db7a4f` já usa `WebhookSignatureValidator.validate()` do SDK, passando `dataId` só da query — exatamente o comportamento que a M1.3 confirmou correto (3 validações bem-sucedidas contra notificações reais de teste do painel). **Nada a corrigir aqui.**
+> - **Payload do `create-subscription`:** o corpo que `3db7a4f` monta (sem `preapproval_plan_id`, `auto_recurring` inline, `status: 'pending'`) é **o mesmo** que a M1.1 usou com sucesso, palavra por palavra. **Nada a corrigir aqui também.**
+>
+> A única ação real desta tarefa é a de logging (abaixo) — segurança, não correção de bug.
 
 Trocar os `console.error` de diagnóstico (`3db7a4f` logava `xSignatureValue` e `secretLength`) por logging que não vaze material sensível.
 
