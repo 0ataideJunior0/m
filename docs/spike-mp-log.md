@@ -193,6 +193,39 @@ Ou seja: o padrão inverso continua encaixando. Julho tinha URL de produção �
 
 **Não fechado.**
 
+---
+
+## 2026-08-09 — M1.3 PAUSADA: painel do Mercado Pago em manutenção
+
+**Tentativas 4 e 5 (com a URL de produção já preenchida pelo humano):** criada preapproval `0f2a9d3a966a42bcb5d6cbdaad0eb919` (evento de criação) e em seguida cancelada (mudança de estado). ~3 minutos de monitoramento, 6 checagens. **Nada entregue.**
+
+**🔴 Descoberta que encerra a investigação por ora:** ao tentar consultar o histórico de entregas no painel, o humano recebeu:
+
+> *"Painel em manutenção — Esta tela está em modo de manutenção e estará de volta em breve."*
+
+**Consequência metodológica:** não é possível depurar entrega de webhook enquanto o subsistema de monitoramento do provedor está em manutenção. Se a tela de monitoramento está fora, é plausível que o despacho de notificações esteja degradado junto — e qualquer conclusão tirada agora seria sobre o estado da manutenção, não sobre a configuração. **Continuar tentando produziria dados não confiáveis.**
+
+### Balanço da M1.3 nesta sessão
+
+| Verificação | Status |
+|---|---|
+| Endpoint acessível | ✅ `curl` → 200, confirmado múltiplas vezes |
+| Tópico "Planos e assinaturas" marcado | ✅ nas duas abas |
+| Segredo correto carregado no `.env.local` | ✅ |
+| URL de teste configurada | ✅ |
+| URL de produção configurada | ✅ |
+| Eventos realmente ocorreram | ✅ confirmado via API (`authorized`, `cancelled`) |
+| **Notificação entregue** | ❌ **nenhuma, em 5 disparos / ~25 min** |
+
+**Estado deixado no ar de propósito:** a function `api/spike-webhook-echo.js` continua deployada e a URL segue registrada no MP. Se a manutenção terminar e alguma notificação atrasada for entregue, ela **será capturada nos logs** — vale checar `vercel logs musa20-j5wetpiwo-ataide-juniors-projects.vercel.app --expand` numa próxima sessão antes de disparar qualquer coisa nova. Preapprovals de teste usadas: `bc85fa0e...` (cancelada), `97b69434...` (cancelada), `0f2a9d3a...` (cancelada).
+
+**Hipóteses que sobrevivem, para a próxima sessão:**
+1. **Manutenção da plataforma** afetando o despacho — testar simplesmente repetindo um disparo quando o painel voltar
+2. **URL de teste só serve ao botão "Simular"** — ainda não descartada, mas agora confundida com a manutenção
+3. Usar o botão **"Simular"** do painel como teste de controle: não fecha a M1.3 (o plano exige notificação real, justamente porque o simulador enganou em julho), mas provaria que o endpoint recebe e que a assinatura valida, isolando o problema ao disparo de eventos reais
+
+**Teorias já derrubadas (não revisitar sem evidência nova):** `dataId` lido da query (refutado contra o código-fonte do SDK 3.2.0) e segredos diferentes por aba (refutado — são o mesmo).
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
