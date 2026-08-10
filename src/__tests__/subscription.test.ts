@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { singleMock, eqMock, selectMock, fromMock, getSessionMock, fetchMock } = vi.hoisted(() => {
+const { singleMock, eqMock, selectMock, fromMock, rpcMock, getSessionMock, fetchMock } = vi.hoisted(() => {
   const singleMock = vi.fn()
   const eqMock = vi.fn(() => ({ single: singleMock }))
   const selectMock = vi.fn(() => ({ eq: eqMock }))
@@ -10,13 +10,14 @@ const { singleMock, eqMock, selectMock, fromMock, getSessionMock, fetchMock } = 
     eqMock,
     selectMock,
     fromMock,
+    rpcMock: vi.fn(),
     getSessionMock: vi.fn(),
     fetchMock: vi.fn(),
   }
 })
 
 vi.mock('../lib/supabase', () => ({
-  supabase: { from: fromMock, auth: { getSession: getSessionMock } },
+  supabase: { from: fromMock, rpc: rpcMock, auth: { getSession: getSessionMock } },
 }))
 
 vi.stubGlobal('fetch', fetchMock)
@@ -29,22 +30,25 @@ import {
 } from '../utils/subscription'
 
 describe('getHasActiveSubscription', () => {
-  it('retorna true quando status é authorized', async () => {
-    singleMock.mockResolvedValueOnce({ data: { status: 'authorized' }, error: null })
-    const result = await getHasActiveSubscription('u1')
-    expect(fromMock).toHaveBeenCalledWith('subscriptions')
-    expect(eqMock).toHaveBeenCalledWith('user_id', 'u1')
+  beforeEach(() => {
+    rpcMock.mockReset()
+  })
+
+  it('retorna true quando a função no banco diz que sim', async () => {
+    rpcMock.mockResolvedValueOnce({ data: true, error: null })
+    const result = await getHasActiveSubscription()
+    expect(rpcMock).toHaveBeenCalledWith('has_active_subscription')
     expect(result).toBe(true)
   })
 
-  it('retorna false quando status não é authorized', async () => {
-    singleMock.mockResolvedValueOnce({ data: { status: 'pending' }, error: null })
-    expect(await getHasActiveSubscription('u2')).toBe(false)
+  it('retorna false quando a função no banco diz que não', async () => {
+    rpcMock.mockResolvedValueOnce({ data: false, error: null })
+    expect(await getHasActiveSubscription()).toBe(false)
   })
 
-  it('retorna false quando há erro ou não há linha', async () => {
-    singleMock.mockResolvedValueOnce({ data: null, error: new Error('not found') })
-    expect(await getHasActiveSubscription('u3')).toBe(false)
+  it('retorna false quando há erro', async () => {
+    rpcMock.mockResolvedValueOnce({ data: null, error: new Error('boom') })
+    expect(await getHasActiveSubscription()).toBe(false)
   })
 })
 

@@ -73,6 +73,25 @@ describe('MySubscription', () => {
     expect(await screen.findByText('Cancelada')).not.toBeNull()
   })
 
+  it('mostra "Acesso liberado até" quando cancelada mas o período pago ainda não acabou', async () => {
+    const future = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+    getMySubscriptionMock.mockResolvedValueOnce({
+      id: 's1', user_id: 'u1', preapproval_id: 'p1', status: 'cancelled',
+      next_payment_date: future, created_at: '', updated_at: '',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/minha-assinatura']}>
+        <Routes>
+          <Route path="/minha-assinatura" element={<MySubscription />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Acesso liberado até')).not.toBeNull()
+    expect(screen.queryByText('Cancelar assinatura')).toBeNull()
+  })
+
   it('mostra mensagem quando não há assinatura', async () => {
     getMySubscriptionMock.mockResolvedValueOnce(null)
 

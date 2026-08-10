@@ -72,14 +72,18 @@ export default function MySubscription() {
                   {STATUS_LABELS[subscription.status] || subscription.status}
                 </div>
               </div>
-              {subscription.status === 'authorized' && subscription.next_payment_date && (
-                <div className="mb-6">
-                  <div className="text-sm text-gray-500 dark:text-text-muted">Próxima cobrança</div>
-                  <div className="text-gray-900 dark:text-text">
-                    {new Date(subscription.next_payment_date).toLocaleDateString('pt-BR')}
+              {subscription.next_payment_date &&
+                (subscription.status === 'authorized' ||
+                  (subscription.status === 'cancelled' && new Date(subscription.next_payment_date) > new Date())) && (
+                  <div className="mb-6">
+                    <div className="text-sm text-gray-500 dark:text-text-muted">
+                      {subscription.status === 'authorized' ? 'Próxima cobrança' : 'Acesso liberado até'}
+                    </div>
+                    <div className="text-gray-900 dark:text-text">
+                      {new Date(subscription.next_payment_date).toLocaleDateString('pt-BR')}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               {subscription.status !== 'cancelled' && (
                 <Button variant="danger" onClick={handleCancel} isLoading={cancelling}>
                   Cancelar assinatura

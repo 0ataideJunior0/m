@@ -1,15 +1,10 @@
 import { supabase } from '../lib/supabase'
 import { Subscription } from '../types'
 
-export const getHasActiveSubscription = async (userId: string): Promise<boolean> => {
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', userId)
-    .single()
-
-  if (error || !data) return false
-  return data.status === 'authorized'
+export const getHasActiveSubscription = async (): Promise<boolean> => {
+  const { data, error } = await supabase.rpc('has_active_subscription')
+  if (error) return false
+  return Boolean(data)
 }
 
 export const getMySubscription = async (userId: string): Promise<Subscription | null> => {

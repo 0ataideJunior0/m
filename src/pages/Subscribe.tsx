@@ -38,7 +38,7 @@ export default function Subscribe() {
     let interval: ReturnType<typeof setInterval>
 
     const check = async () => {
-      const active = await getHasActiveSubscription(user.id)
+      const active = await getHasActiveSubscription()
       if (active) {
         setHasActiveSubscription(true)
         setPolling(false)

@@ -58,7 +58,7 @@ function App() {
           setUser(user)
           setIsAdmin(await getIsAdmin(user.id))
           setNeedsOnboarding(!user.onboardingCompletedAt)
-          setHasActiveSubscription(await getHasActiveSubscription(user.id))
+          setHasActiveSubscription(await getHasActiveSubscription())
         } else {
           setUser(null)
           setIsAdmin(false)
