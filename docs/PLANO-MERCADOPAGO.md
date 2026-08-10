@@ -418,7 +418,16 @@ Restaurar o link "Minha assinatura" no `Profile.tsx` (commit `a3f64d4`), adaptad
 
 > ✅ **M3.1 a M3.4 implementadas em 2026-08-10.** `Subscribe.tsx`, `MySubscription.tsx` e `RequireSubscription.tsx` restaurados de `3db7a4f` e reescritos com `Card`/`Button`/`PageHeader`/`Spinner`/`Toast` de `src/components/ui/`, dark mode aplicado, `alert()`/`window.confirm` de erro trocados pelo toast (o `window.confirm` de "tem certeza?" ficou, é confirmação destrutiva, não feedback). `hasActiveSubscription`/`setHasActiveSubscription` adicionados ao `authStore`, buscados no `checkAuth` do `App.tsx` junto com `isAdmin`/`needsOnboarding`. Guards compostos como `RequireOnboarding > RequireSubscription` em `/home`, `/hiit`, `/program/:slug`, `/program/:slug/day/:weekday`; `/subscribe` e `/minha-assinatura` protegidas só por `RequireOnboarding`; rotas de admin inalteradas (sem `RequireSubscription`, `RequireAdmin` já contorna). Link "Minha assinatura" adicionado ao `Profile.tsx` (visível para não-admin, espelhando o botão "Painel Admin" que só admin vê). `npm run check`, `npm run build` e `npm test` — **32 arquivos / 120 testes** verdes, incluindo os 3 suites restaurados sem nenhum ajuste no próprio teste.
 >
-> ⏳ **Falta o fluxo manual em preview** (cadastro → onboarding → bloqueio → `/subscribe` → MP → retorno → acesso liberado) antes de fechar o checkpoint.
+> ✅ **Fluxo manual em preview executado em 2026-08-10** (`https://musa20-i7865g9s9-ataide-juniors-projects.vercel.app`). Cadastro → onboarding → bloqueio (redirecionou pra `/subscribe` corretamente) → clique em "Assinar agora" → checkout do MP → autorização, tudo funcionou. Dois achados no caminho:
+>
+> 1. **Confirma a Fase M1 (linha 176-178):** a primeira tentativa, com a conta cadastrada com e-mail real, foi rejeitada pelo MP com `MPBadRequestError: Both payer and collector must be real or test users` (log da function, via `vercel logs --status-code 500 -x`). Recadastrando com o e-mail do comprador de teste (`test_user_233439973195359974@testuser.com`) o checkout abriu normalmente. Comportamento correto do código — em sandbox o MP exige usuário de teste como pagador; e-mail real só funciona com credenciais de produção.
+> 2. **"Acesso liberado" não fechou** — a tela ficou em polling até o timeout de 45s. Duas causas, ambas já conhecidas e nenhuma nova:
+>    - `vercel logs` no período do teste mostra **zero** chamadas a `/api/mercadopago-webhook` — o mesmo limite documentado na M1.3 (evento real com credencial de teste não notifica).
+>    - Mais fundamental: `select table_name from information_schema.tables where table_name ilike '%subscri%'` (Supabase MCP) retorna **vazio**. A tabela `subscriptions` ainda não existe — só é recriada na Tarefa M4.1, que ainda não rodou. Mesmo que o webhook tivesse chegado, o `upsert` teria falhado.
+>
+> **Decisão:** fechar o CHECKPOINT M3 sem o passo "acesso liberado" — ele depende estruturalmente da M4 (tabela + função), que é a próxima fase por desenho do próprio plano. `create-subscription` e a UI de bloqueio estão verificados de ponta a ponta; só falta a gravação, que é escopo da M4.
+
+> ✅ **CHECKPOINT M3 fechado em 2026-08-10.**
 
 > ⛔ **CHECKPOINT M3**
 
