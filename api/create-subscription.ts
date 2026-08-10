@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: 19.90, // TEMPORÁRIO: valor de teste M5 passo 2 — voltar para 59.90 depois
+          transaction_amount: 59.90,
           currency_id: 'BRL',
         },
         payer_email: user.email || '',
