@@ -173,7 +173,25 @@ Isso substituiria tanto a hipótese do `dataId` (já derrubada) quanto a teoria 
 
 **Teste decisivo (pendente do humano):** abrir a aba *Modo de produção* e verificar se o segredo mostrado ali é **diferente** do que está no `.env.local`. Se for diferente, a hipótese está praticamente confirmada.
 
-**Não fechado.** Aguardando essa verificação.
+### Resultado do teste decisivo (2026-08-09)
+
+Humano verificou a aba *Modo de produção*:
+
+| Verificação | Resultado |
+|---|---|
+| URL de produção preenchida? | **não, vazia** |
+| Checkbox do tópico marcado? | **sim** (aparentemente os tópicos são compartilhados entre as abas — só as URLs são separadas) |
+| Segredo diferente do da aba de teste? | **não, é o mesmo** |
+
+**❌ Sub-hipótese dos "dois segredos" DERRUBADA.** Ambas as abas usam a mesma assinatura secreta. Isso elimina a explicação de que julho falhava por validar com o segredo da aba errada — e **o blocker B de julho volta a não ter causa conhecida** (de novo). Duas teorias já caíram: o `dataId` vindo da query, e agora os segredos divergentes por aba.
+
+**✅ Sub-hipótese "URL de teste só serve ao Simular" SOBREVIVE, e agora é a principal para o silêncio atual.** A configuração está aparentemente correta (tópico marcado, URL de teste preenchida, endpoint de pé, segredo certo) e mesmo assim nada é entregue. A única coisa faltando é a **URL de produção, que está vazia** — e é justamente o que existia em julho, quando eventos reais *chegavam*.
+
+Ou seja: o padrão inverso continua encaixando. Julho tinha URL de produção → recebia eventos (que falhavam na assinatura). Agora não tem → não recebe nada.
+
+**Próximo passo:** preencher a URL de **produção** com a mesma URL do bypass e disparar um evento. Fazer **pelo painel, não pelo `save_webhook`** — a tool já provou que não aplica tópicos de forma confiável, e rodá-la agora arriscaria desmarcar o checkbox que o humano acabou de corrigir.
+
+**Não fechado.**
 
 <!-- Próxima entrada:
 
