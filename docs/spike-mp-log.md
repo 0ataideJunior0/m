@@ -145,6 +145,36 @@ Mas o painel mostra que nenhum evento foi de fato marcado. **A tool grava a URL 
 
 **Próximo passo:** marcar "Planos e assinaturas" no painel, salvar, e disparar um evento novo (criar + autorizar mais uma preapproval, ou cancelar a `97b69434fcdc4ca7bec73bdcb87e02a6` que está `authorized`).
 
+---
+
+## 2026-08-09 — M1.3, tentativa 3: tópico marcado, **ainda nada** → hipótese das duas abas
+
+**Setup:** humano marcou "Planos e assinaturas" no painel (aba *Modo de teste*) e salvou; o segredo **não mudou** e foi colado no `.env.local`. Endpoint reconfirmado de pé (`curl` → `200 OK`, 1s). Disparado cancelamento da `97b69434fcdc4ca7bec73bdcb87e02a6` (que estava `authorized`) → `status: "cancelled"` confirmado.
+
+**Resultado:** ❌ nada entregue em ~3 minutos (7 checagens). `notifications_history` continua reportando "nenhuma notificação configurada".
+
+### 🔴 Hipótese nova — e ela pode explicar o blocker B de julho inteiro
+
+A tela de Webhooks tem **duas abas**: *Modo de teste* e *Modo de produção*. Tudo o que foi configurado até agora (via `save_webhook` com `callback_sandbox`, e o checkbox marcado pelo humano) está na aba de **teste**. A URL de **produção** está vazia.
+
+**Suspeita:** a "URL para teste" pode servir **apenas ao botão "Simular"** do painel. Eventos reais — mesmo os gerados com credenciais de sandbox — talvez sejam entregues no `callback` de **produção**.
+
+Encaixe com o histórico de julho (ver memória do projeto):
+
+| | Julho | Agora |
+|---|---|---|
+| URL de produção configurada | **sim** (app deployado em produção) | **não** (vazia) |
+| Eventos reais chegavam | **sim** — chegavam, mas falhavam na validação de assinatura | **não chegam** |
+| Botão "Simular" | validava corretamente | não testado |
+
+**Corolário forte, e a parte que importa:** se **cada aba tem seu próprio segredo**, julho pode ter falhado porque o código validava com o segredo de uma aba enquanto os eventos reais vinham assinados com o da outra. A assinatura nunca bateria, e o simulador sempre funcionaria — que é **exatamente** o sintoma que a sessão de julho descreveu e atribuiu a "bug de plataforma do Mercado Pago".
+
+Isso substituiria tanto a hipótese do `dataId` (já derrubada) quanto a teoria do bug de plataforma, e não teria nada a ver com o formato do manifesto.
+
+**Teste decisivo (pendente do humano):** abrir a aba *Modo de produção* e verificar se o segredo mostrado ali é **diferente** do que está no `.env.local`. Se for diferente, a hipótese está praticamente confirmada.
+
+**Não fechado.** Aguardando essa verificação.
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
