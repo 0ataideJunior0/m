@@ -226,6 +226,32 @@ Ou seja: o padrão inverso continua encaixando. Julho tinha URL de produção �
 
 **Teorias já derrubadas (não revisitar sem evidência nova):** `dataId` lido da query (refutado contra o código-fonte do SDK 3.2.0) e segredos diferentes por aba (refutado — são o mesmo).
 
+---
+
+## 2026-08-10 — assinatura validada, mas com uma notificação de teste (não real)
+
+**Status geral do Mercado Pago:** confirmado `Operational`, 99,98% de uptime em 90 dias, na página de status. A "manutenção" da sessão anterior era só da tela de histórico de entregas no painel, não do despacho em si — isso reabre a investigação sem a desculpa da instabilidade de plataforma.
+
+**Achado ao checar `vercel logs --expand` antes de disparar qualquer coisa nova** (seguindo a própria recomendação deixada na entrada anterior): **duas notificações com `x-signature` chegaram**, nos horários `10:07:28` e `10:07:53` de 10/08 — momentos em que o humano estava mexendo na tela de Webhooks do painel (preenchendo a URL de produção). Nenhuma correspondia a um disparo nosso.
+
+**Por que não conta como notificação real:** ambas trazem `data.id: "123456"` e `date: "2021-11-01T02:02:02Z"` no corpo — valores fixos de exemplo, não o id de nenhuma das preapprovals reais desta sessão (`bc85fa0e...`, `97b69434...`, `0f2a9d3a...`). Padrão consistente com um **ping automático de validação da URL** disparado pelo próprio painel ao salvar a configuração, ou com o botão "Simular". A memória do projeto registra exatamente esse risco: *"o simulador validava em julho, mas notificação real nunca validava"* — tratar isto como o mesmo tipo de sinal, não como prova de entrega real.
+
+**O que isso PROVA:**
+- ✅ `MERCADOPAGO_WEBHOOK_SECRET` no `.env.local` está correto
+- ✅ `WebhookSignatureValidator` do SDK, o manifesto e nosso entendimento do formato — tudo bate. Rodado `03-verify-signature.mjs` contra as duas notificações capturadas, ambas: `✅ ASSINATURA VÁLIDA`
+- ✅ O endpoint recebe e responde corretamente a chamadas assinadas do MP
+
+**O que isso NÃO prova:**
+- ❌ Que uma notificação de **evento real** (mudança de estado numa preapproval de verdade) chega. Nenhuma das 5 tentativas anteriores de criar/autorizar/cancelar gerou notificação — só esse ping incidental de configuração gerou.
+
+**Manifesto vencedor (confirmado, para `api/mercadopago-webhook.ts` na M2.2):**
+```
+id:{dataId};request-id:{x-request-id};ts:{ts};
+```
+com qualquer segmento ausente omitido por completo — validado com o `WebhookSignatureValidator` do SDK, não reescrito manualmente.
+
+**Conclusão:** a M1.3 avançou (validação de assinatura funciona, segredo certo), mas o objetivo central — confirmar que um evento real chega — **continua em aberto**. O padrão persiste: eventos reais (criar, autorizar, cancelar) nunca geraram notificação; só a interação com o próprio painel gerou. Isso é uma pista nova, não ruído: sugere que o disparo de notificação pode estar de fato limitado a validação/simulação, e não a mudança de estado real das nossas preapprovals — precisa de mais um ciclo de teste para confirmar.
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
