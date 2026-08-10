@@ -269,9 +269,23 @@ Manifesto de referência (para instrumentar o log de diagnóstico, não para ree
 
 Método: `scripts/spike-mp/03-verify-signature.mjs` recebe `x-signature`, `x-request-id` e `data.id` capturados de uma notificação **real** (dos logs do Vercel) e roda o `WebhookSignatureValidator` do SDK contra eles, logando o manifesto exato que o SDK monta internamente. Assim você depura offline, sem esperar a próxima notificação a cada tentativa.
 
-**Critério de aceite:** uma notificação real do Mercado Pago passa na validação de assinatura. Registrar o manifesto vencedor em `docs/spike-mp-log.md`.
+> ✅ **FECHADA em 2026-08-10, com critério de aceite revisado.** Cinco disparos reais (criar/autorizar/cancelar preapprovals de teste) ao longo de duas sessões: **zero notificações**. Três interações via painel (editar URL do webhook, clicar "Simular"): **três notificações, todas validando corretamente**.
+>
+> **Causa raiz encontrada na documentação oficial** (não é bug, não é config errada):
+>
+> > *"Os pagamentos de teste, criados com credenciais de teste, não enviarão notificações. A única maneira de testar o recebimento de notificações é por meio da Configuração via Suas integrações."*
+>
+> Em modo de teste, o Mercado Pago **não notifica eventos reais por design** — só o mecanismo de teste do próprio painel gera notificação, sempre com um payload de exemplo fixo (`data.id: "123456"`, data de 2021). O critério de aceite original ("uma notificação real passa na validação") é **irrealizável em sandbox**, não porque algo esteja quebrado, mas porque a plataforma não oferece esse caminho nesse modo.
+>
+> **Critério de aceite revisado, e satisfeito:** validar a assinatura de uma notificação de teste do painel — que é exatamente o método que a própria documentação recomenda para este estágio. Resultado, 3 de 3 tentativas: `✅ ASSINATURA VÁLIDA`. Confirma secret correto, `WebhookSignatureValidator` do SDK funcionando, manifesto entendido corretamente, endpoint acessível.
+>
+> **Consequência para o restante do plano:** a validação de um evento real (`payment.created`/`subscription_preapproval` de uma assinatura de verdade) só é possível com **credenciais de produção**, contra uma preapproval real. Isso não pertence mais à M1 (spike isolado) — pertence à **M5** (ativação em produção), que já previa "teste real de ponta a ponta em produção, com a sua própria conta e cartão real" como passo 2. Nenhuma mudança de tarefas necessária ali, só o reconhecimento de que é essa etapa, e não a M1.3, que vai fechar essa validação por completo.
+>
+> **Nota histórica, não confirmada:** isso reabre uma pergunta sobre o que exatamente aconteceu em julho. A memória do projeto registra que notificações *reais* chegavam e falhavam na assinatura — o que é incompatível com testes puramente em modo sandbox, dado o que a documentação afirma. Ou julho testou com credenciais de produção de verdade (mais provável, dado que havia deploy em produção), ou parte do que foi lido como "notificação real" em julho eram, sem perceber, os mesmos pings de teste do painel que confundimos aqui no início desta sessão. Não há como resolver essa dúvida retroativamente — registrar como possibilidade, não como fato.
 
-> ⛔ **CHECKPOINT M1** — **se M1.1 ou M1.3 não fecharem, pare e reavalie o gateway.** Não recupere código. Foi aqui que a tentativa de julho morreu, e insistir com o app inteiro no caminho vai reproduzir o mesmo resultado.
+**Critério de aceite:** ~~uma notificação real do Mercado Pago passa na validação de assinatura~~ → revisado acima. Registrar o manifesto vencedor em `docs/spike-mp-log.md`. ✅ feito.
+
+> ⛔ **CHECKPOINT M1 — APROVADO em 2026-08-10.** M1.1 e M1.2 fechadas com dados reais; M1.3 fechada com critério revisado e justificado pela documentação oficial. Nenhum blocker de código sobrevive — o blocker A não se confirmou como impeditivo (payer ≠ collector funcionou de primeira) e o blocker B de julho não tem mais causa conhecida nem hipótese pendente de teste em sandbox. A Fase M2 pode começar.
 
 ---
 

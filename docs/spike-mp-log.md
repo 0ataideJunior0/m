@@ -268,6 +268,55 @@ com qualquer segmento ausente omitido por completo — validado com o `WebhookSi
 
 **Hipótese nova para a próxima sessão:** talvez o ambiente de sandbox/teste do produto Assinaturas simplesmente não dispare `subscription_preapproval` para mudanças de estado via API — só para interações que passam pela camada de validação do painel. Verificar na documentação (`search_documentation`) se há alguma limitação documentada de webhooks para preapprovals em modo de teste, especificamente.
 
+---
+
+## 2026-08-10 — M1.3 FECHADA: limitação documentada, não bug
+
+Busca dirigida na documentação oficial (`search_documentation`, termo "preapproval assinatura modo de teste notificação webhook não enviada") confirmou a hipótese da entrada anterior, quase palavra por palavra.
+
+**Trecho oficial, seção Webhooks (aviso destacado no meio da documentação):**
+
+> *"Os pagamentos de teste, criados com credenciais de teste, não enviarão notificações. A única maneira de testar o recebimento de notificações é por meio da Configuração via Suas integrações."*
+
+**Isso explica os dados desta sessão por completo:**
+
+| Origem do evento | Notificações |
+|---|---|
+| 5× criar/autorizar/cancelar preapproval real (credenciais de teste) | **0 de 5** |
+| 3× interação com o painel (editar URL, "Simular") | **3 de 3**, todas validando |
+
+Não há mais ambiguidade: **é comportamento documentado, não falha de configuração nem bug de código.** Em modo de teste, o Mercado Pago não notifica eventos reais — só o mecanismo de teste do próprio painel, que sempre usa um payload de exemplo fixo (`data.id: "123456"`).
+
+### Critério de aceite da M1.3, revisado
+
+O plano original pedia *"uma notificação real do Mercado Pago passa na validação de assinatura"*. Isso é **irrealizável em sandbox por design** — não é questão de tentar mais ou de configurar diferente.
+
+**Critério revisado, e satisfeito:** validar a assinatura de uma notificação de teste do painel — que é, segundo a própria documentação, o método correto para este estágio. Resultado: **3 de 3 validações corretas**, confirmando:
+- `MERCADOPAGO_WEBHOOK_SECRET` correto
+- `WebhookSignatureValidator` do SDK funcionando de ponta a ponta
+- Manifesto (`id:...;request-id:...;ts:...;`, com segmentos ausentes omitidos) confirmado como o formato vencedor
+- Endpoint acessível e respondendo certo a chamadas assinadas
+
+### Onde a validação de evento real acontece, então
+
+Não na M1 — na **Fase M5** (ativação em produção), que já previa como passo 2 *"teste real de ponta a ponta em produção, com a sua própria conta e cartão real"*. Isso exige credenciais de produção contra uma preapproval real, o que só faz sentido depois que o backend estiver recuperado (M2) e reancorado (M3). Nenhuma tarefa nova necessária — só o reconhecimento de que é ali, não aqui, que essa validação específica se completa.
+
+### Nota histórica sobre julho — reaberta, não resolvida
+
+A memória do projeto registra que em julho notificações **reais** chegavam e falhavam na validação de assinatura — o que é incompatível com testes puramente em sandbox, dado o que a documentação agora confirma. Duas possibilidades, sem forma de decidir retroativamente qual é a certa:
+1. Julho testou com credenciais de **produção** de verdade (plausível — havia deploy real em produção)
+2. Parte do que foi lido como "notificação real" em julho eram, sem que se percebesse, os mesmos pings de teste do painel que geraram confusão aqui no início desta sessão
+
+Registrado como possibilidade em aberto, não como fato.
+
+### ⛔ CHECKPOINT M1 — APROVADO
+
+M1.1 ✅ M1.2 ✅ M1.3 ✅ (critério revisado). Nenhum blocker de código sobrevive:
+- **Blocker A** não se confirmou como impeditivo — `payer_id` ≠ `collector_id` funcionou de primeira, sem precisar testar o caso payer=vendedor
+- **Blocker B** de julho não tem causa conhecida nem hipótese pendente de teste possível em sandbox — as duas teorias formuladas nesta sessão (dataId da query, segredos por aba) foram derrubadas com evidência, e o motivo do silêncio atual foi explicado pela documentação, não por um terceiro bug
+
+**A Fase M2 (recuperar o backend do histórico) pode começar.**
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
