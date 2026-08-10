@@ -122,6 +122,29 @@ Autorizado manualmente pela `init_point`, logado como o comprador de teste, paga
 
 **Não fechado.** Decisão de como prosseguir pendente do humano.
 
+---
+
+## 2026-08-09 — M1.3, causa encontrada: nenhum evento marcado no painel
+
+**Tentativa 2 (antes da descoberta):** criada uma preapproval nova (`97b69434fcdc4ca7bec73bdcb87e02a6`) **com o webhook já registrado**, e autorizada manualmente. Confirmado via `02-get-preapproval.mjs` que chegou a `status: "authorized"` — ou seja, o evento realmente aconteceu. Mesmo assim, ~5 minutos de monitoramento (10 checagens): **nada entregue**. Isso descartou de vez as hipóteses de "delay de sandbox" e "cancelamento não é evento notificado".
+
+**🔴 CAUSA RAIZ (encontrada pelo humano, olhando o painel):** na tela de Webhooks do painel do Mercado Pago, o campo *URL para teste* estava preenchido corretamente com a URL do bypass — mas **todos os checkboxes de evento estavam desmarcados**. Nenhum tópico assinado ⇒ nada a notificar ⇒ silêncio absoluto, sem erro em lugar nenhum.
+
+O checkbox necessário é **"Planos e assinaturas"**, na seção *Outros eventos*.
+
+**Discrepância a registrar sobre a tool `save_webhook` do MCP:** ela foi chamada com `topics: ["subscription_preapproval"]` e **respondeu sucesso**, inclusive imprimindo:
+
+```
+## 📋 Subscribed Topics
+1. **subscription_preapproval**
+```
+
+Mas o painel mostra que nenhum evento foi de fato marcado. **A tool grava a URL e o segredo, mas aparentemente não aplica os tópicos** — ou usa um identificador de tópico que a UI não reconhece. Consequência prática: **não confiar no retorno de sucesso do `save_webhook` para os tópicos; conferir sempre no painel.** Vale registrar em `docs/ACHADOS-EXTRAS.md` quando a Fase M2 começar.
+
+**Lição de método:** três ciclos de espera (~10 min somados) foram gastos monitorando um endpoint que nunca receberia nada, porque confiei no retorno de sucesso da tool em vez de verificar o estado real na fonte. A tool de diagnóstico `notifications_history` também não ajudou — reportava "nenhuma notificação configurada", que estava tecnicamente correto mas eu li como "ainda não chegou nada" em vez de "não há nada configurado para chegar". **O sinal estava lá, mal interpretado.**
+
+**Próximo passo:** marcar "Planos e assinaturas" no painel, salvar, e disparar um evento novo (criar + autorizar mais uma preapproval, ou cancelar a `97b69434fcdc4ca7bec73bdcb87e02a6` que está `authorized`).
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
