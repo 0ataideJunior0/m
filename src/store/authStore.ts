@@ -7,10 +7,12 @@ interface AuthState {
   isLoading: boolean
   isAdmin: boolean
   needsOnboarding: boolean
+  hasActiveSubscription: boolean
   setUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
   setIsAdmin: (isAdmin: boolean) => void
   setNeedsOnboarding: (needsOnboarding: boolean) => void
+  setHasActiveSubscription: (hasActiveSubscription: boolean) => void
   logout: () => void
 }
 
@@ -20,9 +22,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   isAdmin: false,
   needsOnboarding: false,
+  hasActiveSubscription: false,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setIsAdmin: (isAdmin) => set({ isAdmin }),
   setNeedsOnboarding: (needsOnboarding) => set({ needsOnboarding }),
-  logout: () => set({ user: null, isAuthenticated: false, isAdmin: false, needsOnboarding: false }),
+  setHasActiveSubscription: (hasActiveSubscription) => set({ hasActiveSubscription }),
+  logout: () => set({ user: null, isAuthenticated: false, isAdmin: false, needsOnboarding: false, hasActiveSubscription: false }),
 }))

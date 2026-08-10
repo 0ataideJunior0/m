@@ -12,7 +12,15 @@ dist
 dist-ssr
 *.local
 .env
+.env.*
+!.env.example
 supabase/.temp
+
+# `*.local` só cobre nomes que TERMINAM em .local — um arquivo como
+# .env.local.vercel (ex.: saída de `vercel env pull .env.local.vercel`)
+# não batia na regra e ficaria destravado com segredos em texto puro.
+# `.env.*` cobre qualquer variação; `.env.example` é a única exceção,
+# de propósito (não tem segredo, é o template).
 
 # Claude Code local config — pode conter tokens (ex.: SUPABASE_ACCESS_TOKEN).
 # .mcp.json É versionado de propósito: ele só referencia ${VARIAVEIS},

@@ -319,7 +319,12 @@ Deletar `scripts/spike-mp/` — o conhecimento dele já está em `docs/spike-mp-
 
 ### Tarefa M2.2 — Aplicar as correções do spike
 
-Portar para `api/mercadopago-webhook.ts` o manifesto que funcionou na M1.3, e para `api/create-subscription.ts` qualquer ajuste de payload descoberto na M1.1. **O código do histórico está errado nesses dois pontos — restaurar sem corrigir é reintroduzir os blockers.**
+> 🔄 **Premissa revisada em 2026-08-10.** O texto original presumia que o código de `3db7a4f` estava errado em dois pontos (manifesto do webhook, payload do `create-subscription`) e que restaurar sem corrigir reintroduziria os blockers. **A M1 provou o contrário nos dois pontos:**
+>
+> - **Manifesto do webhook:** `api/mercadopago-webhook.ts` em `3db7a4f` já usa `WebhookSignatureValidator.validate()` do SDK, passando `dataId` só da query — exatamente o comportamento que a M1.3 confirmou correto (3 validações bem-sucedidas contra notificações reais de teste do painel). **Nada a corrigir aqui.**
+> - **Payload do `create-subscription`:** o corpo que `3db7a4f` monta (sem `preapproval_plan_id`, `auto_recurring` inline, `status: 'pending'`) é **o mesmo** que a M1.1 usou com sucesso, palavra por palavra. **Nada a corrigir aqui também.**
+>
+> A única ação real desta tarefa é a de logging (abaixo) — segurança, não correção de bug.
 
 Trocar os `console.error` de diagnóstico (`3db7a4f` logava `xSignatureValue` e `secretLength`) por logging que não vaze material sensível.
 
@@ -345,6 +350,22 @@ Atualizar `.env.example` com as três novas chaves (sem valores).
 > ```
 
 **Critério de aceite:** `npm run check` limpo; os 4 testes de API verdes; deploy de preview no Vercel com as 3 functions respondendo.
+
+> ✅ **M2.1, M2.2 e M2.3 concluídas em 2026-08-10** (commit `e8ed18a`, branch `feat/mercadopago-billing-m2`). `npm run check` limpo, `npm run build` passa, **29 arquivos de teste / 112 testes** verdes (os 4 restaurados de `apiCreateSubscription`/`apiCancelSubscription`/`apiMercadopagoWebhook`/`apiLib`, mais `subscription.test.ts`, todos sem precisar de nenhum ajuste). Verificação de `grep -r "service_role" dist/` feita e investigada — o único hit era comentário JSDoc do próprio `@supabase/supabase-js`, não segredo nosso; confirmado com o valor completo da chave que nada vaza.
+>
+> ✅ **Deploy de preview feito em 2026-08-10.** `https://musa20-2326r1s4l-ataide-juniors-projects.vercel.app` (`target: null`, confirmado preview — não produção). As 3 functions testadas com `curl` (via o mesmo bypass de proteção da M1.3), sem sessão de usuária real:
+>
+> | Chamada | Esperado | Obtido |
+> |---|---|---|
+> | `GET create-subscription` | 405 | ✅ 405 |
+> | `POST create-subscription` sem auth | 401 "Missing authorization token" | ✅ |
+> | `POST cancel-subscription` sem auth | 401 "Missing authorization token" | ✅ |
+> | `GET mercadopago-webhook` | 405 | ✅ 405 |
+> | `POST mercadopago-webhook` sem assinatura | 401 "Invalid signature" (não 500) | ✅ — confirma `MERCADOPAGO_WEBHOOK_SECRET` configurado certo no Preview |
+>
+> As 3 functions estão deployadas, executando o código real, com tratamento de erro correto e acesso às env vars funcionando. Critério de aceite satisfeito por completo.
+>
+> **Achado de segurança durante a M2.3, corrigido antes de qualquer commit:** um `.env.local.vercel` não rastreado (de um `vercel env pull` sugerido nesta sessão) continha todos os segredos reais em texto puro, incluindo um `VERCEL_OIDC_TOKEN` ativo — e o padrão `*.local` do `.gitignore` não cobria esse nome (só cobre arquivos que *terminam* em `.local`). Arquivo deletado, `.gitignore` corrigido para `.env.*` com exceção explícita para `.env.example`, fechando essa lacuna para qualquer nome futuro nesse padrão.
 
 > ⛔ **CHECKPOINT M2**
 
@@ -395,6 +416,19 @@ Restaurar o link "Minha assinatura" no `Profile.tsx` (commit `a3f64d4`), adaptad
 
 **Critério de aceite:** `npm test` verde; fluxo manual completo em preview — cadastro → onboarding → bloqueio → `/subscribe` → MP → retorno → acesso liberado.
 
+> ✅ **M3.1 a M3.4 implementadas em 2026-08-10.** `Subscribe.tsx`, `MySubscription.tsx` e `RequireSubscription.tsx` restaurados de `3db7a4f` e reescritos com `Card`/`Button`/`PageHeader`/`Spinner`/`Toast` de `src/components/ui/`, dark mode aplicado, `alert()`/`window.confirm` de erro trocados pelo toast (o `window.confirm` de "tem certeza?" ficou, é confirmação destrutiva, não feedback). `hasActiveSubscription`/`setHasActiveSubscription` adicionados ao `authStore`, buscados no `checkAuth` do `App.tsx` junto com `isAdmin`/`needsOnboarding`. Guards compostos como `RequireOnboarding > RequireSubscription` em `/home`, `/hiit`, `/program/:slug`, `/program/:slug/day/:weekday`; `/subscribe` e `/minha-assinatura` protegidas só por `RequireOnboarding`; rotas de admin inalteradas (sem `RequireSubscription`, `RequireAdmin` já contorna). Link "Minha assinatura" adicionado ao `Profile.tsx` (visível para não-admin, espelhando o botão "Painel Admin" que só admin vê). `npm run check`, `npm run build` e `npm test` — **32 arquivos / 120 testes** verdes, incluindo os 3 suites restaurados sem nenhum ajuste no próprio teste.
+>
+> ✅ **Fluxo manual em preview executado em 2026-08-10** (`https://musa20-i7865g9s9-ataide-juniors-projects.vercel.app`). Cadastro → onboarding → bloqueio (redirecionou pra `/subscribe` corretamente) → clique em "Assinar agora" → checkout do MP → autorização, tudo funcionou. Dois achados no caminho:
+>
+> 1. **Confirma a Fase M1 (linha 176-178):** a primeira tentativa, com a conta cadastrada com e-mail real, foi rejeitada pelo MP com `MPBadRequestError: Both payer and collector must be real or test users` (log da function, via `vercel logs --status-code 500 -x`). Recadastrando com o e-mail do comprador de teste (`test_user_233439973195359974@testuser.com`) o checkout abriu normalmente. Comportamento correto do código — em sandbox o MP exige usuário de teste como pagador; e-mail real só funciona com credenciais de produção.
+> 2. **"Acesso liberado" não fechou** — a tela ficou em polling até o timeout de 45s. Duas causas, ambas já conhecidas e nenhuma nova:
+>    - `vercel logs` no período do teste mostra **zero** chamadas a `/api/mercadopago-webhook` — o mesmo limite documentado na M1.3 (evento real com credencial de teste não notifica).
+>    - Mais fundamental: `select table_name from information_schema.tables where table_name ilike '%subscri%'` (Supabase MCP) retorna **vazio**. A tabela `subscriptions` ainda não existe — só é recriada na Tarefa M4.1, que ainda não rodou. Mesmo que o webhook tivesse chegado, o `upsert` teria falhado.
+>
+> **Decisão:** fechar o CHECKPOINT M3 sem o passo "acesso liberado" — ele depende estruturalmente da M4 (tabela + função), que é a próxima fase por desenho do próprio plano. `create-subscription` e a UI de bloqueio estão verificados de ponta a ponta; só falta a gravação, que é escopo da M4.
+
+> ✅ **CHECKPOINT M3 fechado em 2026-08-10.**
+
 > ⛔ **CHECKPOINT M3**
 
 ---
@@ -438,16 +472,20 @@ Ajustar os valores de `status` ao que a Tarefa M1.2 observou **de verdade**, nã
 > 2. **Reconciliação periódica** — job que relê no MP as assinaturas `authorized` cuja `next_payment_date` já passou, e corrige o status. Mais robusto, mais trabalho.
 >
 > A decisão depende do que a M1.2 observar. **Não escolher antes de ter o dado.**
+>
+> ✅ **Decidido em 2026-08-10 — opção 1.** Checagem de validade dentro de `has_active_subscription()` (`next_payment_date IS NULL OR next_payment_date > NOW() - INTERVAL '3 days'`), sem job de reconciliação por agora. Implementada em `supabase/migrations/20260810140000_billing_gate.sql`.
 
 ### Tarefa M4.2 — Fechar as policies abertas
 
 > ⚠️ **A armadilha já documentada na migration original:** uma policy `USING (true)` deixada no lugar **combina por OR** com qualquer policy nova e a anula por completo. A antiga precisa ser **derrubada e substituída**, nunca complementada.
 
-O diagnóstico de 2026-08-05 identificou `USING (true)` em **três** tabelas — `workouts`, `programs` e `pdf_plans`. A migration original de julho só tratava `workouts`, porque as outras duas nem existiam ainda. **Todas as três precisam entrar.**
-
-Para cada uma: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_subscription() OR is_admin()`.
+O diagnóstico de 2026-08-05 identificou `USING (true)` em **três** tabelas — `workouts`, `programs` e `pdf_plans`. A migration original de julho só tratava `workouts`, porque as outras duas nem existiam ainda.
 
 `programs` merece uma decisão à parte: se a Home precisa listar os programas para quem ainda não assinou (como vitrine), ela fica aberta e o bloqueio acontece em `workouts`. Recomendação: **manter `programs` legível** — nome de programa não é o produto; o treino é.
+
+`pdf_plans` **não é mais gateada — é derrubada.** Ver M4.3 reescrita abaixo: os planos alimentares deixaram de ser PDF em Storage e viraram páginas com conteúdo em `meal_plans`, que nasce com o gate já embutido na policy de criação. Sobra só `workouts` pra aplicar `DROP POLICY` + `CREATE POLICY` de fato nesta tarefa.
+
+Para `workouts`: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_subscription() OR is_admin()`.
 
 > 🔄 **Decisão explicitada em 2026-08-08 — `user_progress` fica de fora.**
 >
@@ -457,40 +495,40 @@ Para cada uma: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_sub
 >
 > Efeito colateral a conhecer: a página de Perfil continua mostrando "Treinos Concluídos" para quem não assina. É intencional — a M3.3 já mantém `/profile` fora das rotas protegidas pelo mesmo motivo.
 
-### Tarefa M4.3 — O buraco do Storage
+### Tarefa M4.3 — Planos alimentares sem Storage (reescrita em 2026-08-10)
 
-`src/utils/plans.ts` gera signed URL para os PDFs de plano alimentar direto do Storage. **A RLS das tabelas não cobre bucket de Storage.** Sem tratar isso, o conteúdo pago escapa por aí e o gate inteiro vira teatro.
+**Premissa original (até 2026-08-08):** `src/utils/plans.ts` gerava signed URL para 2 PDFs estáticos no bucket `plans`. Como a RLS de tabela não cobre bucket de Storage, era preciso uma policy separada em `storage.objects` — inventariada e resolvida (ver histórico abaixo).
 
-> ✅ **Inventário feito em 2026-08-08 (MCP read-only) — e a notícia é boa.**
->
-> ```
-> bucket:  plans   (public = false)
-> policy:  authenticated_read_plans | SELECT | authenticated | (bucket_id = 'plans')
-> ```
->
-> Só existe **uma** policy, e ela é RLS comum sobre `storage.objects` — portanto **pode** chamar `public.has_active_subscription()`. A Vercel Function que o texto original previa como possível necessidade **não é necessária**; fica como plano B se algo inesperado aparecer.
->
-> Confirmado em [`src/utils/plans.ts:47-49`](../src/utils/plans.ts#L47-L49) que a signed URL é criada **no cliente, com o JWT da usuária** (`supabase.storage.from(...).createSignedUrl(...)`). Ou seja, a RLS é avaliada **no momento da criação da URL** — que é exatamente o ponto de controle certo.
->
-> Migration:
->
-> ```sql
-> DROP POLICY IF EXISTS "authenticated_read_plans" ON storage.objects;
-> CREATE POLICY "subscribers_read_plans" ON storage.objects
->   FOR SELECT TO authenticated
->   USING (
->     bucket_id = 'plans'
->     AND (public.has_active_subscription() OR public.is_admin())
->   );
-> ```
->
-> **Limite conhecido, e aceitável:** uma signed URL já emitida continua válida até expirar, mesmo se a assinatura for cancelada no meio — a RLS não é reavaliada a cada download. Hoje o `expiresInSeconds` usado pela Home é 900 (15 min). Janela pequena o bastante para não valer complexidade extra.
->
-> **Atenção ao efeito colateral em `pdf_plans`:** o mesmo arquivo, nas linhas 57-60, faz `UPDATE` em `pdf_plans` a partir do cliente quando a chave do arquivo não bate. Com `pdf_plans` gateada na M4.2, esse caminho de fallback muda de comportamento para quem não assina. Verificar se ele ainda é alcançável — possivelmente é código morto e deve ir para `docs/ACHADOS-EXTRAS.md`.
+**Decisão de 2026-08-10 — trocar o mecanismo inteiro.** Os 2 planos (`mass_gain` 2300kcal, `fat_loss` 1800kcal) são conteúdo estático, sem nenhuma variação por usuária. Virar páginas de verdade (`/planos-ganho`, `/planos-perda`) em vez de PDF em bucket:
+
+- **Elimina a superfície de Storage inteira** — sem bucket, sem signed URL, sem policy separada de `storage.objects` pra manter sincronizada com a RLS de tabela.
+- **Fecha o limite conhecido da abordagem antiga de vez**: uma signed URL emitida continuava válida até expirar (15 min) mesmo com assinatura cancelada no meio. Uma página busca a linha em `meal_plans` a cada carregamento — RLS avaliada na hora, sem janela de tolerância.
+- **Mais barato** — sem tráfego de Storage; a consulta é uma linha de texto via Postgres, do mesmo jeito que `workouts` já funciona.
+- Conteúdo guardado como markdown puro (`content_md`) em vez de normalizado em tabelas de alimentos — o documento é referência estática, não dado transacional; normalizar seria over-engineering pra 2 linhas que mudam raramente.
+
+**Implementado:**
+
+- `supabase/migrations/20260810140000_billing_gate.sql`: `DROP TABLE pdf_plans`; `CREATE TABLE meal_plans (type, title, description, content_md, updated_at)` com RLS `has_active_subscription() OR is_admin()` desde a criação (não precisa de `DROP POLICY` de nada aberto — a tabela nasce fechada); `INSERT` com o conteúdo real dos 2 planos (fornecido pela usuária em markdown).
+- `src/utils/plans.ts`: `getMealPlan(type)` — uma query, sem signed URL, sem retry de storage key.
+- `src/components/ui/Markdown.tsx`: wrapper de `react-markdown` + `remark-gfm` (novas dependências) com componentes estilizados no padrão dark mode do app.
+- `src/pages/MealPlan.tsx`: página com `PageHeader`, botão "Imprimir" (`window.print()`, `print:hidden` no cabeçalho) em vez de "Baixar PDF", `Card` envolvendo o markdown renderizado.
+- `src/App.tsx`: rotas `/planos-ganho` (`type="mass_gain"`) e `/planos-perda` (`type="fat_loss"`), ambas atrás de `RequireOnboarding > RequireSubscription` — mesmo gate client-side que `/home`, `/hiit` e `/program/*` já usam.
+- `src/pages/Home.tsx`: a seção "Planos Alimentares" virou 2 links de navegação simples; removido o modal de iframe/PDF inteiro (`useDialogA11y`, `getSignedPlanUrl`, ícones `Eye`/`X`/`Download`, toast de erro de link — nada disso sobrou com uso no arquivo).
+
+**Trade-off aceito:** perde-se o "baixar o PDF pra guardar offline" tal como era; substituído por impressão via navegador. Ninguém pediu esse caso de uso explicitamente até agora.
+
+<details>
+<summary>Histórico da abordagem descartada (inventário de Storage, 2026-08-08)</summary>
+
+Inventário feito à época via MCP read-only: bucket `plans` (`public = false`), única policy `authenticated_read_plans | SELECT | authenticated | (bucket_id = 'plans')` — sem checar assinatura. A RLS de `storage.objects` normal permite chamar `has_active_subscription()`; a Vercel Function que o texto original previa como possível necessidade não teria sido necessária. Confirmado que a signed URL era criada no cliente com o JWT da usuária (`src/utils/plans.ts`, versão antiga), então a RLS seria avaliada no momento certo — mas a janela de tolerância pós-cancelamento (item acima) e a complexidade de manter 2 mecanismos de gate sincronizados motivaram a troca completa em vez de só aplicar a policy planejada aqui.
+
+</details>
 
 ### Tarefa M4.4 — Não ativar ainda
 
 Entregar as migrations como arquivo, **sem aplicar**. A ativação é a Fase M5, e tem ordem própria.
+
+> ✅ **CHECKPOINT M4 fechado em 2026-08-10.** `supabase/migrations/20260810140000_billing_gate.sql` cobre M4.1 (subscriptions + has_active_subscription() com a defesa de expiração escolhida), M4.2 (gate em workouts) e M4.3 (meal_plans substituindo pdf_plans + bucket). Arquivo criado no repo, **`apply_migration` não foi chamado** — nenhuma policy mudou no banco real ainda. `npm run check`, `npm run build` e `npm test` (34 arquivos / 124 testes) verdes, incluindo os 2 novos suites (`plans.test.ts`, `MealPlan.test.tsx`) para o caminho novo.
 
 > ⛔ **CHECKPOINT M4**
 

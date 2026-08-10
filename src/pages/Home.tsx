@@ -1,30 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getPrograms } from '../utils/workouts'
-import { Trophy, Flame, Eye, X, Download } from 'lucide-react'
+import { Trophy, Flame } from 'lucide-react'
 import { Program } from '../types'
-import { getSignedPlanUrl } from '../utils/plans'
-import { useDialogA11y } from '../hooks/useDialogA11y'
-import { useToast } from '../hooks/useToast'
-import Toast from '../components/ui/Toast'
 
 export default function Home() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading } = useAuthStore()
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
-  const [modalUrl, setModalUrl] = useState<string | null>(null)
-  const [opening, setOpening] = useState<'mass_gain' | 'fat_loss' | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
-  const [modalTitle, setModalTitle] = useState<string>('')
   const [logoSrc, setLogoSrc] = useState('/logo.png')
   const logoCandidates = useMemo(() => ['/logo.png', '/logo.svg', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
-  const { toast, show: showToast, dismiss: dismissToast } = useToast()
-  const pdfDialogRef = useRef<HTMLDivElement>(null)
-  const pdfCloseButtonRef = useRef<HTMLButtonElement>(null)
-  const closePdfModal = () => { setModalUrl(null); setPreviewLoading(false) }
-  useDialogA11y(!!modalUrl, closePdfModal, pdfDialogRef, pdfCloseButtonRef)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -123,63 +110,24 @@ export default function Home() {
 
         {/* Planos Alimentares */}
         <div className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-xl font-bold text-text mb-2">Planos Alimentares (PDF)</div>
+          <div className="text-xl font-bold text-text mb-4">Planos Alimentares</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+            <button
+              onClick={() => navigate('/planos-ganho')}
+              className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px] text-left"
+            >
               <div className="text-lg md:text-xl font-semibold text-text mb-1">Ganho de Massa Muscular</div>
-              <p className="text-sm text-text-muted mb-4">Plano com foco em hipertrofia e superávit calórico.</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={async () => {
-                    try {
-                      setOpening('mass_gain')
-                      const { url, meta } = await getSignedPlanUrl('mass_gain', 900)
-                      setModalTitle(meta.title)
-                      setModalUrl(url)
-                      setPreviewLoading(true)
-                    } catch (e: any) {
-                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      showToast(`Pré-visualização indisponível no momento. ${msg}`)
-                    } finally {
-                      setOpening(null)
-                    }
-                  }}
-                  className="ui-hover bg-surface border border-border text-text px-4 py-2 rounded-lg flex items-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {opening === 'mass_gain' ? 'Abrindo...' : 'Visualizar'}
-                </button>
-              </div>
-            </div>
+              <p className="text-sm text-text-muted">Plano com foco em hipertrofia e superávit calórico.</p>
+            </button>
 
-            <div className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px]">
+            <button
+              onClick={() => navigate('/planos-perda')}
+              className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px] text-left"
+            >
               <div className="text-lg md:text-xl font-semibold text-text mb-1">Perda de Gordura</div>
-              <p className="text-sm text-text-muted mb-4">Plano com foco em déficit calórico e definição.</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={async () => {
-                    try {
-                      setOpening('fat_loss')
-                      const { url, meta } = await getSignedPlanUrl('fat_loss', 900)
-                      setModalTitle(meta.title)
-                      setModalUrl(url)
-                      setPreviewLoading(true)
-                    } catch (e: any) {
-                      const msg = typeof e?.message === 'string' ? e.message : 'Erro ao gerar link seguro'
-                      showToast(`Pré-visualização indisponível no momento. ${msg}`)
-                    } finally {
-                      setOpening(null)
-                    }
-                  }}
-                  className="ui-hover bg-surface border border-border text-text px-4 py-2 rounded-lg flex items-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {opening === 'fat_loss' ? 'Abrindo...' : 'Visualizar'}
-                </button>
-              </div>
-            </div>
+              <p className="text-sm text-text-muted">Plano com foco em déficit calórico e definição.</p>
+            </button>
           </div>
-
         </div>
 
         <div className="grid grid-cols-1 gap-4">
@@ -192,47 +140,6 @@ export default function Home() {
           </button>
         </div>
       </div>
-      {modalUrl && (
-        <div ref={pdfDialogRef} role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col">
-          <div className="bg-surface/95 p-3 flex items-center justify-between">
-            <div className="font-semibold text-text">{modalTitle || 'Visualização do PDF'}</div>
-            <div className="flex items-center gap-2">
-              <a
-                href={modalUrl}
-                download
-                rel="noopener"
-                className="ui-hover bg-gradient-to-r from-purple-600 to-pink-500 text-white px-3 py-2 rounded-md flex items-center"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                Baixar
-              </a>
-              <button
-                ref={pdfCloseButtonRef}
-                onClick={closePdfModal}
-                className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
-                aria-label="Fechar"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Fechar
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 bg-white">
-            {previewLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin"></div>
-              </div>
-            )}
-            <iframe
-              src={modalUrl}
-              title="Visualização do PDF"
-              className="w-full h-full"
-              onLoad={() => setPreviewLoading(false)}
-            />
-          </div>
-        </div>
-      )}
-      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
 }

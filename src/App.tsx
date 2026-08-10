@@ -3,11 +3,13 @@ import { useEffect, useRef, Suspense, lazy } from 'react'
 import { useAuthStore } from './store/authStore'
 import { getCurrentUser } from './utils/auth'
 import { getIsAdmin } from './utils/profile'
+import { getHasActiveSubscription } from './utils/subscription'
 import PageTransition from './components/PageTransition'
 import ThemeInit from './components/ThemeInit'
 import Layout from './components/Layout'
 import RequireAdmin from './components/RequireAdmin'
 import RequireOnboarding from './components/RequireOnboarding'
+import RequireSubscription from './components/RequireSubscription'
 
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
@@ -17,6 +19,9 @@ const ProgramDays = lazy(() => import('./pages/ProgramDays'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Home = lazy(() => import('./pages/Home'))
 const HIIT = lazy(() => import('./pages/HIIT'))
+const Subscribe = lazy(() => import('./pages/Subscribe'))
+const MySubscription = lazy(() => import('./pages/MySubscription'))
+const MealPlan = lazy(() => import('./pages/MealPlan'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
@@ -40,7 +45,7 @@ function cleanupOrphanedStorage() {
 }
 
 function App() {
-  const { setUser, setIsLoading, setIsAdmin, setNeedsOnboarding } = useAuthStore()
+  const { setUser, setIsLoading, setIsAdmin, setNeedsOnboarding, setHasActiveSubscription } = useAuthStore()
   const lastResetAt = useRef(0)
 
   useEffect(() => {
@@ -53,23 +58,26 @@ function App() {
           setUser(user)
           setIsAdmin(await getIsAdmin(user.id))
           setNeedsOnboarding(!user.onboardingCompletedAt)
+          setHasActiveSubscription(await getHasActiveSubscription(user.id))
         } else {
           setUser(null)
           setIsAdmin(false)
           setNeedsOnboarding(false)
+          setHasActiveSubscription(false)
         }
       } catch (error) {
         console.error('Auth check failed:', error)
         setUser(null)
         setIsAdmin(false)
         setNeedsOnboarding(false)
+        setHasActiveSubscription(false)
       } finally {
         setIsLoading(false)
       }
     }
 
     checkAuth()
-  }, [setUser, setIsLoading, setIsAdmin, setNeedsOnboarding])
+  }, [setUser, setIsLoading, setIsAdmin, setNeedsOnboarding, setHasActiveSubscription])
 
   useEffect(() => {
     let timer: any
@@ -111,10 +119,14 @@ function App() {
             <Route path="/reset" element={<ResetPassword />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
-            <Route path="/home" element={<RequireOnboarding><Home /></RequireOnboarding>} />
-            <Route path="/hiit" element={<RequireOnboarding><HIIT /></RequireOnboarding>} />
-            <Route path="/program/:slug" element={<RequireOnboarding><ProgramDays /></RequireOnboarding>} />
-            <Route path="/program/:slug/day/:weekday" element={<RequireOnboarding><WorkoutDay /></RequireOnboarding>} />
+            <Route path="/subscribe" element={<RequireOnboarding><Subscribe /></RequireOnboarding>} />
+            <Route path="/minha-assinatura" element={<RequireOnboarding><MySubscription /></RequireOnboarding>} />
+            <Route path="/home" element={<RequireOnboarding><RequireSubscription><Home /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/hiit" element={<RequireOnboarding><RequireSubscription><HIIT /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/program/:slug" element={<RequireOnboarding><RequireSubscription><ProgramDays /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/program/:slug/day/:weekday" element={<RequireOnboarding><RequireSubscription><WorkoutDay /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/planos-ganho" element={<RequireOnboarding><RequireSubscription><MealPlan type="mass_gain" /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/planos-perda" element={<RequireOnboarding><RequireSubscription><MealPlan type="fat_loss" /></RequireSubscription></RequireOnboarding>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs" element={<RequireOnboarding><RequireAdmin><AdminProgramList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />

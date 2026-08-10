@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { getUserProgress } from '../utils/workouts'
 import { updateProfileFields } from '../utils/profile'
 import { Goal, Sex, UserProgress } from '../types'
-import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Shield, Sun, Moon, Pencil } from 'lucide-react'
+import { ChevronLeft, Trophy, Calendar, Sparkles, Target, Shield, Sun, Moon, Pencil, CreditCard } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
 import { signOut } from '../utils/auth'
 import { useTheme } from '../hooks/useTheme'
@@ -406,6 +406,15 @@ export default function Profile() {
             </FormField>
           </div>
         </Modal>
+
+        {!isAdmin && (
+          <button
+            onClick={() => navigate('/minha-assinatura')}
+            className="w-full bg-white dark:bg-surface rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-medium"
+          >
+            <CreditCard className="w-5 h-5 mr-2" /> Minha assinatura
+          </button>
+        )}
 
         {isAdmin && (
           <button
