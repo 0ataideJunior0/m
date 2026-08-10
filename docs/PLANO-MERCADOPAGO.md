@@ -416,6 +416,10 @@ Restaurar o link "Minha assinatura" no `Profile.tsx` (commit `a3f64d4`), adaptad
 
 **Critério de aceite:** `npm test` verde; fluxo manual completo em preview — cadastro → onboarding → bloqueio → `/subscribe` → MP → retorno → acesso liberado.
 
+> ✅ **M3.1 a M3.4 implementadas em 2026-08-10.** `Subscribe.tsx`, `MySubscription.tsx` e `RequireSubscription.tsx` restaurados de `3db7a4f` e reescritos com `Card`/`Button`/`PageHeader`/`Spinner`/`Toast` de `src/components/ui/`, dark mode aplicado, `alert()`/`window.confirm` de erro trocados pelo toast (o `window.confirm` de "tem certeza?" ficou, é confirmação destrutiva, não feedback). `hasActiveSubscription`/`setHasActiveSubscription` adicionados ao `authStore`, buscados no `checkAuth` do `App.tsx` junto com `isAdmin`/`needsOnboarding`. Guards compostos como `RequireOnboarding > RequireSubscription` em `/home`, `/hiit`, `/program/:slug`, `/program/:slug/day/:weekday`; `/subscribe` e `/minha-assinatura` protegidas só por `RequireOnboarding`; rotas de admin inalteradas (sem `RequireSubscription`, `RequireAdmin` já contorna). Link "Minha assinatura" adicionado ao `Profile.tsx` (visível para não-admin, espelhando o botão "Painel Admin" que só admin vê). `npm run check`, `npm run build` e `npm test` — **32 arquivos / 120 testes** verdes, incluindo os 3 suites restaurados sem nenhum ajuste no próprio teste.
+>
+> ⏳ **Falta o fluxo manual em preview** (cadastro → onboarding → bloqueio → `/subscribe` → MP → retorno → acesso liberado) antes de fechar o checkpoint.
+
 > ⛔ **CHECKPOINT M3**
 
 ---
