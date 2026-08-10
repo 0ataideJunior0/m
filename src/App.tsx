@@ -21,6 +21,7 @@ const Home = lazy(() => import('./pages/Home'))
 const HIIT = lazy(() => import('./pages/HIIT'))
 const Subscribe = lazy(() => import('./pages/Subscribe'))
 const MySubscription = lazy(() => import('./pages/MySubscription'))
+const MealPlan = lazy(() => import('./pages/MealPlan'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
@@ -124,6 +125,8 @@ function App() {
             <Route path="/hiit" element={<RequireOnboarding><RequireSubscription><HIIT /></RequireSubscription></RequireOnboarding>} />
             <Route path="/program/:slug" element={<RequireOnboarding><RequireSubscription><ProgramDays /></RequireSubscription></RequireOnboarding>} />
             <Route path="/program/:slug/day/:weekday" element={<RequireOnboarding><RequireSubscription><WorkoutDay /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/planos-ganho" element={<RequireOnboarding><RequireSubscription><MealPlan type="mass_gain" /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/planos-perda" element={<RequireOnboarding><RequireSubscription><MealPlan type="fat_loss" /></RequireSubscription></RequireOnboarding>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs" element={<RequireOnboarding><RequireAdmin><AdminProgramList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />

@@ -472,16 +472,20 @@ Ajustar os valores de `status` ao que a Tarefa M1.2 observou **de verdade**, nã
 > 2. **Reconciliação periódica** — job que relê no MP as assinaturas `authorized` cuja `next_payment_date` já passou, e corrige o status. Mais robusto, mais trabalho.
 >
 > A decisão depende do que a M1.2 observar. **Não escolher antes de ter o dado.**
+>
+> ✅ **Decidido em 2026-08-10 — opção 1.** Checagem de validade dentro de `has_active_subscription()` (`next_payment_date IS NULL OR next_payment_date > NOW() - INTERVAL '3 days'`), sem job de reconciliação por agora. Implementada em `supabase/migrations/20260810140000_billing_gate.sql`.
 
 ### Tarefa M4.2 — Fechar as policies abertas
 
 > ⚠️ **A armadilha já documentada na migration original:** uma policy `USING (true)` deixada no lugar **combina por OR** com qualquer policy nova e a anula por completo. A antiga precisa ser **derrubada e substituída**, nunca complementada.
 
-O diagnóstico de 2026-08-05 identificou `USING (true)` em **três** tabelas — `workouts`, `programs` e `pdf_plans`. A migration original de julho só tratava `workouts`, porque as outras duas nem existiam ainda. **Todas as três precisam entrar.**
-
-Para cada uma: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_subscription() OR is_admin()`.
+O diagnóstico de 2026-08-05 identificou `USING (true)` em **três** tabelas — `workouts`, `programs` e `pdf_plans`. A migration original de julho só tratava `workouts`, porque as outras duas nem existiam ainda.
 
 `programs` merece uma decisão à parte: se a Home precisa listar os programas para quem ainda não assinou (como vitrine), ela fica aberta e o bloqueio acontece em `workouts`. Recomendação: **manter `programs` legível** — nome de programa não é o produto; o treino é.
+
+`pdf_plans` **não é mais gateada — é derrubada.** Ver M4.3 reescrita abaixo: os planos alimentares deixaram de ser PDF em Storage e viraram páginas com conteúdo em `meal_plans`, que nasce com o gate já embutido na policy de criação. Sobra só `workouts` pra aplicar `DROP POLICY` + `CREATE POLICY` de fato nesta tarefa.
+
+Para `workouts`: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_subscription() OR is_admin()`.
 
 > 🔄 **Decisão explicitada em 2026-08-08 — `user_progress` fica de fora.**
 >
@@ -491,40 +495,40 @@ Para cada uma: `DROP POLICY` da aberta, `CREATE POLICY` nova com `has_active_sub
 >
 > Efeito colateral a conhecer: a página de Perfil continua mostrando "Treinos Concluídos" para quem não assina. É intencional — a M3.3 já mantém `/profile` fora das rotas protegidas pelo mesmo motivo.
 
-### Tarefa M4.3 — O buraco do Storage
+### Tarefa M4.3 — Planos alimentares sem Storage (reescrita em 2026-08-10)
 
-`src/utils/plans.ts` gera signed URL para os PDFs de plano alimentar direto do Storage. **A RLS das tabelas não cobre bucket de Storage.** Sem tratar isso, o conteúdo pago escapa por aí e o gate inteiro vira teatro.
+**Premissa original (até 2026-08-08):** `src/utils/plans.ts` gerava signed URL para 2 PDFs estáticos no bucket `plans`. Como a RLS de tabela não cobre bucket de Storage, era preciso uma policy separada em `storage.objects` — inventariada e resolvida (ver histórico abaixo).
 
-> ✅ **Inventário feito em 2026-08-08 (MCP read-only) — e a notícia é boa.**
->
-> ```
-> bucket:  plans   (public = false)
-> policy:  authenticated_read_plans | SELECT | authenticated | (bucket_id = 'plans')
-> ```
->
-> Só existe **uma** policy, e ela é RLS comum sobre `storage.objects` — portanto **pode** chamar `public.has_active_subscription()`. A Vercel Function que o texto original previa como possível necessidade **não é necessária**; fica como plano B se algo inesperado aparecer.
->
-> Confirmado em [`src/utils/plans.ts:47-49`](../src/utils/plans.ts#L47-L49) que a signed URL é criada **no cliente, com o JWT da usuária** (`supabase.storage.from(...).createSignedUrl(...)`). Ou seja, a RLS é avaliada **no momento da criação da URL** — que é exatamente o ponto de controle certo.
->
-> Migration:
->
-> ```sql
-> DROP POLICY IF EXISTS "authenticated_read_plans" ON storage.objects;
-> CREATE POLICY "subscribers_read_plans" ON storage.objects
->   FOR SELECT TO authenticated
->   USING (
->     bucket_id = 'plans'
->     AND (public.has_active_subscription() OR public.is_admin())
->   );
-> ```
->
-> **Limite conhecido, e aceitável:** uma signed URL já emitida continua válida até expirar, mesmo se a assinatura for cancelada no meio — a RLS não é reavaliada a cada download. Hoje o `expiresInSeconds` usado pela Home é 900 (15 min). Janela pequena o bastante para não valer complexidade extra.
->
-> **Atenção ao efeito colateral em `pdf_plans`:** o mesmo arquivo, nas linhas 57-60, faz `UPDATE` em `pdf_plans` a partir do cliente quando a chave do arquivo não bate. Com `pdf_plans` gateada na M4.2, esse caminho de fallback muda de comportamento para quem não assina. Verificar se ele ainda é alcançável — possivelmente é código morto e deve ir para `docs/ACHADOS-EXTRAS.md`.
+**Decisão de 2026-08-10 — trocar o mecanismo inteiro.** Os 2 planos (`mass_gain` 2300kcal, `fat_loss` 1800kcal) são conteúdo estático, sem nenhuma variação por usuária. Virar páginas de verdade (`/planos-ganho`, `/planos-perda`) em vez de PDF em bucket:
+
+- **Elimina a superfície de Storage inteira** — sem bucket, sem signed URL, sem policy separada de `storage.objects` pra manter sincronizada com a RLS de tabela.
+- **Fecha o limite conhecido da abordagem antiga de vez**: uma signed URL emitida continuava válida até expirar (15 min) mesmo com assinatura cancelada no meio. Uma página busca a linha em `meal_plans` a cada carregamento — RLS avaliada na hora, sem janela de tolerância.
+- **Mais barato** — sem tráfego de Storage; a consulta é uma linha de texto via Postgres, do mesmo jeito que `workouts` já funciona.
+- Conteúdo guardado como markdown puro (`content_md`) em vez de normalizado em tabelas de alimentos — o documento é referência estática, não dado transacional; normalizar seria over-engineering pra 2 linhas que mudam raramente.
+
+**Implementado:**
+
+- `supabase/migrations/20260810140000_billing_gate.sql`: `DROP TABLE pdf_plans`; `CREATE TABLE meal_plans (type, title, description, content_md, updated_at)` com RLS `has_active_subscription() OR is_admin()` desde a criação (não precisa de `DROP POLICY` de nada aberto — a tabela nasce fechada); `INSERT` com o conteúdo real dos 2 planos (fornecido pela usuária em markdown).
+- `src/utils/plans.ts`: `getMealPlan(type)` — uma query, sem signed URL, sem retry de storage key.
+- `src/components/ui/Markdown.tsx`: wrapper de `react-markdown` + `remark-gfm` (novas dependências) com componentes estilizados no padrão dark mode do app.
+- `src/pages/MealPlan.tsx`: página com `PageHeader`, botão "Imprimir" (`window.print()`, `print:hidden` no cabeçalho) em vez de "Baixar PDF", `Card` envolvendo o markdown renderizado.
+- `src/App.tsx`: rotas `/planos-ganho` (`type="mass_gain"`) e `/planos-perda` (`type="fat_loss"`), ambas atrás de `RequireOnboarding > RequireSubscription` — mesmo gate client-side que `/home`, `/hiit` e `/program/*` já usam.
+- `src/pages/Home.tsx`: a seção "Planos Alimentares" virou 2 links de navegação simples; removido o modal de iframe/PDF inteiro (`useDialogA11y`, `getSignedPlanUrl`, ícones `Eye`/`X`/`Download`, toast de erro de link — nada disso sobrou com uso no arquivo).
+
+**Trade-off aceito:** perde-se o "baixar o PDF pra guardar offline" tal como era; substituído por impressão via navegador. Ninguém pediu esse caso de uso explicitamente até agora.
+
+<details>
+<summary>Histórico da abordagem descartada (inventário de Storage, 2026-08-08)</summary>
+
+Inventário feito à época via MCP read-only: bucket `plans` (`public = false`), única policy `authenticated_read_plans | SELECT | authenticated | (bucket_id = 'plans')` — sem checar assinatura. A RLS de `storage.objects` normal permite chamar `has_active_subscription()`; a Vercel Function que o texto original previa como possível necessidade não teria sido necessária. Confirmado que a signed URL era criada no cliente com o JWT da usuária (`src/utils/plans.ts`, versão antiga), então a RLS seria avaliada no momento certo — mas a janela de tolerância pós-cancelamento (item acima) e a complexidade de manter 2 mecanismos de gate sincronizados motivaram a troca completa em vez de só aplicar a policy planejada aqui.
+
+</details>
 
 ### Tarefa M4.4 — Não ativar ainda
 
 Entregar as migrations como arquivo, **sem aplicar**. A ativação é a Fase M5, e tem ordem própria.
+
+> ✅ **CHECKPOINT M4 fechado em 2026-08-10.** `supabase/migrations/20260810140000_billing_gate.sql` cobre M4.1 (subscriptions + has_active_subscription() com a defesa de expiração escolhida), M4.2 (gate em workouts) e M4.3 (meal_plans substituindo pdf_plans + bucket). Arquivo criado no repo, **`apply_migration` não foi chamado** — nenhuma policy mudou no banco real ainda. `npm run check`, `npm run build` e `npm test` (34 arquivos / 124 testes) verdes, incluindo os 2 novos suites (`plans.test.ts`, `MealPlan.test.tsx`) para o caminho novo.
 
 > ⛔ **CHECKPOINT M4**
 

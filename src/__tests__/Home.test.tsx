@@ -8,10 +8,6 @@ vi.mock('../utils/workouts', () => ({
   getPrograms: vi.fn(async () => []),
 }))
 
-vi.mock('../utils/plans', () => ({
-  getSignedPlanUrl: vi.fn(async () => ({ url: '', meta: { title: '' } })),
-}))
-
 beforeEach(() => {
   useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false })
 })
