@@ -552,6 +552,12 @@ Ordem importa. Ativar o gate antes do fluxo de pagamento funcionar tranca todo m
 
 **Plano de rollback:** manter pronto o SQL que restaura as policies `USING (true)` nas três tabelas. Se algo der errado no passo 5, o rollback é uma execução só e devolve o acesso a todo mundo em segundos. Testar esse SQL **antes** de precisar dele.
 
+> ✅ **Passo 1 concluído em 2026-08-10.** Merge de `feat/mercadopago-billing-m2` → `main` (commit `65616ff`), deploy em produção (`https://traemusa20lfmz.vercel.app`, `target: production`). Gate confirmado inativo via MCP: `workouts` continua com `USING (true)`. Env vars de produção (`MERCADOPAGO_ACCESS_TOKEN` real, prefixo `APP_USR-`; `MERCADOPAGO_WEBHOOK_SECRET`; `SUPABASE_SERVICE_ROLE_KEY`) cadastradas no Vercel só em Production (Preview continua em sandbox), redeploy feito pra aplicar. Smoke test nas 3 functions em produção: `GET` → 405, `POST` sem auth → 401 "Missing authorization token", `POST` webhook sem assinatura → 401 "Invalid signature" (não mais 500 "not configured") — confirma as env vars ativas.
+>
+> Segunda identidade (M0): conta vendedora do MP é `ataide.junior.mg`; teste real vai usar uma conta diferente no Musa Fit, como o blocker A exige.
+>
+> ⏳ **Passos 2-6 pendentes** — teste real de ponta a ponta com cartão, cancelamento, comunicação às usuárias, aplicação da migration do gate.
+
 > ⛔ **CHECKPOINT M5**
 
 ---
