@@ -252,6 +252,22 @@ com qualquer segmento ausente omitido por completo — validado com o `WebhookSi
 
 **Conclusão:** a M1.3 avançou (validação de assinatura funciona, segredo certo), mas o objetivo central — confirmar que um evento real chega — **continua em aberto**. O padrão persiste: eventos reais (criar, autorizar, cancelar) nunca geraram notificação; só a interação com o próprio painel gerou. Isso é uma pista nova, não ruído: sugere que o disparo de notificação pode estar de fato limitado a validação/simulação, e não a mudança de estado real das nossas preapprovals — precisa de mais um ciclo de teste para confirmar.
 
+---
+
+## 2026-08-10 — teste de controle: clique manual em "Simular"
+
+**Setup:** humano clicou deliberadamente em "Simular" no painel, com monitor rearmado para ignorar os dois `x-request-id` já conhecidos (`f98e6333...`, `18421952...`) e disparar só em notificação genuinamente nova.
+
+**Resultado:** ✅ notificação nova capturada em ~40s (`x-request-id: a9d0fbd2-6109-4e99-a4ff-a6e01b1f4194`). **Corpo idêntico às duas anteriores** — mesmo `data.id: "123456"`, mesma `date: "2021-11-01T02:02:02Z"`. Assinatura validada com sucesso (`03-verify-signature.mjs` → `✅ ASSINATURA VÁLIDA`), terceira confirmação seguida.
+
+**O que isso fecha:** confirma com certeza — não mais suspeita — que as três notificações recebidas até agora (as duas "incidentais" ao editar a URL no painel + esta do clique explícito) **são todas produzidas pelo mesmo mecanismo de teste/validação do painel**, com um payload de exemplo fixo, completamente desacoplado de qualquer preapproval real. Editar a URL do webhook aparentemente já dispara esse ping de validação por conta própria — **não precisa nem clicar em "Simular" para gerar um**.
+
+**Consequência para a investigação:** "Simular" (e o auto-ping do painel) são um **beco sem saída** para provar entrega de evento real — por design, nunca vão usar dados de uma preapproval de verdade, então nunca vão confirmar o que a M1.3 realmente precisa. Servem só para o que já provaram: secret certo, validação de assinatura funcionando, endpoint acessível. Essas três coisas agora estão solidamente estabelecidas e não precisam ser testadas de novo.
+
+**O que continua sem explicação:** por que criar, autorizar e cancelar preapprovals reais (5 tentativas ao longo da sessão, incluindo uma autorização manual completa) nunca gerou notificação nenhuma, incidental ou não. Essa pergunta não avançou nesta rodada — só ficou mais isolada, porque agora dá pra afirmar com confiança que o mecanismo de entrega *funciona* (prova: as notificações de teste chegam), então a causa não é "entrega quebrada" — é algo específico de **quando o Mercado Pago decide que um evento de preapproval merece notificação**.
+
+**Hipótese nova para a próxima sessão:** talvez o ambiente de sandbox/teste do produto Assinaturas simplesmente não dispare `subscription_preapproval` para mudanças de estado via API — só para interações que passam pela camada de validação do painel. Verificar na documentação (`search_documentation`) se há alguma limitação documentada de webhooks para preapprovals em modo de teste, especificamente.
+
 <!-- Próxima entrada:
 
 ## AAAA-MM-DD HH:MM — 01-create-preapproval.mjs
