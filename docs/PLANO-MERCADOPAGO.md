@@ -351,6 +351,12 @@ Atualizar `.env.example` com as três novas chaves (sem valores).
 
 **Critério de aceite:** `npm run check` limpo; os 4 testes de API verdes; deploy de preview no Vercel com as 3 functions respondendo.
 
+> ✅ **M2.1, M2.2 e M2.3 concluídas em 2026-08-10** (commit `e8ed18a`, branch `feat/mercadopago-billing-m2`). `npm run check` limpo, `npm run build` passa, **29 arquivos de teste / 112 testes** verdes (os 4 restaurados de `apiCreateSubscription`/`apiCancelSubscription`/`apiMercadopagoWebhook`/`apiLib`, mais `subscription.test.ts`, todos sem precisar de nenhum ajuste). Verificação de `grep -r "service_role" dist/` feita e investigada — o único hit era comentário JSDoc do próprio `@supabase/supabase-js`, não segredo nosso; confirmado com o valor completo da chave que nada vaza.
+>
+> **Falta só o deploy de preview com as 3 functions respondendo de verdade** — a parte do critério de aceite que exige testar contra infraestrutura real, não só localmente. Pendente de decisão do humano sobre quando fazer esse deploy.
+>
+> **Achado de segurança durante a M2.3, corrigido antes de qualquer commit:** um `.env.local.vercel` não rastreado (de um `vercel env pull` sugerido nesta sessão) continha todos os segredos reais em texto puro, incluindo um `VERCEL_OIDC_TOKEN` ativo — e o padrão `*.local` do `.gitignore` não cobria esse nome (só cobre arquivos que *terminam* em `.local`). Arquivo deletado, `.gitignore` corrigido para `.env.*` com exceção explícita para `.env.example`, fechando essa lacuna para qualquer nome futuro nesse padrão.
+
 > ⛔ **CHECKPOINT M2**
 
 ---
