@@ -114,18 +114,26 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => navigate('/planos-ganho')}
-              className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px] text-left"
+              style={{ backgroundImage: 'url(/programs/ganhodemassa.jpg)' }}
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
-              <div className="text-lg md:text-xl font-semibold text-text mb-1">Ganho de Massa Muscular</div>
-              <p className="text-sm text-text-muted">Plano com foco em hipertrofia e superávit calórico.</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Ganho de</div>
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Massa</div>
+              </div>
             </button>
 
             <button
               onClick={() => navigate('/planos-perda')}
-              className="bg-surface rounded-2xl shadow-md p-5 hover:shadow-lg transition transform hover:scale-[1.01] min-h-[140px] text-left"
+              style={{ backgroundImage: 'url(/programs/perdadegordura.jpg)' }}
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
-              <div className="text-lg md:text-xl font-semibold text-text mb-1">Perda de Gordura</div>
-              <p className="text-sm text-text-muted">Plano com foco em déficit calórico e definição.</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Perda de</div>
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Gordura</div>
+              </div>
             </button>
           </div>
         </div>
