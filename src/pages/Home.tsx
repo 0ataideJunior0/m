@@ -115,9 +115,9 @@ export default function Home() {
             <button
               onClick={() => navigate('/planos-ganho')}
               style={{ backgroundImage: 'url(/programs/ganhodemassa.jpg)' }}
-              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-right hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-l from-black/85 via-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Ganho de</div>
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Massa</div>
@@ -126,7 +126,7 @@ export default function Home() {
 
             <button
               onClick={() => navigate('/planos-perda')}
-              style={{ backgroundImage: 'url(/programs/perdadegordura.jpg)' }}
+              style={{ backgroundImage: 'url(/programs/perdadegordura.png)' }}
               className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
