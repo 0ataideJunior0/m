@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signIn } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
+import { getHasActiveSubscription } from '../utils/subscription'
 import { Mail, Lock, Eye, EyeOff, Dumbbell, Sparkles } from 'lucide-react'
 
 export default function Login() {
@@ -14,7 +15,7 @@ export default function Login() {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
 
   const navigate = useNavigate()
-  const { setUser, setIsAdmin, setNeedsOnboarding } = useAuthStore()
+  const { setUser, setIsAdmin, setNeedsOnboarding, setHasActiveSubscription } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,6 +47,7 @@ export default function Login() {
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
         setNeedsOnboarding(!user.onboardingCompletedAt)
+        setHasActiveSubscription(await getHasActiveSubscription())
         navigate('/home')
       }
     } catch (err) {
@@ -62,10 +64,10 @@ export default function Login() {
         <div className="text-center mb-6">
           <img
             src="/logo.png"
-            alt="Logo Musa Fit"
+            alt="Logo MusaFit"
             className="w-20 h-20 rounded-full mx-auto mb-3 shadow-md object-contain animate-fade-in"
           />
-          <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">Musa Fit</div>
+          <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">MusaFit</div>
           <div className="flex items-center justify-center text-sm text-text-muted mt-1">
             <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
             Destrave sua Transformação

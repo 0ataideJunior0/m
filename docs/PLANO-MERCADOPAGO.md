@@ -182,7 +182,7 @@ As duas funções **estavam sendo executadas** — os logs de erro que motivaram
 > Se a hipótese acima estiver certa, ela não afeta só o spike — afeta **todo teste de ponta a ponta**, inclusive o de produção da Fase M5. Providencie desde já:
 >
 > - **e-mail vendedor**: o da conta MP que recebe o dinheiro
-> - **e-mail pagador**: uma conta no app Musa Fit com e-mail **diferente**, usada para assinar nos testes
+> - **e-mail pagador**: uma conta no app MusaFit com e-mail **diferente**, usada para assinar nos testes
 >
 > Sem isso, a M5 passo 2 é impossível de executar como escrita.
 
@@ -206,7 +206,7 @@ Criar `scripts/spike-mp/` — pasta temporária, **a ser deletada na Fase M2**.
 
 ```js
 {
-  reason: 'Musa Fit - Assinatura mensal',
+  reason: 'MusaFit - Assinatura mensal',
   auto_recurring: {
     frequency: 1,
     frequency_type: 'months',
@@ -543,7 +543,7 @@ Ordem importa. Ativar o gate antes do fluxo de pagamento funcionar tranca todo m
 
    > 🔄 **Corrigido em 2026-08-08 — contradição interna.** O texto original mandava testar "com a sua própria conta". Isso **contradiz a hipótese principal do blocker A** (§4): se o Mercado Pago recusa assinatura em que pagador = vendedor, esse teste falha exatamente pelo motivo que se está tentando validar, e você conclui que o código está quebrado quando não está.
    >
-   > Usar a segunda identidade — conta no Musa Fit com e-mail **diferente** do e-mail vendedor do MP. Se a hipótese A cair na M1.1 (ou seja, o MP aceitar pagador = vendedor), esta restrição pode ser relaxada; até lá, tratar como obrigatória.
+   > Usar a segunda identidade — conta no MusaFit com e-mail **diferente** do e-mail vendedor do MP. Se a hipótese A cair na M1.1 (ou seja, o MP aceitar pagador = vendedor), esta restrição pode ser relaxada; até lá, tratar como obrigatória.
 
 3. **Testar o cancelamento** — `cancel-subscription` reflete no MP e no banco.
 4. **Comunicar as usuárias** (Tarefa M6.1) — antes do corte, não depois.
@@ -554,11 +554,11 @@ Ordem importa. Ativar o gate antes do fluxo de pagamento funcionar tranca todo m
 
 > ✅ **Passo 1 concluído em 2026-08-10.** Merge de `feat/mercadopago-billing-m2` → `main` (commit `65616ff`), deploy em produção (`https://traemusa20lfmz.vercel.app`, `target: production`). Gate confirmado inativo via MCP: `workouts` continua com `USING (true)`. Env vars de produção (`MERCADOPAGO_ACCESS_TOKEN` real, prefixo `APP_USR-`; `MERCADOPAGO_WEBHOOK_SECRET`; `SUPABASE_SERVICE_ROLE_KEY`) cadastradas no Vercel só em Production (Preview continua em sandbox), redeploy feito pra aplicar. Smoke test nas 3 functions em produção: `GET` → 405, `POST` sem auth → 401 "Missing authorization token", `POST` webhook sem assinatura → 401 "Invalid signature" (não mais 500 "not configured") — confirma as env vars ativas.
 >
-> Segunda identidade (M0): conta vendedora do MP é `ataide.junior.mg`; teste real vai usar uma conta diferente no Musa Fit, como o blocker A exige.
+> Segunda identidade (M0): conta vendedora do MP é `ataide.junior.mg`; teste real vai usar uma conta diferente no MusaFit, como o blocker A exige.
 >
 > ✅ **Passos 2-6 concluídos em 2026-08-10.**
 >
-> **Passo 2 — teste real.** Valor baixado temporariamente pra R$19,90 (commit `cbb607e`, revertido pra R$59,90 depois — commit posterior) só pra reduzir o custo do teste. Segunda identidade confirmada: conta vendedora `ataide.junior.mg`, conta pagadora no Musa Fit com e-mail diferente. Primeiro cartão testado foi **recusado pelo antifraude do MP** (mensagem genérica "pague com o meio de pagamento que costuma usar"), esperado numa primeira transação de conta vendedora recém-ativada. Segundo cartão: **aprovado** — `init_point` abriu, checkout do MP confirmou "Pronto! Você já assinou Musa Fit30", cartão master final 7896, próximo pagamento 10/09.
+> **Passo 2 — teste real.** Valor baixado temporariamente pra R$19,90 (commit `cbb607e`) só pra reduzir o custo do teste. Foi revertido pra R$59,90 depois do primeiro teste, mas voltou pra R$19,90 em seguida a pedido do humano pra mais rodadas de teste — **conferir `api/create-subscription.ts` pelo valor real antes de qualquer decisão**, não confiar nesta nota. Segunda identidade confirmada: conta vendedora `ataide.junior.mg`, conta pagadora no MusaFit com e-mail diferente. Primeiro cartão testado foi **recusado pelo antifraude do MP** (mensagem genérica "pague com o meio de pagamento que costuma usar"), esperado numa primeira transação de conta vendedora recém-ativada. Segundo cartão: **aprovado** — `init_point` abriu, checkout do MP confirmou "Pronto! Você já assinou MusaFit", cartão master final 7896, próximo pagamento 10/09.
 >
 > **Achado no meio do caminho — URL de webhook de produção errada.** Nenhuma chamada chegou em `/api/mercadopago-webhook` depois da aprovação. `notifications_history` do MCP reportava "5 sucessos, 100%", mas os logs do Vercel mostravam zero — **novo caso do mesmo padrão já visto nesta fase: não confiar nas ferramentas do MP sem cruzar com evidência direta.** Causa real: a "URL de produção" configurada no painel apontava pra um deploy de *preview* antigo da M1.3 (`/api/spike-webhook-echo`, endpoint já deletado na M2.1, que só ecoava sucesso sem checar nada), com um `x-vercel-protection-bypass` que produção nem precisa. Corrigida manualmente pelo humano pra `https://traemusa20lfmz.vercel.app/api/mercadopago-webhook`.
 >
