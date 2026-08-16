@@ -2,7 +2,7 @@
 
 ## Contexto
 
-O projeto (app de treino "Musa Fit30") não tem hoje nenhum conceito de administrador: sem coluna ou tabela de perfil, sem rota protegida, sem permissão de escrita em nenhuma tabela além do próprio progresso do usuário. Todo o conteúdo (título dos treinos, exercícios, vídeos) foi inserido manualmente via SQL.
+O projeto (app de treino "MusaFit") não tem hoje nenhum conceito de administrador: sem coluna ou tabela de perfil, sem rota protegida, sem permissão de escrita em nenhuma tabela além do próprio progresso do usuário. Todo o conteúdo (título dos treinos, exercícios, vídeos) foi inserido manualmente via SQL.
 
 O dono do produto precisa de um painel dentro do próprio app para:
 1. Editar o conteúdo dos treinos (título, vídeo do dia, e os exercícios de cada dia — nome, reps, sets, nota, vídeo, tipo, agrupamento) sem depender de rodar SQL manualmente.

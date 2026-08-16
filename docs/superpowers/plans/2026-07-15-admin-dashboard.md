@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let the app owner (identified as `ataide.junior.mg@gmail.com`) edit workout content (title, day video, and per-exercise fields) and view a read-only list of non-admin users, from inside the existing Musa Fit30 SPA.
+**Goal:** Let the app owner (identified as `ataide.junior.mg@gmail.com`) edit workout content (title, day video, and per-exercise fields) and view a read-only list of non-admin users, from inside the existing MusaFit SPA.
 
 **Architecture:** A new `public.profiles` table (populated by an `auth.users` trigger + one-time backfill) stores the `is_admin` flag and is the sole source of truth for authorization — enforced by Postgres RLS on `profiles`, `workouts` (UPDATE), and `user_progress` (SELECT). The React app reads `is_admin` into `authStore` after login and uses it only for UX (hiding the admin link, redirecting non-admins away from `/admin/*`); the database is what actually blocks unauthorized writes/reads.
 

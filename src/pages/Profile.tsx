@@ -187,7 +187,7 @@ export default function Profile() {
 
   const displayName = useMemo(() => {
     const name = (user?.username || user?.email.split('@')[0] || '').trim()
-    return name || 'Usuária Musa'
+    return name || 'Usuária MusaFit'
   }, [user])
 
   const initials = useMemo(() => {
@@ -257,7 +257,7 @@ export default function Profile() {
             <div className="rounded-xl p-6 text-center bg-green-50 dark:bg-green-950/30 transition-transform duration-300 hover:scale-[1.02]">
               <Sparkles className="w-6 h-6 text-green-500 mx-auto mb-2" />
               <div className="text-4xl font-bold text-gray-900 dark:text-text">{timeUsingApp}</div>
-              <div className="text-gray-600 dark:text-text-muted text-sm">Usando o Musa Fit</div>
+              <div className="text-gray-600 dark:text-text-muted text-sm">Usando o MusaFit</div>
             </div>
           </div>
         </div>

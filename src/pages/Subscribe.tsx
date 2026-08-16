@@ -96,8 +96,8 @@ export default function Subscribe() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
       <Card className="max-w-md text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-text mb-2">Assine o Musa Fit30</h1>
-        <p className="text-gray-600 dark:text-text-muted mb-6">Acesso completo aos treinos por R$19,90/mês.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-text mb-2">Assine o MusaFit</h1>
+        <p className="text-gray-600 dark:text-text-muted mb-6">Acesso completo aos treinos por R$59,90/mês.</p>
         <Button className="w-full" onClick={handleSubscribe} isLoading={creating}>
           Assinar agora
         </Button>

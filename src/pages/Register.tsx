@@ -87,7 +87,7 @@ export default function Register() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text mb-2">Musa Fit</h1>
+          <h1 className="text-3xl font-bold text-text mb-2">MusaFit</h1>
           <p className="text-text-muted">Crie sua conta para começar o desafio</p>
         </div>
 

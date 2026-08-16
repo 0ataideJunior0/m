@@ -35,7 +35,7 @@ export default function Home() {
 
   const displayName = useMemo(() => {
     const name = (user?.username || user?.email.split('@')[0] || '').trim()
-    return name || 'Usuária Musa'
+    return name || 'Usuária MusaFit'
   }, [user])
 
   if (isLoading || loading) {
@@ -59,7 +59,7 @@ export default function Home() {
           <div className="flex items-center">
             <img
               src={logoSrc}
-              alt="Logo Musa Fit"
+              alt="Logo MusaFit"
               className="w-12 h-12 mr-3 rounded-full shadow-md object-contain"
               onError={() => {
                 const i = logoCandidates.indexOf(logoSrc)
@@ -68,7 +68,7 @@ export default function Home() {
               }}
             />
             <div>
-              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">Musa Fit</div>
+              <div className="text-2xl font-bold text-purple-800 dark:text-purple-300">MusaFit</div>
               <div className="text-sm text-text-muted">Olá, {displayName}!</div>
             </div>
           </div>

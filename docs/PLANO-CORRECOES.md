@@ -1,4 +1,4 @@
-# Plano de Correções — Musa Fit
+# Plano de Correções — MusaFit
 
 **Destinatário:** agente de código
 **Origem:** auditoria do repositório em 2026-08-04
@@ -481,7 +481,7 @@ Criar `supabase/migrations/_draft/gate-conteudo.sql.draft` (extensão `.draft` p
 
 ### Tarefa 7.1 — Reescrever o `README.md`
 
-Hoje é o template padrão do Vite, sem uma palavra sobre o Musa Fit. Substituir por: o que é o produto, stack, como rodar local, variáveis de ambiente necessárias (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`), como aplicar migrations, e como fazer deploy.
+Hoje é o template padrão do Vite, sem uma palavra sobre o MusaFit. Substituir por: o que é o produto, stack, como rodar local, variáveis de ambiente necessárias (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`), como aplicar migrations, e como fazer deploy.
 
 ### Tarefa 7.2 — Atualizar o PRD
 
