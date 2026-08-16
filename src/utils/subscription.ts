@@ -1,10 +1,17 @@
 import { supabase } from '../lib/supabase'
 import { Subscription } from '../types'
 
+// Uma falha transitória de rede/RPC não deve ser lida como "sem assinatura" —
+// isso barraria uma assinante em dia sem chance de recuperar sozinha. Uma
+// retentativa curta cobre o caso comum (instabilidade passageira) sem
+// mudar o formato de retorno pra quem chama.
 export const getHasActiveSubscription = async (): Promise<boolean> => {
-  const { data, error } = await supabase.rpc('has_active_subscription')
-  if (error) return false
-  return Boolean(data)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase.rpc('has_active_subscription')
+    if (!error) return Boolean(data)
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 400))
+  }
+  return false
 }
 
 export const getMySubscription = async (userId: string): Promise<Subscription | null> => {

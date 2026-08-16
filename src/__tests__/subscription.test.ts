@@ -46,9 +46,20 @@ describe('getHasActiveSubscription', () => {
     expect(await getHasActiveSubscription()).toBe(false)
   })
 
-  it('retorna false quando há erro', async () => {
-    rpcMock.mockResolvedValueOnce({ data: null, error: new Error('boom') })
+  it('tenta de novo e retorna true quando o primeiro erro é transitório', async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: null, error: new Error('network blip') })
+      .mockResolvedValueOnce({ data: true, error: null })
+    expect(await getHasActiveSubscription()).toBe(true)
+    expect(rpcMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('retorna false quando erra nas duas tentativas', async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: null, error: new Error('boom') })
+      .mockResolvedValueOnce({ data: null, error: new Error('boom again') })
     expect(await getHasActiveSubscription()).toBe(false)
+    expect(rpcMock).toHaveBeenCalledTimes(2)
   })
 })
 

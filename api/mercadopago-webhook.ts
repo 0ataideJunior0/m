@@ -63,6 +63,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const supabaseAdmin = createSupabaseAdmin()
+
+    // Notificação atrasada ou reentregue pode chegar depois que a usuária já
+    // cancelou essa preapproval e assinou de novo (nova preapproval, mais
+    // recente). Sem essa checagem, o upsert por user_id sobrescreveria a
+    // linha atual com o estado velho da preapproval superada.
+    const { data: existing } = await supabaseAdmin
+      .from('subscriptions')
+      .select('preapproval_id, created_at')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (
+      existing &&
+      existing.preapproval_id !== resource.id &&
+      resource.date_created &&
+      new Date(existing.created_at) > new Date(resource.date_created)
+    ) {
+      res.status(200).json({ ignored: true, reason: 'stale preapproval superseded by a newer subscription' })
+      return
+    }
+
     await supabaseAdmin.from('subscriptions').upsert(
       {
         user_id: userId,
