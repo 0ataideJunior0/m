@@ -33,6 +33,30 @@ describe('MealPlan', () => {
     expect(getMealPlanMock).toHaveBeenCalledWith('mass_gain')
   })
 
+  it('coloca as substituições num dropdown, deixando a opção principal sempre visível', async () => {
+    getMealPlanMock.mockResolvedValueOnce({
+      type: 'mass_gain',
+      title: 'Plano Alimentar • Ganho de Massa',
+      description: null,
+      content_md:
+        '## 1) CAFÉ DA MANHÃ\n\n### Opção Principal\n\n| Alimento | Quantidade |\n|---|---|\n| Ovos | 3 unidades |\n\n### Substituições Possíveis por Grupo\n\n| Grupo | Opção |\n|---|---|\n| Carboidratos | Pão |',
+      updated_at: '',
+    })
+
+    render(
+      <MemoryRouter>
+        <MealPlan type="mass_gain" />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Opção Principal')).not.toBeNull()
+    expect(screen.getByText('Ovos')).not.toBeNull()
+
+    const summary = screen.getByText('Substituições Possíveis por Grupo')
+    expect(summary.closest('details')).not.toBeNull()
+    expect(summary.closest('details')).not.toHaveAttribute('open')
+  })
+
   it('mostra mensagem quando o plano não está disponível (ex.: sem assinatura ativa)', async () => {
     getMealPlanMock.mockResolvedValueOnce(null)
 
