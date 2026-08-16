@@ -8,6 +8,7 @@ import PageTransition from './components/PageTransition'
 import ThemeInit from './components/ThemeInit'
 import Layout from './components/Layout'
 import RequireAdmin from './components/RequireAdmin'
+import RequireAuth from './components/RequireAuth'
 import RequireOnboarding from './components/RequireOnboarding'
 import RequireSubscription from './components/RequireSubscription'
 
@@ -117,16 +118,22 @@ function App() {
             <Route path="/forgot" element={<ForgotPassword />} />
             <Route path="/reset-confirm" element={<ResetConfirm />} />
             <Route path="/reset" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            {/* Funil: cadastro/login -> pagamento -> onboarding -> app.
+                /subscribe e /minha-assinatura só exigem login (sem onboarding
+                completo, que só acontece depois de pagar). /onboarding exige
+                assinatura ativa (ou admin). O restante do app exige os dois,
+                nessa ordem — RequireSubscription por fora, pra barrar quem
+                não pagou antes mesmo de checar onboarding. */}
+            <Route path="/subscribe" element={<RequireAuth><Subscribe /></RequireAuth>} />
+            <Route path="/minha-assinatura" element={<RequireAuth><MySubscription /></RequireAuth>} />
+            <Route path="/onboarding" element={<RequireSubscription><Onboarding /></RequireSubscription>} />
             <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
-            <Route path="/subscribe" element={<RequireOnboarding><Subscribe /></RequireOnboarding>} />
-            <Route path="/minha-assinatura" element={<RequireOnboarding><MySubscription /></RequireOnboarding>} />
-            <Route path="/home" element={<RequireOnboarding><RequireSubscription><Home /></RequireSubscription></RequireOnboarding>} />
-            <Route path="/hiit" element={<RequireOnboarding><RequireSubscription><HIIT /></RequireSubscription></RequireOnboarding>} />
-            <Route path="/program/:slug" element={<RequireOnboarding><RequireSubscription><ProgramDays /></RequireSubscription></RequireOnboarding>} />
-            <Route path="/program/:slug/day/:weekday" element={<RequireOnboarding><RequireSubscription><WorkoutDay /></RequireSubscription></RequireOnboarding>} />
-            <Route path="/planos-ganho" element={<RequireOnboarding><RequireSubscription><MealPlan type="mass_gain" /></RequireSubscription></RequireOnboarding>} />
-            <Route path="/planos-perda" element={<RequireOnboarding><RequireSubscription><MealPlan type="fat_loss" /></RequireSubscription></RequireOnboarding>} />
+            <Route path="/home" element={<RequireSubscription><RequireOnboarding><Home /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/hiit" element={<RequireSubscription><RequireOnboarding><HIIT /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/program/:slug" element={<RequireSubscription><RequireOnboarding><ProgramDays /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/program/:slug/day/:weekday" element={<RequireSubscription><RequireOnboarding><WorkoutDay /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/planos-ganho" element={<RequireSubscription><RequireOnboarding><MealPlan type="mass_gain" /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/planos-perda" element={<RequireSubscription><RequireOnboarding><MealPlan type="fat_loss" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs" element={<RequireOnboarding><RequireAdmin><AdminProgramList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />

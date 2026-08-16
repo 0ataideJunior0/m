@@ -17,6 +17,7 @@ const mockState: any = {
   user: { id: 'u1' },
   isAdmin: false,
   hasActiveSubscription: false,
+  needsOnboarding: false,
   setHasActiveSubscription: vi.fn(),
 }
 vi.mock('../store/authStore', () => ({
@@ -27,6 +28,7 @@ describe('Subscribe', () => {
   beforeEach(() => {
     mockState.isAdmin = false
     mockState.hasActiveSubscription = false
+    mockState.needsOnboarding = false
     mockState.setHasActiveSubscription = vi.fn()
     createSubscriptionMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
@@ -67,5 +69,21 @@ describe('Subscribe', () => {
 
     expect(await screen.findByText('Home Page')).not.toBeNull()
     expect(mockState.setHasActiveSubscription).toHaveBeenCalledWith(true)
+  })
+
+  it('ao voltar do checkout com onboarding pendente, redireciona pro onboarding em vez da home', async () => {
+    mockState.needsOnboarding = true
+    getHasActiveSubscriptionMock.mockResolvedValueOnce(true)
+
+    render(
+      <MemoryRouter initialEntries={['/subscribe?preapproval_id=abc']}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/onboarding" element={<div>Onboarding Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
   })
 })

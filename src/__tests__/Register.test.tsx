@@ -49,12 +49,12 @@ describe('Register page', () => {
     expect(screen.getByText(/não coincidem/i)).not.toBeNull()
   })
 
-  it('cadastra com email e senha (sem username) e redireciona pro onboarding', async () => {
+  it('cadastra com email e senha (sem username) e redireciona pra assinatura antes do onboarding', async () => {
     render(
       <MemoryRouter initialEntries={['/register']}>
         <Routes>
           <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<div>Onboarding Page</div>} />
+          <Route path="/subscribe" element={<div>Subscribe Page</div>} />
         </Routes>
       </MemoryRouter>
     )
@@ -65,7 +65,7 @@ describe('Register page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }))
 
-    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+    expect(await screen.findByText('Subscribe Page')).not.toBeNull()
     expect(signUpMock).toHaveBeenCalledWith('maria@example.com', '123456')
   })
 })

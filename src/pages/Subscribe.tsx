@@ -14,7 +14,7 @@ const POLL_TIMEOUT_MS = 45000
 export default function Subscribe() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user, isAdmin, hasActiveSubscription, setHasActiveSubscription } = useAuthStore()
+  const { user, isAdmin, hasActiveSubscription, needsOnboarding, setHasActiveSubscription } = useAuthStore()
   const [creating, setCreating] = useState(false)
   const [polling, setPolling] = useState(false)
   const [pollTimedOut, setPollTimedOut] = useState(false)
@@ -25,9 +25,9 @@ export default function Subscribe() {
 
   useEffect(() => {
     if (isAdmin || hasActiveSubscription) {
-      navigate('/home', { replace: true })
+      navigate(needsOnboarding ? '/onboarding' : '/home', { replace: true })
     }
-  }, [isAdmin, hasActiveSubscription, navigate])
+  }, [isAdmin, hasActiveSubscription, needsOnboarding, navigate])
 
   useEffect(() => {
     if (!returnedFromCheckout || !user) return
@@ -43,7 +43,7 @@ export default function Subscribe() {
         setHasActiveSubscription(true)
         setPolling(false)
         clearInterval(interval)
-        navigate('/home', { replace: true })
+        navigate(needsOnboarding ? '/onboarding' : '/home', { replace: true })
         return
       }
       if (Date.now() - startedAt >= POLL_TIMEOUT_MS) {
@@ -56,7 +56,7 @@ export default function Subscribe() {
     check()
     interval = setInterval(check, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [returnedFromCheckout, user, navigate, setHasActiveSubscription, pollKey])
+  }, [returnedFromCheckout, user, navigate, setHasActiveSubscription, needsOnboarding, pollKey])
 
   const handleSubscribe = async () => {
     setCreating(true)

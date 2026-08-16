@@ -74,7 +74,7 @@ export default function Register() {
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
         setNeedsOnboarding(true)
-        navigate('/onboarding')
+        navigate('/subscribe')
       }
     } catch (err) {
       setError('Erro ao criar conta. Tente novamente.')

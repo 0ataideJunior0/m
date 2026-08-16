@@ -397,16 +397,27 @@ Tratar como rascunho. A lógica se aproveita; o markup precisa ser refeito.
 
 ### Tarefa M3.3 — Compor os guards na ordem certa
 
-Em `App.tsx`, o encadeamento correto é:
-
-```tsx
-<RequireOnboarding><RequireSubscription><WorkoutDay /></RequireSubscription></RequireOnboarding>
-```
-
-Onboarding **antes** de assinatura: fazer a usuária pagar antes de dizer o próprio nome é fricção sem motivo.
-
-Rotas a proteger: `/home`, `/hiit`, `/program/:slug`, `/program/:slug/day/:weekday`.
-Rotas a **não** proteger: `/subscribe`, `/minha-assinatura`, `/profile`, e todas as de auth — senão a usuária sem assinatura fica presa sem conseguir nem assinar nem sair.
+> 🔄 **Ordem invertida em 2026-08-16, a pedido do humano** (revisando a análise de `marketing/funil-e-lancamento.md`, que argumentou o oposto do texto original abaixo: colocar o onboarding — cinco campos que não convencem ninguém a comprar — entre a decisão de compra e o cartão é fricção com custo de conversão; depois de pagar, a conclusão do onboarding tende a ser alta). Texto original mantido riscado por rastreabilidade; a implementação **atual é a versão nova**, abaixo.
+>
+> **Funil atual:** cadastro/login (só e-mail+senha) → `/subscribe` → pagamento → `/onboarding` → app.
+>
+> - `/subscribe` e `/minha-assinatura`: só exigem login (`RequireAuth`, componente novo — sem exigir onboarding nem assinatura, senão viraria um paradoxo: precisa entrar em `/subscribe` justamente por não ter assinatura ainda).
+> - `/onboarding`: exige assinatura ativa (ou admin) — `<RequireSubscription><Onboarding /></RequireSubscription>`. Só chega lá quem já pagou.
+> - Conteúdo do app (`/home`, `/hiit`, `/program/*`, `/planos-*`): `<RequireSubscription><RequireOnboarding><Conteúdo /></RequireOnboarding></RequireSubscription>` — assinatura checada **por fora**, antes do onboarding.
+> - `Register.tsx` navega pra `/subscribe` (não mais `/onboarding`) após o cadastro. `Subscribe.tsx` navega pra `/onboarding` se `needsOnboarding` for true, senão `/home`, tanto no polling pós-checkout quanto no bounce de quem já está assinada.
+> - `RequireSubscription` ganhou checagem de `isAuthenticated` própria (redireciona pra `/login`) — necessário porque agora é usado sem o `RequireOnboarding` por fora em alguns lugares, que era quem cobria essa checagem antes.
+> - `/profile` continua fora do gate de assinatura, só `RequireOnboarding` — pensado pra assinante cuja assinatura expirou continuar acessando o próprio perfil (e o link "Minha assinatura" pra reativar), não pra ficar trancada fora da própria conta.
+>
+> ~~Em `App.tsx`, o encadeamento correto é:~~
+>
+> ~~```tsx~~
+> ~~<RequireOnboarding><RequireSubscription><WorkoutDay /></RequireSubscription></RequireOnboarding>~~
+> ~~```~~
+>
+> ~~Onboarding **antes** de assinatura: fazer a usuária pagar antes de dizer o próprio nome é fricção sem motivo.~~
+>
+> ~~Rotas a proteger: `/home`, `/hiit`, `/program/:slug`, `/program/:slug/day/:weekday`.~~
+> ~~Rotas a **não** proteger: `/subscribe`, `/minha-assinatura`, `/profile`, e todas as de auth — senão a usuária sem assinatura fica presa sem conseguir nem assinar nem sair.~~
 
 `RequireAdmin` deve **contornar** a checagem de assinatura. Admin não assina.
 

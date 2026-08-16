@@ -2,8 +2,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import Spinner from './ui/Spinner'
 
-export default function RequireSubscription({ children }: { children: JSX.Element }) {
-  const { isAuthenticated, isAdmin, hasActiveSubscription, isLoading } = useAuthStore()
+export default function RequireAuth({ children }: { children: JSX.Element }) {
+  const { isAuthenticated, isLoading } = useAuthStore()
 
   if (isLoading) {
     return (
@@ -15,10 +15,6 @@ export default function RequireSubscription({ children }: { children: JSX.Elemen
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
-  }
-
-  if (!isAdmin && !hasActiveSubscription) {
-    return <Navigate to="/subscribe" replace />
   }
 
   return children
