@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete } from '../utils/workouts'
 import { Workout as WorkoutType, Program } from '../types'
-import { Check, ArrowLeft, Play, X } from 'lucide-react'
+import { Check, ArrowLeft, X } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
 import { getExerciseKey } from '../utils/exerciseKeys'
 import { loadLocalProgress, saveLocalProgress, mergeServerLocal, clearLocalProgress } from '../utils/exerciseProgress'
@@ -168,24 +168,6 @@ export default function WorkoutDay() {
           </div>
         </div>
 
-
-        {/* Video geral do treino */}
-        {workout.video_url && (
-          <div className="bg-surface rounded-2xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-bold text-text mb-4 flex items-center">
-              <Play className="w-5 h-5 mr-2" />
-              Vídeo do Treino
-            </h2>
-            <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={resolveVideoUrl(workout.video_url)}
-                title="Vídeo do treino"
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Progresso exercícios */}
         {workout.exercises?.length ? (
