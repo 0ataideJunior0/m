@@ -636,7 +636,8 @@ Como CPF, você não emite nota fiscal de serviço com facilidade. Cobrança rec
 
 ## 11. Fora de escopo
 
-- **Pix Automático** — taxa muito menor (~0,22–0,35% vs 4,99%) e alcança quem não tem cartão, mas exige contratação junto à instituição financeira e é orientado a PJ. Reavaliar com CNPJ.
+- **Pix Automático** — taxa muito menor (~0,22–0,35% vs 4,99%) e alcança quem não tem cartão, mas exige contratação junto à instituição financeira e é orientado a PJ. Reavaliar com CNPJ. **Confirmado em 2026-08-19 que o Mercado Pago também não expõe isso via API — ver §14.**
+- **Pix comum dentro de Assinaturas** — investigado a fundo em 2026-08-19 e **comprovadamente impossível**: o checkout de `preapproval` só oferece cartão, mesmo com Pix ativo na conta. Ver §14 para a evidência e [`PLANO-PIX.md`](PLANO-PIX.md) para a alternativa (Pix à vista, fora de Assinaturas).
 - **Planos anual / múltiplos preços** — a decisão travada é preço único mensal.
 - **Trial gratuito** — descartado nesta rodada.
 - **Cupons e descontos** — não existe suporte no código recuperado.
@@ -681,3 +682,39 @@ M6  Operação
 - **M1.1 → M5 passo 2.** Se a hipótese A cair (o MP aceitar pagador = vendedor), a restrição de identidade pode ser relaxada.
 
 **A fase que importa é a M1.** M2 a M6 são trabalho conhecido, de risco baixo — o código já existe e o caminho está mapeado. Se a M1 não fechar em algumas horas de tentativa, o problema não é código: é conta, credencial ou produto do Mercado Pago, e aí a conversa muda para outro gateway.
+
+---
+
+## 14. Investigação — Pix em Assinaturas (2026-08-19)
+
+**Pergunta:** dá para aceitar Pix, ou Pix recorrente, no fluxo de assinatura que está no ar?
+
+**Resposta: não.** O checkout de `preapproval` oferece **somente cartão**. Verificado diretamente, não inferido.
+
+### A cadeia de evidências
+
+| # | Fonte | O que afirmou | Realidade |
+|---|---|---|---|
+| 1 | Doc oficial, landing de Assinaturas (MLB) | `available_payments: credit, mercadopago, boleto, pix` | ❌ contradiz o observado |
+| 2 | Doc oficial, tabela comparativa de produtos | Lista Pix como meio aceito nas três soluções de recorrência | ❌ idem |
+| 3 | **IA de suporte do próprio Mercado Pago** | "usando Assinaturas via API, você pode oferecer Pix no formulário de pagamento da assinatura" | ❌ idem |
+| 4 | `GET /v1/payment_methods` com o token de **produção** | `{"id": "pix", "payment_type_id": "bank_transfer", "status": "active"}` | ✅ verdadeiro — a conta **tem** Pix ativo |
+| 5 | **Checkout real aberto pelo `init_point`** | — | ✅ **só cartão.** Em aba anônima pede cartão novo; logado no MP, mostra os cartões salvos. Nenhuma opção de Pix |
+
+A evidência nº 4 é a que fecha o caso: **a conta tem Pix ativo e mesmo assim ele não aparece no checkout da assinatura.** Logo a limitação não é de conta nem de configuração — é do produto Assinaturas.
+
+Também foi descartado que o problema fosse do nosso lado: `grep` por `card_token`/`Bricks` no repositório retorna vazio — não tokenizamos cartão, usamos o `init_point` hospedado, que é exatamente o fluxo que a IA do MP recomendou.
+
+### Por que, estruturalmente
+
+Uma `preapproval` debita sozinha todo mês, então precisa de uma **credencial armazenada e debitável**. Pix comum é o oposto: quem paga inicia cada transferência. Não há o que debitar.
+
+> ⚠️ **Padrão a levar para qualquer decisão futura nesta integração.** Esta foi a **quarta vez** nesta implantação em que uma fonte oficial do Mercado Pago afirmou algo que a realidade contradisse — as outras três foram o `save_webhook` reportando tópicos inscritos que o painel mostrava desmarcados, o `notifications_history` reportando "5 sucessos, 100%" enquanto os logs do Vercel mostravam zero chamadas, e a tabela comparativa da doc. **Documentação, tabela de marketing e a IA de suporte do MP não valem como evidência. Só vale o comportamento observado em produção ou uma resposta de API.**
+
+### Pix Automático
+
+Busca dirigida na documentação (`"Pix Automático"`, `"débito automático recorrente"`) retorna **zero resultados** — só Pix comum (QR Code / Copia e Cola). O Mercado Pago não expõe o Pix Automático do Banco Central via API, ou não documentou. Não é acionável hoje. Ver também o item em §11, que registra a barreira comercial (contratação junto à instituição financeira, orientado a PJ).
+
+### Consequência
+
+Pix continua possível no Mercado Pago — só **fora** de Assinaturas, via API de Orders, como pagamento à vista. Plano desenhado em [`PLANO-PIX.md`](PLANO-PIX.md), **deliberadamente não implementado** (ver a decisão de sequenciamento lá).
