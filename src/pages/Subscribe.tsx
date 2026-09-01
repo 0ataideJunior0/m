@@ -37,9 +37,11 @@ export default function Subscribe() {
   const renewing = searchParams.has('renovar')
   const destination = needsOnboarding ? '/onboarding' : '/home'
 
+  // Admin não é redirecionado: /subscribe é onde ele roda a verificação de
+  // R$ 0,01 depois de mexer em domínio, credencial ou webhook.
   useEffect(() => {
-    if (renewing || pixCharge) return
-    if (isAdmin || hasActiveSubscription) {
+    if (renewing || pixCharge || isAdmin) return
+    if (hasActiveSubscription) {
       navigate(destination, { replace: true })
     }
   }, [isAdmin, hasActiveSubscription, destination, navigate, renewing, pixCharge])
@@ -222,7 +224,7 @@ export default function Subscribe() {
         </div>
 
         <div className="space-y-3">
-          {PIX_PLANS_DISPLAY.map((plan) => (
+          {PIX_PLANS_DISPLAY.filter((plan) => !plan.adminOnly || isAdmin).map((plan) => (
             <div key={plan.id} className="rounded-xl border border-gray-200 dark:border-border p-4">
               <div className="flex items-start justify-between gap-3 mb-1">
                 <div className="flex items-center gap-2">

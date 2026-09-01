@@ -220,3 +220,43 @@ describe('Subscribe — renovação de acesso via Pix', () => {
     expect(getHasActiveSubscriptionMock).not.toHaveBeenCalled()
   })
 })
+
+describe('Subscribe — plano de verificação restrito a admin', () => {
+  beforeEach(() => {
+    mockState.hasActiveSubscription = false
+    mockState.needsOnboarding = false
+    mockState.setHasActiveSubscription = vi.fn()
+    createSubscriptionMock.mockReset()
+    getHasActiveSubscriptionMock.mockReset()
+    getMySubscriptionMock.mockReset()
+    createPixPaymentMock.mockReset()
+  })
+
+  const renderSubscribe = () =>
+    render(
+      <MemoryRouter initialEntries={['/subscribe']}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/home" element={<div>Home Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+  it('não mostra o plano de um centavo para usuária comum', () => {
+    mockState.isAdmin = false
+    renderSubscribe()
+
+    expect(screen.getByText('1 mês')).not.toBeNull()
+    expect(screen.queryByText('Verificação (admin)')).toBeNull()
+  })
+
+  // Admin não pode ser redirecionado daqui: /subscribe é onde ele roda a
+  // verificação de R$ 0,01 depois de mexer em dominio, credencial ou webhook.
+  it('mostra o plano de verificação para admin, sem redirecioná-lo para a Home', async () => {
+    mockState.isAdmin = true
+    renderSubscribe()
+
+    expect(await screen.findByText('Verificação (admin)')).not.toBeNull()
+    expect(screen.queryByText('Home Page')).toBeNull()
+  })
+})

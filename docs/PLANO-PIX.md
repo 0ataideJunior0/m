@@ -312,3 +312,32 @@ Validado em produção com **quatro pagamentos reais**, incluindo dois de renova
 - banner de vencimento nos dois tons: normal a 3 dias, urgente a 1 dia ✅
 - "Renovar" leva à tela de assinatura e o QR permanece na tela até o pagamento cair ✅
 - plano temporário de R$ 0,01 **removido** ✅
+
+---
+
+## 11. Plano de verificação permanente (admin) — 2026-09-01
+
+Depois de trocar o domínio para `musafit.me`, ficou claro que **toda mudança de infraestrutura de cobrança precisa ser verificada com um pagamento real** — domínio, credencial, URL de webhook. A simulação do painel do MP não serve (§9), e sem um plano barato a verificação custaria R$ 59,90 por vez.
+
+Por isso o plano de R$ 0,01 virou permanente, restrito a admin.
+
+**Como usar:** logado como admin, acesse `/subscribe`. O plano **"Verificação (admin)"** aparece junto dos demais. Pague, e confirme que o acesso é creditado.
+
+**Proteções:**
+
+- O servidor consulta `profiles.is_admin` antes de aceitar o plano `teste` e devolve **403** para os demais. Esconder na interface não protegeria nada — bastaria mandar `{"plan":"teste"}` na requisição para assinar por um centavo.
+- A vitrine filtra por `adminOnly`, então usuária comum nem vê a opção.
+- `/subscribe` deixou de redirecionar admin para a Home; sem isso ele não conseguiria chegar na tela onde a verificação acontece.
+
+**Quando rodar:** depois de trocar domínio, rotacionar credencial do Mercado Pago, mudar a URL do webhook, ou alterar qualquer coisa em `create-pix-payment.ts` / `mercadopago-webhook.ts`.
+
+**O que conferir depois de pagar:**
+
+```sql
+select payment_id, amount, status, raw->>'live_mode' as live_mode
+from pix_payments order by created_at desc limit 1;
+
+select source, status, next_payment_date from subscriptions where user_id = '<admin>';
+```
+
+E nos logs do Vercel: `POST /api/mercadopago-webhook` com `200`. Notificações do IPN antigo continuam vindo e sendo rejeitadas — isso é esperado, ver §10.

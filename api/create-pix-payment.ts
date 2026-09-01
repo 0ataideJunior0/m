@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { Payment } from 'mercadopago'
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { PIX_PLANS, isPixPlanId } from './_lib/pixPlans.js'
+import { PIX_PLANS, ADMIN_ONLY_PLANS, isPixPlanId } from './_lib/pixPlans.js'
 import { buildPixExternalReference } from './_lib/pixPeriod.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -34,6 +34,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
   const user = userData.user
+
+  // O plano de verificação custa R$ 0,01. Sem esta checagem no SERVIDOR,
+  // bastaria mandar {"plan":"teste"} na requisição para assinar por um
+  // centavo — esconder na interface não protegeria nada.
+  if (ADMIN_ONLY_PLANS.includes(planId)) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!profile?.is_admin) {
+      res.status(403).json({ error: 'Plano indisponível' })
+      return
+    }
+  }
 
   // Regra de conflito (decisão P0.3 do docs/PLANO-PIX.md): quem tem assinatura
   // recorrente viva no cartão não pode pagar Pix, senão seria cobrada duas

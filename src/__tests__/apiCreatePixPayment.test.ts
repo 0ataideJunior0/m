@@ -157,3 +157,54 @@ describe('POST /api/create-pix-payment', () => {
     expect(res.status).toHaveBeenCalledWith(502)
   })
 })
+
+// O plano de verificação custa R$ 0,01. Esconder na interface não protege
+// nada: sem a checagem no servidor, bastaria mandar {"plan":"teste"}.
+describe('POST /api/create-pix-payment — plano de verificação restrito a admin', () => {
+  beforeEach(() => {
+    getUserMock.mockReset().mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@b.com' } }, error: null })
+    paymentCreateMock.mockReset().mockResolvedValue(approvedCharge)
+    maybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
+  })
+
+  it('recusa o plano de teste para quem não é admin', async () => {
+    maybeSingleMock.mockResolvedValueOnce({ data: { is_admin: false }, error: null })
+
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'teste' }) as any, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(paymentCreateMock).not.toHaveBeenCalled()
+  })
+
+  it('recusa também quando não há perfil para consultar', async () => {
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
+
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'teste' }) as any, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(paymentCreateMock).not.toHaveBeenCalled()
+  })
+
+  it('permite para admin, cobrando o valor mínimo de R$ 0,01', async () => {
+    maybeSingleMock
+      .mockResolvedValueOnce({ data: { is_admin: true }, error: null }) // checagem de admin
+      .mockResolvedValueOnce({ data: null, error: null }) // assinatura existente
+
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'teste' }) as any, res)
+
+    expect(paymentCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ body: expect.objectContaining({ transaction_amount: 0.01 }) })
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('não consulta perfil para os planos normais', async () => {
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'mensal' }) as any, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+})
