@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { getPrograms } from '../utils/workouts'
 import { Trophy, Flame } from 'lucide-react'
 import { Program } from '../types'
+import PixExpiryBanner from '../components/PixExpiryBanner'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -73,6 +74,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <PixExpiryBanner />
 
         <div id="treinos" className="bg-surface rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-xl font-bold text-text mb-4">Treinos</div>

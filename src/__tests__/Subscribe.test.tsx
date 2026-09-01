@@ -3,14 +3,19 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import Subscribe from '../pages/Subscribe'
 
-const { createSubscriptionMock, getHasActiveSubscriptionMock } = vi.hoisted(() => ({
+const { createSubscriptionMock, getHasActiveSubscriptionMock, createPixPaymentMock } = vi.hoisted(() => ({
   createSubscriptionMock: vi.fn(),
   getHasActiveSubscriptionMock: vi.fn(),
+  createPixPaymentMock: vi.fn(),
 }))
 
 vi.mock('../utils/subscription', () => ({
   createSubscription: createSubscriptionMock,
   getHasActiveSubscription: getHasActiveSubscriptionMock,
+}))
+
+vi.mock('../utils/pixPayment', () => ({
+  createPixPayment: createPixPaymentMock,
 }))
 
 const mockState: any = {
@@ -32,6 +37,7 @@ describe('Subscribe', () => {
     mockState.setHasActiveSubscription = vi.fn()
     createSubscriptionMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
+    createPixPaymentMock.mockReset()
   })
 
   it('mostra o botão de assinar e redireciona pro checkout ao clicar', async () => {
@@ -85,5 +91,68 @@ describe('Subscribe', () => {
     )
 
     expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+  })
+})
+
+describe('Subscribe — pagamento via Pix', () => {
+  beforeEach(() => {
+    mockState.isAdmin = false
+    mockState.hasActiveSubscription = false
+    mockState.needsOnboarding = false
+    mockState.setHasActiveSubscription = vi.fn()
+    createSubscriptionMock.mockReset()
+    getHasActiveSubscriptionMock.mockReset()
+    createPixPaymentMock.mockReset()
+  })
+
+  const renderSubscribe = () =>
+    render(
+      <MemoryRouter initialEntries={['/subscribe']}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/home" element={<div>Home Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+  it('oferece os dois planos de Pix junto com o cartão', () => {
+    renderSubscribe()
+
+    expect(screen.getByText('Assinar agora')).not.toBeNull()
+    expect(screen.getByText('1 mês')).not.toBeNull()
+    expect(screen.getByText('3 meses')).not.toBeNull()
+  })
+
+  it('mostra o QR Code e o código copia e cola depois de gerar a cobrança', async () => {
+    createPixPaymentMock.mockResolvedValueOnce({
+      charge: {
+        payment_id: '123',
+        qr_code: '00020126-codigo-pix-copia-e-cola',
+        qr_code_base64: 'iVBORw0KGgo=',
+        amount: 149.9,
+        months: 3,
+      },
+      error: null,
+    })
+    getHasActiveSubscriptionMock.mockResolvedValue(false)
+
+    renderSubscribe()
+    fireEvent.click(screen.getByText(/Pagar R\$\s*149,90/))
+
+    expect(await screen.findByText('00020126-codigo-pix-copia-e-cola')).not.toBeNull()
+    expect(screen.getByAltText('QR Code do Pix')).not.toBeNull()
+    expect(createPixPaymentMock).toHaveBeenCalledWith('trimestral')
+  })
+
+  it('avisa quando não dá para gerar a cobrança, em vez de travar na tela', async () => {
+    createPixPaymentMock.mockResolvedValueOnce({
+      charge: null,
+      error: 'Você já tem uma assinatura ativa no cartão.',
+    })
+
+    renderSubscribe()
+    fireEvent.click(screen.getByText(/Pagar R\$\s*59,90/))
+
+    expect(await screen.findByText('Você já tem uma assinatura ativa no cartão.')).not.toBeNull()
   })
 })

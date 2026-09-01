@@ -8,6 +8,12 @@ vi.mock('../utils/workouts', () => ({
   getPrograms: vi.fn(async () => []),
 }))
 
+// A Home renderiza o PixExpiryBanner, que consulta a assinatura. Sem assinatura
+// o banner não aparece, que é o cenário destes testes.
+vi.mock('../utils/subscription', () => ({
+  getMySubscription: vi.fn(async () => null),
+}))
+
 beforeEach(() => {
   useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false })
 })

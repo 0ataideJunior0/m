@@ -1,6 +1,6 @@
 # Plano — Pagamento via Pix (fora de Assinaturas)
 
-**Status:** 🟡 **DESENHADO, NÃO IMPLEMENTADO** — deliberadamente. Ver §7.
+**Status:** 🟢 **IMPLEMENTADO em 2026-08-19** — falta um passo de ativação no painel do Mercado Pago e o teste real. Ver §8.
 **Data:** 2026-08-19
 **Pré-requisito de leitura:** [`PLANO-MERCADOPAGO.md` §14](PLANO-MERCADOPAGO.md) — por que Pix **não** cabe dentro de Assinaturas.
 **Relacionado:** [`../marketing/funil-e-lancamento.md`](../marketing/funil-e-lancamento.md)
@@ -39,6 +39,8 @@ O Pix resolve o alcance, mas **não pode ser recorrente** (§14 do plano do MP).
 ---
 
 ## 3. Fase P0 — Decisões de produto (bloqueante, não é código)
+
+> ✅ **Respondidas pelo humano em 2026-08-19.** As decisões estão registradas em cada item abaixo; a implementação em §8 segue exatamente elas.
 
 Nenhuma linha deve ser escrita antes destas quatro respostas.
 
@@ -182,3 +184,49 @@ O fluxo de cartão acabou de ser validado em produção (M5) e o relançamento a
 O caminho barato é o inverso: **lançar, medir quantas pessoas chegam em `/subscribe` e não concluem**, e só então decidir. Se a conversão for boa, o Pix não era o problema e o esforço foi economizado. Se for ruim, os dados dirão inclusive **qual período** faz sentido — em vez de chutar entre trimestral e semestral na fase P0.1.
 
 O `marketing/funil-e-lancamento.md` já identifica a conversão cadastro → assinatura como *a* métrica-chave e aponta que hoje o funil não é medido em nenhuma etapa. **Instrumentar o funil vem antes desta feature.**
+
+---
+
+## 8. O que foi implementado (2026-08-19)
+
+### Decisões de produto tomadas (fase P0)
+
+| Decisão | Resposta |
+|---|---|
+| **P0.1 — Período** | **Mensal E trimestral.** O humano pediu o mensal para manter o ticket acessível a quem não pode desembolsar o valor cheio de uma vez, com o trimestral como opção com desconto |
+| **P0.2 — Preço** | Mensal **R$ 59,90** (mesmo do cartão) e trimestral **R$ 149,90** (~17% de desconto sobre R$ 179,70) |
+| **P0.3 — Conflito** | **Bloquear, exceto renovação Pix.** Quem tem assinatura viva no cartão recebe 409 ao tentar Pix; quem já tem Pix pode pagar de novo e o período **soma** ao que resta |
+| **P0.4 — Aviso** | **Na plataforma**, a partir de 7 dias do fim, com tom mais urgente faltando 1 dia ou menos |
+
+> ⚠️ **Risco assumido conscientemente no mensal via Pix.** São 12 renovações manuais por ano contra 4 do trimestral — 12 oportunidades de esquecer e sair. O aviso de vencimento (P0.4) é o que compensa isso. **Vale comparar a taxa de renovação do mensal contra a do trimestral** depois de alguns ciclos; se o mensal sangrar, a resposta é empurrar o trimestral, não remover o mensal.
+
+### Código
+
+| Arquivo | Papel |
+|---|---|
+| `supabase/migrations/20260819120000_pix_payments.sql` | `preapproval_id` vira nullable, entram `source` e `payment_id`, e nasce `pix_payments` (livro-razão) |
+| `api/_lib/pixPlans.ts` | **Fonte de verdade do preço.** O cliente manda só o id do plano |
+| `api/_lib/pixPeriod.ts` | Formato do `external_reference` e soma de meses com clamp de fim de mês |
+| `api/create-pix-payment.ts` | Gera a cobrança e aplica a regra de bloqueio da P0.3 |
+| `api/mercadopago-webhook.ts` | Passa a tratar o tópico `payment` além de `subscription_preapproval` |
+| `src/utils/pixPlans.ts` / `pixPayment.ts` / `pixExpiry.ts` | Vitrine, cliente da API e regra do aviso |
+| `src/pages/Subscribe.tsx` | Escolha entre cartão e os dois planos Pix, e a tela de QR Code com espera |
+| `src/components/PixExpiryBanner.tsx` | O aviso de vencimento, na Home |
+| `src/pages/MySubscription.tsx` | Para Pix mostra "Acesso liberado até" e oferece **Renovar** no lugar de Cancelar |
+
+**48 testes novos** (136 → 184), cobrindo em especial os pontos de risco: idempotência do webhook, soma de período na renovação, bloqueio de cobrança dupla, preço vindo do servidor e não do cliente, e o clamp de fim de mês.
+
+### Decisões técnicas que valem registro
+
+- **`next_payment_date` reaproveitada** como fim do acesso, então `has_active_subscription()` **não mudou** — o gate, a RLS e os guards de rota continuam idênticos.
+- **Idempotência via `pix_payments`**, não via `subscriptions`. Como só existe uma linha de assinatura por usuária, uma renovação sobrescreveria o `payment_id` anterior e uma notificação reentregue creditaria período de novo. O `UNIQUE` no livro-razão é o que impede isso de verdade.
+- **Desvio do que a §4/P2 previa: usamos a API de Pagamentos (`/v1/payments`, classe `Payment` do SDK) e não a de Orders.** O SDK instalado (3.3.0) expõe `Payment` nativamente, o fluxo é o clássico de Pix (mais rodado) e a notificação chega no tópico `payment`, que é conhecido — enquanto o tópico da API de Orders a própria doc descreve de forma vaga. Menos superfície para descobrir por tentativa e erro em produção.
+- **`external_reference` carrega usuária e meses** (`user_id|pix|N`) em vez de consultarmos uma linha nossa. Evita a corrida em que a notificação chega antes do nosso INSERT commitar.
+- **Assinar no cartão não encurta acesso Pix já pago**: o handler de preapproval preserva a data maior (P0.3, "nunca tira acesso de ninguém").
+- **Anomalia cartão+Pix simultâneos** é bloqueada no endpoint, mas se acontecer o webhook credita o acesso, **preserva** a preapproval (para o cancelamento continuar funcionando) e loga como erro para intervenção humana.
+
+### ⏳ Falta para funcionar de verdade
+
+1. **Habilitar o tópico de pagamentos no webhook do painel do Mercado Pago.** Hoje só os tópicos de assinatura estão marcados. Sem isso a notificação de Pix aprovado não chega e o acesso não libera. **Verificar no painel, não confiar no `save_webhook`** — ele já reportou tópicos inscritos que estavam desmarcados (ver `PLANO-MERCADOPAGO.md` §14).
+2. **Teste real de ponta a ponta**, com Pix de verdade: gerar, pagar, e confirmar que o acesso liga sozinho e que a data de fim bate.
+3. **Confirmar se o MP exige CPF do pagador** para Pix. O endpoint manda só o e-mail; se a API reclamar, o erro aparece no log do Vercel e será preciso coletar o CPF na tela.

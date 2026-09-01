@@ -1,22 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { validateMock, preApprovalGetMock, upsertMock, maybeSingleMock, fromMock, FakeInvalidWebhookSignatureError } =
-  vi.hoisted(() => {
-    const upsertMock = vi.fn().mockResolvedValue({ error: null })
-    const maybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
-    const selectMock = vi.fn(() => ({ eq: eqMock }))
-    const fromMock = vi.fn(() => ({ upsert: upsertMock, select: selectMock }))
-    class FakeInvalidWebhookSignatureError extends Error {}
-    return {
-      validateMock: vi.fn(),
-      preApprovalGetMock: vi.fn(),
-      upsertMock,
-      maybeSingleMock,
-      fromMock,
-      FakeInvalidWebhookSignatureError,
-    }
-  })
+const {
+  validateMock,
+  preApprovalGetMock,
+  paymentGetMock,
+  upsertMock,
+  updateMock,
+  pixInsertMock,
+  maybeSingleMock,
+  fromMock,
+  FakeInvalidWebhookSignatureError,
+} = vi.hoisted(() => {
+  const upsertMock = vi.fn().mockResolvedValue({ error: null })
+  const updateEqMock = vi.fn().mockResolvedValue({ error: null })
+  const updateMock = vi.fn(() => ({ eq: updateEqMock }))
+  const pixInsertMock = vi.fn().mockResolvedValue({ error: null })
+  const maybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
+  const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
+  const selectMock = vi.fn(() => ({ eq: eqMock }))
+  const fromMock = vi.fn((table: string) =>
+    table === 'pix_payments'
+      ? { insert: pixInsertMock }
+      : { upsert: upsertMock, select: selectMock, update: updateMock }
+  )
+  class FakeInvalidWebhookSignatureError extends Error {}
+  return {
+    validateMock: vi.fn(),
+    preApprovalGetMock: vi.fn(),
+    paymentGetMock: vi.fn(),
+    upsertMock,
+    updateMock,
+    pixInsertMock,
+    maybeSingleMock,
+    fromMock,
+    FakeInvalidWebhookSignatureError,
+  }
+})
 
 vi.mock('../../api/_lib/supabaseAdmin', () => ({
   createSupabaseAdmin: () => ({ from: fromMock }),
@@ -28,6 +47,7 @@ vi.mock('../../api/_lib/mercadopagoConfig', () => ({
 
 vi.mock('mercadopago', () => ({
   PreApproval: vi.fn().mockImplementation(() => ({ get: preApprovalGetMock })),
+  Payment: vi.fn().mockImplementation(() => ({ get: paymentGetMock })),
   WebhookSignatureValidator: { validate: validateMock },
   InvalidWebhookSignatureError: FakeInvalidWebhookSignatureError,
 }))
@@ -47,6 +67,9 @@ describe('POST /api/mercadopago-webhook', () => {
     fromMock.mockClear()
     upsertMock.mockClear()
     maybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
+    paymentGetMock.mockReset()
+    pixInsertMock.mockReset().mockResolvedValue({ error: null })
+    updateMock.mockClear()
   })
 
   it('retorna 405 se não for POST', async () => {
@@ -90,7 +113,7 @@ describe('POST /api/mercadopago-webhook', () => {
     const req: any = {
       method: 'POST',
       headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
-      query: { 'data.id': '999', type: 'payment' },
+      query: { 'data.id': '999', type: 'invoice' },
       body: {},
     }
     const res = createMockRes()
@@ -265,5 +288,149 @@ describe('POST /api/mercadopago-webhook', () => {
 
     expect(upsertMock).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(500)
+  })
+})
+
+describe('POST /api/mercadopago-webhook — pagamentos Pix', () => {
+  const pixReq = (dataId = 'pay-1') => ({
+    method: 'POST',
+    headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+    query: { 'data.id': dataId, type: 'payment' },
+    body: {},
+  })
+
+  beforeEach(() => {
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', 'secret-abc')
+    fromMock.mockClear()
+    upsertMock.mockClear()
+    updateMock.mockClear()
+    maybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
+    paymentGetMock.mockReset()
+    pixInsertMock.mockReset().mockResolvedValue({ error: null })
+    validateMock.mockImplementation(() => undefined)
+  })
+
+  it('credita o período no primeiro Pix aprovado', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+    paymentGetMock.mockResolvedValueOnce({
+      id: 12345,
+      status: 'approved',
+      transaction_amount: 149.9,
+      external_reference: 'user-1|pix|3',
+    })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+    vi.useRealTimers()
+
+    expect(pixInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_id: '12345', user_id: 'user-1', months: 3, amount: 149.9 })
+    )
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'user-1',
+        source: 'pix',
+        payment_id: '12345',
+        preapproval_id: null,
+        status: 'authorized',
+        next_payment_date: '2026-11-19T12:00:00.000Z',
+      }),
+      { onConflict: 'user_id' }
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('não credita nada enquanto o pagamento não foi aprovado', async () => {
+    paymentGetMock.mockResolvedValueOnce({ id: 1, status: 'pending', external_reference: 'user-1|pix|1' })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+
+    expect(pixInsertMock).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('é idempotente: reentrega do mesmo pagamento não credita período de novo', async () => {
+    paymentGetMock.mockResolvedValueOnce({
+      id: 12345,
+      status: 'approved',
+      transaction_amount: 149.9,
+      external_reference: 'user-1|pix|3',
+    })
+    // UNIQUE violation no livro-razão = já processamos este pagamento antes
+    pixInsertMock.mockResolvedValueOnce({ error: { code: '23505' } })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('ignora pagamento aprovado que não é de um plano Pix nosso', async () => {
+    paymentGetMock.mockResolvedValueOnce({
+      id: 999,
+      status: 'approved',
+      external_reference: '224e4c07-a10c-49e6-ba3e-ffa7f6c38e99',
+    })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+
+    expect(pixInsertMock).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('renovação antecipada soma ao período que ainda resta, em vez de descartá-lo', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+    paymentGetMock.mockResolvedValueOnce({
+      id: 222,
+      status: 'approved',
+      transaction_amount: 149.9,
+      external_reference: 'user-1|pix|3',
+    })
+    // ainda tem 1 mês de acesso pago
+    maybeSingleMock.mockResolvedValueOnce({
+      data: { source: 'pix', status: 'authorized', next_payment_date: '2026-09-19T12:00:00.000Z' },
+      error: null,
+    })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+    vi.useRealTimers()
+
+    // 19/09 + 3 meses = 19/12, e não 19/11 (que seria descartar o mês restante)
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ next_payment_date: '2026-12-19T12:00:00.000Z' }),
+      { onConflict: 'user_id' }
+    )
+  })
+
+  it('credita o acesso mas preserva a assinatura no cartão quando as duas coexistem', async () => {
+    paymentGetMock.mockResolvedValueOnce({
+      id: 333,
+      status: 'approved',
+      transaction_amount: 59.9,
+      external_reference: 'user-1|pix|1',
+    })
+    maybeSingleMock.mockResolvedValueOnce({
+      data: { source: 'preapproval', status: 'authorized', preapproval_id: 'pa-1', next_payment_date: null },
+      error: null,
+    })
+
+    const res = createMockRes()
+    await handler(pixReq() as any, res)
+
+    // não sobrescreve a linha do cartão (senão o cancelamento pararia de funcionar),
+    // mas o acesso pago é creditado do mesmo jeito
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ next_payment_date: expect.any(String) })
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
   })
 })

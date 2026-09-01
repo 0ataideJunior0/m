@@ -50,6 +50,8 @@ export default function MySubscription() {
     setCancelling(false)
   }
 
+  const isPix = subscription?.source === 'pix'
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
@@ -69,7 +71,7 @@ export default function MySubscription() {
               <div className="mb-4">
                 <div className="text-sm text-gray-500 dark:text-text-muted">Status</div>
                 <div className="text-lg font-bold text-gray-900 dark:text-text">
-                  {STATUS_LABELS[subscription.status] || subscription.status}
+                  {isPix ? 'Acesso via Pix' : STATUS_LABELS[subscription.status] || subscription.status}
                 </div>
               </div>
               {subscription.next_payment_date &&
@@ -77,17 +79,24 @@ export default function MySubscription() {
                   (subscription.status === 'cancelled' && new Date(subscription.next_payment_date) > new Date())) && (
                   <div className="mb-6">
                     <div className="text-sm text-gray-500 dark:text-text-muted">
-                      {subscription.status === 'authorized' ? 'Próxima cobrança' : 'Acesso liberado até'}
+                      {isPix || subscription.status === 'cancelled' ? 'Acesso liberado até' : 'Próxima cobrança'}
                     </div>
                     <div className="text-gray-900 dark:text-text">
                       {new Date(subscription.next_payment_date).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                 )}
-              {subscription.status !== 'cancelled' && (
-                <Button variant="danger" onClick={handleCancel} isLoading={cancelling}>
-                  Cancelar assinatura
-                </Button>
+              {/* Pix não é recorrente: não há o que cancelar, e o botão de
+                  cancelamento falharia (não existe preapproval no Mercado Pago).
+                  O que faz sentido oferecer é renovar. */}
+              {isPix ? (
+                <Button onClick={() => navigate('/subscribe')}>Renovar acesso</Button>
+              ) : (
+                subscription.status !== 'cancelled' && (
+                  <Button variant="danger" onClick={handleCancel} isLoading={cancelling}>
+                    Cancelar assinatura
+                  </Button>
+                )
               )}
             </>
           ) : (

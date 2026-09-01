@@ -65,11 +65,22 @@ export interface AuthError {
 
 export type SubscriptionStatus = 'pending' | 'authorized' | 'paused' | 'cancelled'
 
+export type SubscriptionSource = 'preapproval' | 'pix'
+
 export interface Subscription {
   id: string
   user_id: string
-  preapproval_id: string
+  /** Nulo quando a linha veio de um pagamento Pix avulso, não de uma assinatura. */
+  preapproval_id: string | null
+  /** Nulo quando a linha veio de uma assinatura no cartão. */
+  payment_id: string | null
+  source: SubscriptionSource
   status: SubscriptionStatus
+  /**
+   * No cartão: quando o Mercado Pago vai cobrar de novo.
+   * No Pix: quando o acesso pago acaba. Nos dois casos é a data até quando o
+   * acesso vale, que é o que has_active_subscription() consulta.
+   */
   next_payment_date: string | null
   created_at: string
   updated_at: string
