@@ -49,6 +49,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         xRequestIdPresent: Boolean(xRequestId),
         xRequestIdValue: xRequestId,
         dataId,
+        // DIAGNÓSTICO (2026-09-01): notificações chegando sem data.id nem na
+        // query nem no corpo, e falhando a validação. Payload de notificação do
+        // MP não tem segredo (ids, tipo, timestamps), então dá para logar
+        // inteiro e descobrir o formato real em vez de adivinhar de novo.
+        query: req.query,
+        body: req.body,
       })
       res.status(401).json({ error: 'Invalid signature' })
       return
