@@ -5,7 +5,7 @@
  * Estes números existem só para exibição; src/__tests__/pixPlans.test.ts
  * falha se divergirem da fonte de verdade.
  */
-export type PixPlanId = 'mensal' | 'trimestral' | 'teste'
+export type PixPlanId = 'mensal' | 'trimestral'
 
 export interface PixPlanDisplay {
   id: PixPlanId
@@ -23,14 +23,6 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
     amount: 59.9,
     title: '1 mês',
     subtitle: 'Acesso por 30 dias',
-  },
-  {
-    // TEMPORÁRIO: só para validar o webhook de produção. Remover após o teste.
-    id: 'teste',
-    months: 1,
-    amount: 0.01,
-    title: '⚠️ TESTE INTERNO — não use',
-    subtitle: 'Plano temporário de verificação técnica',
   },
   {
     id: 'trimestral',

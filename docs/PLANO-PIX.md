@@ -270,6 +270,45 @@ reason: 'SignatureMismatch',  xSignaturePresent: true,  dataId: ''
 
 O pagamento funcionou porque a notificação que creditou veio com o id na query. Mas as demais eram rejeitadas, o MP as reenviaria, e um evento que chegasse só nesse formato passaria despercebido.
 
-**Corrigido:** `data.id` agora vem da query com fallback para o corpo, mantendo string vazia quando não há id em lugar nenhum (caso em que o SDK corretamente omite o segmento do manifesto). Três testes de regressão cobrem os três casos.
+**Investigação completa em §10.**
 
 > Este defeito é a justificativa retroativa para ter feito o teste com dinheiro real em vez de confiar na simulação. Nenhum teste unitário o encontraria: ele depende do formato que o Mercado Pago escolhe usar na entrega.
+
+---
+
+## 10. Os 401 do webhook — investigação encerrada (2026-09-01)
+
+**Conclusão: comportamento esperado do Mercado Pago, não defeito nosso. Nada a corrigir.**
+
+O MP entrega **o mesmo evento por dois canais diferentes**:
+
+| Canal | Formato | Resultado |
+|---|---|---|
+| Moderno (webhook v2) | query `data.id` + `type`, body `{type, data:{id}}` | ✅ valida, credita o acesso. **É o único que o painel de Webhooks do MP registra — e como `200 - Entregue`** |
+| IPN antigo | query `{id, topic}`, body `{resource, topic}` | ❌ carrega `x-signature` mas não fecha com o manifesto documentado, **mesmo usando o id correto** |
+
+Três tentativas de correção, cada uma descartando uma hipótese:
+
+1. **"falta o `data.id` na query"** → adicionado fallback para o corpo. `dataId` continuou vazio: não estava em nenhum dos dois.
+2. **"é o formato IPN antigo"** → adicionada leitura de `query.id` / `body.resource`. O id passou a ser extraído corretamente — **e a assinatura continuou falhando**. Descartou a hipótese de que era só o id.
+3. **Conclusão** → o IPN antigo simplesmente não é assinado pelo esquema documentado. Não há como autenticá-lo.
+
+**Por que rejeitar é a resposta certa, e não um problema:**
+
+- Não se perde informação: a duplicata carrega o **mesmo `payment_id`** que o canal moderno já processou com sucesso.
+- Não há retentativa acumulando: o painel do MP considera 100% das entregas bem-sucedidas, porque ele só rastreia o canal moderno.
+- Aceitar sem validar seria abrir um caminho não autenticado no webhook — pior que o ruído.
+
+**Único ajuste feito:** a duplicata conhecida passou a ser registrada como `console.log` em vez de `console.error`. O 401 continua. Erro esperado e inofensivo poluindo o log de erro é pior que inútil — esconde falha de verdade.
+
+> 🔍 **Se um dia valer limpar de vez:** a hipótese não testada é que o `notification_url` que definimos em cada pagamento seja o que dispara o IPN antigo, enquanto o canal moderno vem da configuração do painel. Dá para testar removendo o `notification_url` de `create-pix-payment.ts` e pagando um Pix de R$ 0,01 — se o acesso continuar creditando, o duplicado some. **Não testado**; o custo do ruído não justificou o risco de parar de receber notificação.
+
+### Estado final da feature
+
+Validado em produção com **quatro pagamentos reais**, incluindo dois de renovação:
+
+- primeira compra credita e libera o acesso sozinha ✅
+- renovação **soma** ao período restante (04/09 + 1 mês = 04/10, e 02/09 + 1 mês = 02/10) ✅
+- banner de vencimento nos dois tons: normal a 3 dias, urgente a 1 dia ✅
+- "Renovar" leva à tela de assinatura e o QR permanece na tela até o pagamento cair ✅
+- plano temporário de R$ 0,01 **removido** ✅

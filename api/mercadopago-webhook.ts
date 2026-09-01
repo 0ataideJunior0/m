@@ -49,24 +49,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     WebhookSignatureValidator.validate({ xSignature, xRequestId, dataId, secret })
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) {
-      // Diagnóstico sem vazar material sensível: nem o valor de x-signature
-      // (contém o HMAC calculado pelo MP) nem o tamanho do segredo entram no
-      // log. reason/xRequestIdValue/dataId bastam para correlacionar com o
-      // painel do Mercado Pago e são publicamente rastreáveis de qualquer forma.
-      console.error('mercadopago-webhook signature mismatch:', {
-        reason: error.reason,
-        xSignaturePresent: Boolean(xSignature),
-        xRequestIdPresent: Boolean(xRequestId),
-        xRequestIdValue: xRequestId,
-        dataId,
-        // Payload inteiro de propósito: foi o que revelou o formato IPN antigo
-        // em 2026-09-01, depois de dois palpites errados sobre a causa. Se o MP
-        // introduzir um terceiro formato, este log responde na primeira falha
-        // em vez de exigir outro ciclo de pagamento real. Notificação do MP não
-        // carrega segredo (ids, tipo, timestamps); a x-signature fica fora.
-        query: req.query,
-        body: req.body,
-      })
+      // O Mercado Pago entrega o mesmo evento por dois canais. O moderno
+      // (query 'data.id' + type) valida e é o que credita o acesso — o painel
+      // de Webhooks do MP registra só esse, e como 200. Em paralelo chega um
+      // IPN antigo (query {id, topic} / body {resource, topic}) que carrega
+      // x-signature mas não fecha com o manifesto documentado, mesmo usando o
+      // id correto (testado em produção em 2026-09-01).
+      //
+      // Rejeitar é o certo: não dá para autenticar. E não se perde nada — é
+      // duplicata do MESMO payment id que o canal moderno já processou. Só não
+      // faz sentido registrar como erro algo esperado e inofensivo, senão o
+      // log de erro vira ruído e esconde falha de verdade.
+      const isLegacyIpnDuplicate = Boolean(req.body?.resource && req.body?.topic && !req.body?.data)
+      const log = isLegacyIpnDuplicate ? console.log : console.error
+      log(
+        isLegacyIpnDuplicate
+          ? 'mercadopago-webhook: IPN antigo ignorado (duplicata não autenticável)'
+          : 'mercadopago-webhook signature mismatch:',
+        {
+          reason: error.reason,
+          xSignaturePresent: Boolean(xSignature),
+          xRequestIdPresent: Boolean(xRequestId),
+          xRequestIdValue: xRequestId,
+          dataId,
+          query: req.query,
+          body: req.body,
+        }
+      )
       res.status(401).json({ error: 'Invalid signature' })
       return
     }

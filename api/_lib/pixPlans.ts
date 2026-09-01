@@ -8,9 +8,7 @@
  * A vitrine em src/utils/pixPlans.ts repete esses números para renderizar a
  * tela; src/__tests__/pixPlans.test.ts falha se os dois divergirem.
  */
-// TEMPORÁRIO: 'teste' existe só para validar o webhook de produção por R$ 0,01
-// (a API do MP informa min_allowed_amount 0.01 para Pix). Remover depois.
-export type PixPlanId = 'mensal' | 'trimestral' | 'teste'
+export type PixPlanId = 'mensal' | 'trimestral'
 
 export interface PixPlan {
   id: PixPlanId
@@ -21,9 +19,8 @@ export interface PixPlan {
 export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
   mensal: { id: 'mensal', months: 1, amount: 59.9 },
   trimestral: { id: 'trimestral', months: 3, amount: 149.9 },
-  teste: { id: 'teste', months: 1, amount: 0.01 },
 }
 
 export function isPixPlanId(value: unknown): value is PixPlanId {
-  return value === 'mensal' || value === 'trimestral' || value === 'teste'
+  return value === 'mensal' || value === 'trimestral'
 }
