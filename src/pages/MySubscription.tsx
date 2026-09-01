@@ -90,7 +90,7 @@ export default function MySubscription() {
                   cancelamento falharia (não existe preapproval no Mercado Pago).
                   O que faz sentido oferecer é renovar. */}
               {isPix ? (
-                <Button onClick={() => navigate('/subscribe')}>Renovar acesso</Button>
+                <Button onClick={() => navigate('/subscribe?renovar=1')}>Renovar acesso</Button>
               ) : (
                 subscription.status !== 'cancelled' && (
                   <Button variant="danger" onClick={handleCancel} isLoading={cancelling}>

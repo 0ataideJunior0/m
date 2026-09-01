@@ -48,7 +48,7 @@ export default function PixExpiryBanner() {
         <p className="text-sm opacity-90 mt-0.5">O pagamento via Pix não renova sozinho.</p>
       </div>
       <button
-        onClick={() => navigate('/subscribe')}
+        onClick={() => navigate('/subscribe?renovar=1')}
         className="flex-shrink-0 text-sm font-semibold underline underline-offset-2 hover:opacity-80"
       >
         Renovar

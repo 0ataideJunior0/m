@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Copy, QrCode, CreditCard } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { createSubscription, getHasActiveSubscription } from '../utils/subscription'
+import { createSubscription, getHasActiveSubscription, getMySubscription } from '../utils/subscription'
 import { createPixPayment, PixCharge } from '../utils/pixPayment'
 import { PIX_PLANS_DISPLAY, PixPlanId, formatBRL } from '../utils/pixPlans'
 import Card from '../components/ui/Card'
@@ -31,13 +31,18 @@ export default function Subscribe() {
   const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
   const returnedFromCheckout = searchParams.has('preapproval_id')
+  // Quem está renovando TEM acesso ativo — sem esta intenção explícita, o
+  // redirecionamento abaixo a expulsaria de volta para a Home e a renovação
+  // via Pix seria impossível.
+  const renewing = searchParams.has('renovar')
   const destination = needsOnboarding ? '/onboarding' : '/home'
 
   useEffect(() => {
+    if (renewing || pixCharge) return
     if (isAdmin || hasActiveSubscription) {
       navigate(destination, { replace: true })
     }
-  }, [isAdmin, hasActiveSubscription, destination, navigate])
+  }, [isAdmin, hasActiveSubscription, destination, navigate, renewing, pixCharge])
 
   // Uma única espera cobre os dois caminhos: voltar do checkout do cartão e
   // aguardar a compensação do Pix. Nos dois, quem libera o acesso é o webhook,
@@ -54,8 +59,14 @@ export default function Subscribe() {
     let interval: ReturnType<typeof setInterval>
 
     const check = async () => {
-      const active = await getHasActiveSubscription()
-      if (active) {
+      // Numa renovação, "tem acesso ativo?" já responde sim antes de pagar —
+      // usar isso como sinal faria a tela do QR sumir sozinha. O sinal correto
+      // é o webhook ter gravado ESTE pagamento na assinatura.
+      const done = pixCharge
+        ? (await getMySubscription(user.id))?.payment_id === pixCharge.payment_id
+        : await getHasActiveSubscription()
+
+      if (done) {
         setHasActiveSubscription(true)
         setPolling(false)
         clearInterval(interval)
@@ -72,7 +83,7 @@ export default function Subscribe() {
     check()
     interval = setInterval(check, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [awaitingPayment, user, navigate, setHasActiveSubscription, destination, timeoutMs, pollKey])
+  }, [awaitingPayment, user, navigate, setHasActiveSubscription, destination, timeoutMs, pixCharge, pollKey])
 
   const handleSubscribe = async () => {
     setCreating(true)

@@ -3,15 +3,18 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import Subscribe from '../pages/Subscribe'
 
-const { createSubscriptionMock, getHasActiveSubscriptionMock, createPixPaymentMock } = vi.hoisted(() => ({
-  createSubscriptionMock: vi.fn(),
-  getHasActiveSubscriptionMock: vi.fn(),
-  createPixPaymentMock: vi.fn(),
-}))
+const { createSubscriptionMock, getHasActiveSubscriptionMock, getMySubscriptionMock, createPixPaymentMock } =
+  vi.hoisted(() => ({
+    createSubscriptionMock: vi.fn(),
+    getHasActiveSubscriptionMock: vi.fn(),
+    getMySubscriptionMock: vi.fn(),
+    createPixPaymentMock: vi.fn(),
+  }))
 
 vi.mock('../utils/subscription', () => ({
   createSubscription: createSubscriptionMock,
   getHasActiveSubscription: getHasActiveSubscriptionMock,
+  getMySubscription: getMySubscriptionMock,
 }))
 
 vi.mock('../utils/pixPayment', () => ({
@@ -154,5 +157,66 @@ describe('Subscribe — pagamento via Pix', () => {
     fireEvent.click(screen.getByText(/Pagar R\$\s*59,90/))
 
     expect(await screen.findByText('Você já tem uma assinatura ativa no cartão.')).not.toBeNull()
+  })
+})
+
+describe('Subscribe — renovação de acesso via Pix', () => {
+  beforeEach(() => {
+    mockState.isAdmin = false
+    mockState.needsOnboarding = false
+    mockState.setHasActiveSubscription = vi.fn()
+    createSubscriptionMock.mockReset()
+    getHasActiveSubscriptionMock.mockReset()
+    getMySubscriptionMock.mockReset()
+    createPixPaymentMock.mockReset()
+  })
+
+  const renderAt = (entry: string) =>
+    render(
+      <MemoryRouter initialEntries={[entry]}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/home" element={<div>Home Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+  // Quem renova ainda tem acesso ativo. Sem a intenção explícita de renovar, o
+  // guard que impede assinatura dupla expulsava a pessoa de volta pra Home e
+  // tornava a renovação impossível.
+  it('deixa renovar quem ainda tem acesso ativo, quando a intenção é explícita', async () => {
+    mockState.hasActiveSubscription = true
+
+    renderAt('/subscribe?renovar=1')
+
+    expect(await screen.findByText('3 meses')).not.toBeNull()
+    expect(screen.queryByText('Home Page')).toBeNull()
+  })
+
+  it('continua expulsando quem já tem acesso e chegou sem intenção de renovar', async () => {
+    mockState.hasActiveSubscription = true
+
+    renderAt('/subscribe')
+
+    expect(await screen.findByText('Home Page')).not.toBeNull()
+  })
+
+  it('espera o pagamento NOVO ser gravado, e não some da tela só porque o acesso ainda vale', async () => {
+    mockState.hasActiveSubscription = true
+    createPixPaymentMock.mockResolvedValueOnce({
+      charge: { payment_id: 'novo-999', qr_code: 'codigo', qr_code_base64: 'b64', amount: 149.9, months: 3 },
+      error: null,
+    })
+    // assinatura ainda aponta pro pagamento ANTERIOR
+    getMySubscriptionMock.mockResolvedValue({ payment_id: 'antigo-111' })
+
+    renderAt('/subscribe?renovar=1')
+    fireEvent.click(await screen.findByText(/Pagar R\$\s*149,90/))
+
+    expect(await screen.findByText('codigo')).not.toBeNull()
+    await waitFor(() => expect(getMySubscriptionMock).toHaveBeenCalled())
+    // segue esperando: o pagamento novo ainda não chegou
+    expect(screen.queryByText('Home Page')).toBeNull()
+    expect(getHasActiveSubscriptionMock).not.toHaveBeenCalled()
   })
 })
