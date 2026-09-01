@@ -17,14 +17,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  // O Mercado Pago nem sempre manda data.id na query: parte das notificações
-  // traz o id só no corpo. Como o manifesto assinado inclui esse id, ler apenas
-  // da query fazia essas notificações falharem a validação com
-  // SignatureMismatch e dataId vazio (visto em produção em 2026-09-01).
-  // Se os dois faltarem, segue string vazia — o SDK omite o segundo do
-  // manifesto nesse caso, que é o comportamento correto.
+  // O Mercado Pago entrega o MESMO evento em dois formatos diferentes:
+  //
+  //   moderno (webhook v2, vem do notification_url do pagamento):
+  //     query { 'data.id', type }        body { type, data: { id } }
+  //   antigo (IPN, vem do topico "Pagamentos (legacy)" do painel):
+  //     query { id, topic }              body { resource, topic }
+  //
+  // O id entra no manifesto que o MP assina, entao ler so o formato moderno
+  // fazia as notificacoes antigas falharem com SignatureMismatch e dataId
+  // vazio (observado em producao em 2026-09-01). Processar as duas e seguro:
+  // o UNIQUE em pix_payments impede creditar periodo duas vezes.
+  const rawResource = req.body?.resource
   const dataId =
-    (req.query['data.id'] as string) || (req.body?.data?.id ? String(req.body.data.id) : '')
+    (req.query['data.id'] as string) ||
+    (req.body?.data?.id ? String(req.body.data.id) : '') ||
+    (req.query.id as string) ||
+    // em alguns topicos o IPN manda uma URL completa em vez do id puro
+    (rawResource ? String(rawResource).split('/').filter(Boolean).pop() || '' : '')
   const xSignature = (req.headers['x-signature'] as string) || ''
   const xRequestId = (req.headers['x-request-id'] as string) || ''
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET || ''
@@ -49,10 +59,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         xRequestIdPresent: Boolean(xRequestId),
         xRequestIdValue: xRequestId,
         dataId,
-        // DIAGNÓSTICO (2026-09-01): notificações chegando sem data.id nem na
-        // query nem no corpo, e falhando a validação. Payload de notificação do
-        // MP não tem segredo (ids, tipo, timestamps), então dá para logar
-        // inteiro e descobrir o formato real em vez de adivinhar de novo.
+        // Payload inteiro de propósito: foi o que revelou o formato IPN antigo
+        // em 2026-09-01, depois de dois palpites errados sobre a causa. Se o MP
+        // introduzir um terceiro formato, este log responde na primeira falha
+        // em vez de exigir outro ciclo de pagamento real. Notificação do MP não
+        // carrega segredo (ids, tipo, timestamps); a x-signature fica fora.
         query: req.query,
         body: req.body,
       })

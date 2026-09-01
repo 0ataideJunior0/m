@@ -481,3 +481,50 @@ describe('POST /api/mercadopago-webhook — origem do data.id', () => {
     expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: '' }))
   })
 })
+
+// Formato IPN antigo, observado em produção em 2026-09-01: o mesmo evento
+// chega também como { query: {id, topic}, body: {resource, topic} }.
+describe('POST /api/mercadopago-webhook — formato IPN antigo', () => {
+  beforeEach(() => {
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', 'secret-abc')
+    validateMock.mockReset().mockImplementation(() => undefined)
+    paymentGetMock.mockReset().mockResolvedValue({ id: 1, status: 'pending' })
+  })
+
+  it('valida a assinatura com o id que o IPN antigo manda na query', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { id: '176645487138', topic: 'payment' },
+      body: { resource: '176645487138', topic: 'payment' },
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: '176645487138' }))
+    expect(paymentGetMock).toHaveBeenCalledWith({ id: '176645487138' })
+  })
+
+  it('extrai o id quando o IPN manda uma URL completa em resource', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { topic: 'payment' },
+      body: { resource: 'https://api.mercadolibre.com/collections/notifications/999', topic: 'payment' },
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: '999' }))
+  })
+
+  it('o formato moderno continua tendo precedência quando os dois estão presentes', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': 'moderno', id: 'antigo', type: 'payment' },
+      body: { type: 'payment', data: { id: 'moderno' }, resource: 'antigo' },
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: 'moderno' }))
+  })
+})
