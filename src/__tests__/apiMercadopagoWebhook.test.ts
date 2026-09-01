@@ -434,3 +434,50 @@ describe('POST /api/mercadopago-webhook — pagamentos Pix', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })
+
+describe('POST /api/mercadopago-webhook — origem do data.id', () => {
+  beforeEach(() => {
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', 'secret-abc')
+    validateMock.mockReset().mockImplementation(() => undefined)
+    paymentGetMock.mockReset().mockResolvedValue({ id: 1, status: 'pending' })
+    preApprovalGetMock.mockReset().mockResolvedValue({ id: 'pa-1', status: 'authorized' })
+  })
+
+  // Visto em produção: parte das notificações do MP não traz data.id na query,
+  // só no corpo. Validar com id vazio quebra a assinatura (SignatureMismatch).
+  it('usa o data.id do corpo quando a query não traz', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { type: 'payment' },
+      body: { type: 'payment', data: { id: '175689105273' } },
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: '175689105273' }))
+  })
+
+  it('prefere a query quando as duas trazem o id', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': 'da-query', type: 'payment' },
+      body: { type: 'payment', data: { id: 'do-corpo' } },
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: 'da-query' }))
+  })
+
+  it('passa string vazia quando não há id em lugar nenhum, sem quebrar', async () => {
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { type: 'subscription_preapproval' },
+      body: {},
+    }
+    await handler(req, createMockRes())
+
+    expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: '' }))
+  })
+})

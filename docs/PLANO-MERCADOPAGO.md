@@ -636,8 +636,8 @@ Como CPF, você não emite nota fiscal de serviço com facilidade. Cobrança rec
 
 ## 11. Fora de escopo
 
-- **Pix Automático** — taxa muito menor (~0,22–0,35% vs 4,99%) e alcança quem não tem cartão, mas exige contratação junto à instituição financeira e é orientado a PJ. Reavaliar com CNPJ. **Confirmado em 2026-08-19 que o Mercado Pago também não expõe isso via API — ver §14.**
-- **Pix comum dentro de Assinaturas** — investigado a fundo em 2026-08-19 e **comprovadamente impossível**: o checkout de `preapproval` só oferece cartão, mesmo com Pix ativo na conta. Ver §14 para a evidência e [`PLANO-PIX.md`](PLANO-PIX.md) para a alternativa (Pix à vista, fora de Assinaturas).
+- **Pix Automático** — taxa muito menor (~0,22–0,35% vs 4,99%) e alcança quem não tem cartão, mas exige contratação junto à instituição financeira e é orientado a PJ. Reavaliar com CNPJ. **Confirmado em 2026-09-01 que o Mercado Pago também não expõe isso via API — ver §14.**
+- **Pix comum dentro de Assinaturas** — investigado a fundo em 2026-09-01 e **comprovadamente impossível**: o checkout de `preapproval` só oferece cartão, mesmo com Pix ativo na conta. Ver §14 para a evidência e [`PLANO-PIX.md`](PLANO-PIX.md) para a alternativa (Pix à vista, fora de Assinaturas).
 - **Planos anual / múltiplos preços** — a decisão travada é preço único mensal.
 - **Trial gratuito** — descartado nesta rodada.
 - **Cupons e descontos** — não existe suporte no código recuperado.
@@ -685,7 +685,7 @@ M6  Operação
 
 ---
 
-## 14. Investigação — Pix em Assinaturas (2026-08-19)
+## 14. Investigação — Pix em Assinaturas (2026-09-01)
 
 **Pergunta:** dá para aceitar Pix, ou Pix recorrente, no fluxo de assinatura que está no ar?
 

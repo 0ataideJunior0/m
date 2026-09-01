@@ -1,7 +1,7 @@
 # Plano — Pagamento via Pix (fora de Assinaturas)
 
-**Status:** 🟢 **IMPLEMENTADO em 2026-08-19** — falta um passo de ativação no painel do Mercado Pago e o teste real. Ver §8.
-**Data:** 2026-08-19
+**Status:** 🟢 **IMPLEMENTADO em 2026-09-01** — falta um passo de ativação no painel do Mercado Pago e o teste real. Ver §8.
+**Data:** 2026-09-01
 **Pré-requisito de leitura:** [`PLANO-MERCADOPAGO.md` §14](PLANO-MERCADOPAGO.md) — por que Pix **não** cabe dentro de Assinaturas.
 **Relacionado:** [`../marketing/funil-e-lancamento.md`](../marketing/funil-e-lancamento.md)
 
@@ -40,7 +40,7 @@ O Pix resolve o alcance, mas **não pode ser recorrente** (§14 do plano do MP).
 
 ## 3. Fase P0 — Decisões de produto (bloqueante, não é código)
 
-> ✅ **Respondidas pelo humano em 2026-08-19.** As decisões estão registradas em cada item abaixo; a implementação em §8 segue exatamente elas.
+> ✅ **Respondidas pelo humano em 2026-09-01.** As decisões estão registradas em cada item abaixo; a implementação em §8 segue exatamente elas.
 
 Nenhuma linha deve ser escrita antes destas quatro respostas.
 
@@ -177,7 +177,7 @@ P2 e P3 são independentes entre si e podem ser feitos em paralelo.
 
 ## 7. Por que isto NÃO está implementado
 
-Decisão consciente de sequenciamento, tomada em 2026-08-19.
+Decisão consciente de sequenciamento, tomada em 2026-09-01.
 
 O fluxo de cartão acabou de ser validado em produção (M5) e o relançamento ainda não aconteceu — **não existe um único número de conversão real**. Construir Pix agora é apostar que a falta dele é o gargalo, sem evidência.
 
@@ -187,7 +187,7 @@ O `marketing/funil-e-lancamento.md` já identifica a conversão cadastro → ass
 
 ---
 
-## 8. O que foi implementado (2026-08-19)
+## 8. O que foi implementado (2026-09-01)
 
 ### Decisões de produto tomadas (fase P0)
 
@@ -230,3 +230,46 @@ O `marketing/funil-e-lancamento.md` já identifica a conversão cadastro → ass
 1. **Habilitar o tópico de pagamentos no webhook do painel do Mercado Pago.** Hoje só os tópicos de assinatura estão marcados. Sem isso a notificação de Pix aprovado não chega e o acesso não libera. **Verificar no painel, não confiar no `save_webhook`** — ele já reportou tópicos inscritos que estavam desmarcados (ver `PLANO-MERCADOPAGO.md` §14).
 2. **Teste real de ponta a ponta**, com Pix de verdade: gerar, pagar, e confirmar que o acesso liga sozinho e que a data de fim bate.
 3. **Confirmar se o MP exige CPF do pagador** para Pix. O endpoint manda só o e-mail; se a API reclamar, o erro aparece no log do Vercel e será preciso coletar o CPF na tela.
+
+---
+
+## 9. Verificação em produção (2026-09-01)
+
+### O que a simulação do painel NÃO prova
+
+O botão **"Simular notificação"** do painel do Mercado Pago **não valida a configuração de produção**. O payload que ele envia vem com `live_mode: false` e vai para a URL da aba **"Modo de teste"** — mesmo com a aba de produção aberta na tela.
+
+Evidência: o painel reportou `200 - OK`, e os logs dos **dois** deployments de produção não registraram requisição nenhuma. É o mesmo padrão do §14 do plano do MP: **resposta de sucesso no painel do MP não é evidência de que a integração funciona.**
+
+### Teste real, por R$ 0,01
+
+A API do MP informa `min_allowed_amount: 0.01` para Pix, então o fluxo foi exercitado com um centavo em vez dos R$ 59,90 que o teste do cartão custou.
+
+Resultado, lido direto do banco:
+
+```
+pix_payments:  payment_id 175689105273 | months 1 | amount 0.01 | status approved
+               live_mode "true"  ← notificação REAL, não simulada
+               external_reference "bcf7609f-...|pix|1"  ← o formato fez ida e volta
+
+subscriptions: source pix | preapproval_id NULL | status authorized
+               next_payment_date 2026-10-01 10:36  ← exatamente +1 mês
+```
+
+O acesso liberou sozinho na tela, sem recarregar. **Pipeline completo validado com dinheiro real.**
+
+### 🐛 Defeito encontrado — e que só a cobrança real revelaria
+
+Junto dos `200`, três notificações voltaram **401**, todas com a mesma assinatura de problema:
+
+```
+reason: 'SignatureMismatch',  xSignaturePresent: true,  dataId: ''
+```
+
+**Causa:** o handler lia `data.id` apenas da query string, e parte das notificações do Mercado Pago traz esse id **somente no corpo**. Como o id entra no manifesto que o MP assina, validar com id vazio produz um manifesto diferente do assinado — daí o mismatch.
+
+O pagamento funcionou porque a notificação que creditou veio com o id na query. Mas as demais eram rejeitadas, o MP as reenviaria, e um evento que chegasse só nesse formato passaria despercebido.
+
+**Corrigido:** `data.id` agora vem da query com fallback para o corpo, mantendo string vazia quando não há id em lugar nenhum (caso em que o SDK corretamente omite o segmento do manifesto). Três testes de regressão cobrem os três casos.
+
+> Este defeito é a justificativa retroativa para ter feito o teste com dinheiro real em vez de confiar na simulação. Nenhum teste unitário o encontraria: ele depende do formato que o Mercado Pago escolhe usar na entrega.

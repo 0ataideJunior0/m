@@ -17,7 +17,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const dataId = (req.query['data.id'] as string) || ''
+  // O Mercado Pago nem sempre manda data.id na query: parte das notificações
+  // traz o id só no corpo. Como o manifesto assinado inclui esse id, ler apenas
+  // da query fazia essas notificações falharem a validação com
+  // SignatureMismatch e dataId vazio (visto em produção em 2026-09-01).
+  // Se os dois faltarem, segue string vazia — o SDK omite o segundo do
+  // manifesto nesse caso, que é o comportamento correto.
+  const dataId =
+    (req.query['data.id'] as string) || (req.body?.data?.id ? String(req.body.data.id) : '')
   const xSignature = (req.headers['x-signature'] as string) || ''
   const xRequestId = (req.headers['x-request-id'] as string) || ''
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET || ''
