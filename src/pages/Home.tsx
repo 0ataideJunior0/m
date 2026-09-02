@@ -84,7 +84,7 @@ export default function Home() {
               <button
                 key={program.id}
                 onClick={() => navigate(`/program/${program.slug}`)}
-                style={{ backgroundImage: `url(/programs/${program.slug}.jpg)` }}
+                style={{ backgroundImage: `url(/programs/${program.slug}.webp)` }}
                 className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
@@ -117,7 +117,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => navigate('/planos-ganho')}
-              style={{ backgroundImage: 'url(/programs/ganhodemassa.jpg)' }}
+              style={{ backgroundImage: 'url(/programs/ganhodemassa.webp)' }}
               className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-right hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
               <div className="absolute inset-0 bg-gradient-to-l from-black/85 via-black/60 to-transparent" />
@@ -129,7 +129,7 @@ export default function Home() {
 
             <button
               onClick={() => navigate('/planos-perda')}
-              style={{ backgroundImage: 'url(/programs/perdadegordura.png)' }}
+              style={{ backgroundImage: 'url(/programs/perdadegordura.webp)' }}
               className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-purple-900"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
