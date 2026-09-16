@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { PreApproval } from 'mercadopago'
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { isCancellationReason } from './_lib/cancellationReasons.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -59,6 +60,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       preapprovalId: subscription.preapproval_id,
       error: updateError,
     })
+  }
+
+  // Best-effort: o motivo é opcional e, se vier ausente ou inválido, o
+  // cancelamento já aconteceu e não pode ser desfeito por causa disso.
+  const reason = req.body?.reason
+  if (isCancellationReason(reason)) {
+    const comment = typeof req.body?.comment === 'string' ? req.body.comment.trim().slice(0, 1000) || null : null
+    const { error: feedbackError } = await supabaseAdmin
+      .from('subscription_cancellation_feedback')
+      .insert({ user_id: userData.user.id, reason, comment })
+    if (feedbackError) {
+      console.error('cancel-subscription feedback insert error:', feedbackError)
+    }
   }
 
   res.status(200).json({ ok: true, status: 'cancelled' })

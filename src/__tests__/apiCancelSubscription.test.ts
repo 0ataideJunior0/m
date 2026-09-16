@@ -1,25 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { getUserMock, selectSingleMock, updateEqMock, preApprovalUpdateMock, fromMock } = vi.hoisted(() => {
-  const selectSingleMock = vi.fn()
-  const updateEqMock = vi.fn().mockResolvedValue({ error: null })
-  const fromMock = vi.fn((table: string) => {
-    if (table === 'subscriptions') {
-      return {
-        select: () => ({ eq: () => ({ single: selectSingleMock }) }),
-        update: () => ({ eq: updateEqMock }),
+const { getUserMock, selectSingleMock, updateEqMock, preApprovalUpdateMock, feedbackInsertMock, fromMock } =
+  vi.hoisted(() => {
+    const selectSingleMock = vi.fn()
+    const updateEqMock = vi.fn().mockResolvedValue({ error: null })
+    const feedbackInsertMock = vi.fn().mockResolvedValue({ error: null })
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'subscriptions') {
+        return {
+          select: () => ({ eq: () => ({ single: selectSingleMock }) }),
+          update: () => ({ eq: updateEqMock }),
+        }
       }
+      if (table === 'subscription_cancellation_feedback') {
+        return { insert: feedbackInsertMock }
+      }
+      throw new Error(`unexpected table ${table}`)
+    })
+    return {
+      getUserMock: vi.fn(),
+      selectSingleMock,
+      updateEqMock,
+      preApprovalUpdateMock: vi.fn(),
+      feedbackInsertMock,
+      fromMock,
     }
-    throw new Error(`unexpected table ${table}`)
   })
-  return {
-    getUserMock: vi.fn(),
-    selectSingleMock,
-    updateEqMock,
-    preApprovalUpdateMock: vi.fn(),
-    fromMock,
-  }
-})
 
 vi.mock('../../api/_lib/supabaseAdmin', () => ({
   createSupabaseAdmin: () => ({ auth: { getUser: getUserMock }, from: fromMock }),
@@ -47,6 +53,7 @@ describe('POST /api/cancel-subscription', () => {
     fromMock.mockClear()
     updateEqMock.mockClear()
     preApprovalUpdateMock.mockReset()
+    feedbackInsertMock.mockReset().mockResolvedValue({ error: null })
   })
 
   it('retorna 401 sem token', async () => {
@@ -119,6 +126,98 @@ describe('POST /api/cancel-subscription', () => {
 
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.json).toHaveBeenCalledWith({ ok: true, status: 'cancelled' })
+    expect(consoleErrorSpy).toHaveBeenCalled()
+
+    consoleErrorSpy.mockRestore()
+  })
+})
+
+// O motivo é opcional e não pode nunca impedir o cancelamento em si — a
+// cliente já pagou pelo direito de cancelar, o formulário é só para aprender
+// com ela.
+describe('POST /api/cancel-subscription — motivo do cancelamento', () => {
+  beforeEach(() => {
+    fromMock.mockClear()
+    updateEqMock.mockClear()
+    preApprovalUpdateMock.mockReset()
+    feedbackInsertMock.mockReset().mockResolvedValue({ error: null })
+  })
+
+  it('grava o motivo e o comentário quando informados', async () => {
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+    selectSingleMock.mockResolvedValueOnce({
+      data: { preapproval_id: 'preapproval-999', status: 'authorized' },
+      error: null,
+    })
+    preApprovalUpdateMock.mockResolvedValueOnce({ id: 'preapproval-999', status: 'cancelled' })
+
+    const req: any = {
+      method: 'POST',
+      headers: { authorization: 'Bearer good-token' },
+      body: { reason: 'preco', comment: 'Achei caro' },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(feedbackInsertMock).toHaveBeenCalledWith({ user_id: 'user-1', reason: 'preco', comment: 'Achei caro' })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('cancela normalmente e não grava nada quando o motivo vem ausente', async () => {
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+    selectSingleMock.mockResolvedValueOnce({
+      data: { preapproval_id: 'preapproval-999', status: 'authorized' },
+      error: null,
+    })
+    preApprovalUpdateMock.mockResolvedValueOnce({ id: 'preapproval-999', status: 'cancelled' })
+
+    const req: any = { method: 'POST', headers: { authorization: 'Bearer good-token' }, body: {} }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(feedbackInsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('cancela normalmente e não grava nada quando o motivo é inválido', async () => {
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+    selectSingleMock.mockResolvedValueOnce({
+      data: { preapproval_id: 'preapproval-999', status: 'authorized' },
+      error: null,
+    })
+    preApprovalUpdateMock.mockResolvedValueOnce({ id: 'preapproval-999', status: 'cancelled' })
+
+    const req: any = {
+      method: 'POST',
+      headers: { authorization: 'Bearer good-token' },
+      body: { reason: 'motivo-que-nao-existe' },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(feedbackInsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('continua retornando 200 se o registro do motivo falhar', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getUserMock.mockResolvedValueOnce({ data: { user: { id: 'user-1' } }, error: null })
+    selectSingleMock.mockResolvedValueOnce({
+      data: { preapproval_id: 'preapproval-999', status: 'authorized' },
+      error: null,
+    })
+    preApprovalUpdateMock.mockResolvedValueOnce({ id: 'preapproval-999', status: 'cancelled' })
+    feedbackInsertMock.mockResolvedValueOnce({ error: new Error('db down') })
+
+    const req: any = {
+      method: 'POST',
+      headers: { authorization: 'Bearer good-token' },
+      body: { reason: 'outro' },
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(200)
     expect(consoleErrorSpy).toHaveBeenCalled()
 
     consoleErrorSpy.mockRestore()

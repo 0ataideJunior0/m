@@ -31,6 +31,7 @@ const AdminProgramList = lazy(() => import('./pages/admin/AdminProgramList'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminCancellations = lazy(() => import('./pages/admin/AdminCancellations'))
 
 // Limpeza one-shot de chaves órfãs deixadas por mecanismos removidos:
 // - musa_auth_enc: cache de sessão cifrado (utils/authPersist.ts, removido
@@ -139,6 +140,7 @@ function App() {
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/users" element={<RequireOnboarding><RequireAdmin><AdminUsers /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/cancellations" element={<RequireOnboarding><RequireAdmin><AdminCancellations /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </Suspense>

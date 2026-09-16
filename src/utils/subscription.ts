@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { Subscription } from '../types'
+import { CancellationReason } from './cancellationReasons'
 
 // Uma falha transitória de rede/RPC não deve ser lida como "sem assinatura" —
 // isso barraria uma assinante em dia sem chance de recuperar sozinha. Uma
@@ -43,7 +44,10 @@ export const createSubscription = async (): Promise<{ initPoint: string | null; 
   }
 }
 
-export const cancelSubscription = async (): Promise<{ ok: boolean; error: string | null }> => {
+export const cancelSubscription = async (
+  reason?: CancellationReason,
+  comment?: string
+): Promise<{ ok: boolean; error: string | null }> => {
   const { data: sessionData } = await supabase.auth.getSession()
   const token = sessionData.session?.access_token
   if (!token) return { ok: false, error: 'Sessão inválida' }
@@ -51,7 +55,8 @@ export const cancelSubscription = async (): Promise<{ ok: boolean; error: string
   try {
     const response = await fetch('/api/cancel-subscription', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason, comment }),
     })
     const body = await response.json()
     if (!response.ok) return { ok: false, error: body?.error || 'Erro ao cancelar assinatura' }

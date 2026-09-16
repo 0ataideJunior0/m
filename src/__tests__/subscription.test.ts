@@ -120,13 +120,14 @@ describe('cancelSubscription', () => {
     getSessionMock.mockReset()
   })
 
-  it('chama a function e retorna ok', async () => {
+  it('chama a function e retorna ok, enviando o motivo e o comentário', async () => {
     getSessionMock.mockResolvedValueOnce({ data: { session: { access_token: 'tok-1' } } })
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, status: 'cancelled' }) })
-    const result = await cancelSubscription()
+    const result = await cancelSubscription('preco', 'Achei caro')
     expect(fetchMock).toHaveBeenCalledWith('/api/cancel-subscription', {
       method: 'POST',
-      headers: { Authorization: 'Bearer tok-1' },
+      headers: { Authorization: 'Bearer tok-1', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'preco', comment: 'Achei caro' }),
     })
     expect(result).toEqual({ ok: true, error: null })
   })

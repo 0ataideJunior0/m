@@ -48,7 +48,7 @@ describe('MySubscription', () => {
     expect(screen.getByText('Cancelar assinatura')).not.toBeNull()
   })
 
-  it('cancela a assinatura ao confirmar', async () => {
+  it('pede o motivo antes de cancelar, e envia motivo e comentário ao confirmar', async () => {
     getMySubscriptionMock.mockResolvedValueOnce({
       id: 's1', user_id: 'u1', preapproval_id: 'p1', status: 'authorized',
       next_payment_date: null, created_at: '', updated_at: '',
@@ -69,7 +69,19 @@ describe('MySubscription', () => {
 
     fireEvent.click(await screen.findByText('Cancelar assinatura'))
 
-    await waitFor(() => expect(cancelSubscriptionMock).toHaveBeenCalled())
+    // sem motivo selecionado, o botão de confirmação fica desabilitado
+    const confirmButton = await screen.findByText('Confirmar cancelamento')
+    expect(confirmButton.closest('button')).toBeDisabled()
+
+    fireEvent.click(screen.getByText('O preço'))
+    fireEvent.change(screen.getByLabelText('Quer contar mais? (opcional)'), {
+      target: { value: 'Achei caro pro que uso' },
+    })
+    fireEvent.click(confirmButton)
+
+    await waitFor(() =>
+      expect(cancelSubscriptionMock).toHaveBeenCalledWith('preco', 'Achei caro pro que uso')
+    )
     expect(await screen.findByText('Cancelada')).not.toBeNull()
   })
 

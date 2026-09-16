@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Dumbbell, Users } from 'lucide-react'
+import { ArrowLeft, Dumbbell, Users, MessageSquareX } from 'lucide-react'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -31,6 +31,15 @@ export default function AdminDashboard() {
             <Users className="w-8 h-8 text-purple-600 mb-3" />
             <div className="text-lg font-bold text-text mb-1">Usuárias</div>
             <div className="text-sm text-text-muted">Ver cadastros e progresso</div>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/cancellations')}
+            className="bg-surface rounded-2xl shadow-lg p-6 text-left hover:shadow-xl transition"
+          >
+            <MessageSquareX className="w-8 h-8 text-purple-600 mb-3" />
+            <div className="text-lg font-bold text-text mb-1">Cancelamentos</div>
+            <div className="text-sm text-text-muted">Motivos informados ao cancelar a assinatura</div>
           </button>
         </div>
       </div>
