@@ -22,7 +22,7 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
   {
     id: 'mensal',
     months: 1,
-    amount: 59.9,
+    amount: 49.9,
     title: '1 mês',
     subtitle: 'Acesso por 30 dias',
   },
@@ -37,10 +37,10 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
   {
     id: 'trimestral',
     months: 3,
-    amount: 149.9,
+    amount: 129.9,
     title: '3 meses',
-    subtitle: 'Equivale a R$ 49,97 por mês',
-    badge: 'Economize R$ 29,80',
+    subtitle: 'Equivale a R$ 43,30 por mês',
+    badge: 'Economize R$ 19,80',
   },
 ]
 

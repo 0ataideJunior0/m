@@ -210,7 +210,8 @@ export default function Subscribe() {
             <span className="font-semibold text-gray-900 dark:text-text">Cartão de crédito</span>
           </div>
           <p className="text-sm text-gray-600 dark:text-text-muted mb-3">
-            {formatBRL(59.9)} por mês, com renovação automática. Cancele quando quiser.
+            <s className="opacity-70">{formatBRL(59.9)}</s> <strong>{formatBRL(49.9)}</strong> por mês, com renovação
+            automática. Cancele quando quiser.
           </p>
           <Button className="w-full" onClick={handleSubscribe} isLoading={creating}>
             Assinar agora

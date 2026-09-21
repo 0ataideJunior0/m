@@ -85,7 +85,7 @@ describe('POST /api/create-pix-payment', () => {
     expect(paymentCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
-          transaction_amount: 149.9,
+          transaction_amount: 129.9,
           payment_method_id: 'pix',
           external_reference: 'user-1|pix|3',
         }),
@@ -103,7 +103,7 @@ describe('POST /api/create-pix-payment', () => {
         payment_id: '999',
         qr_code: 'copia-e-cola',
         qr_code_base64: 'base64==',
-        amount: 59.9,
+        amount: 49.9,
         months: 1,
       })
     )

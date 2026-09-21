@@ -132,7 +132,7 @@ describe('Subscribe — pagamento via Pix', () => {
         payment_id: '123',
         qr_code: '00020126-codigo-pix-copia-e-cola',
         qr_code_base64: 'iVBORw0KGgo=',
-        amount: 149.9,
+        amount: 129.9,
         months: 3,
       },
       error: null,
@@ -140,7 +140,7 @@ describe('Subscribe — pagamento via Pix', () => {
     getHasActiveSubscriptionMock.mockResolvedValue(false)
 
     renderSubscribe()
-    fireEvent.click(screen.getByText(/Pagar R\$\s*149,90/))
+    fireEvent.click(screen.getByText(/Pagar R\$\s*129,90/))
 
     expect(await screen.findByText('00020126-codigo-pix-copia-e-cola')).not.toBeNull()
     expect(screen.getByAltText('QR Code do Pix')).not.toBeNull()
@@ -154,7 +154,7 @@ describe('Subscribe — pagamento via Pix', () => {
     })
 
     renderSubscribe()
-    fireEvent.click(screen.getByText(/Pagar R\$\s*59,90/))
+    fireEvent.click(screen.getByText(/Pagar R\$\s*49,90/))
 
     expect(await screen.findByText('Você já tem uma assinatura ativa no cartão.')).not.toBeNull()
   })
@@ -204,14 +204,14 @@ describe('Subscribe — renovação de acesso via Pix', () => {
   it('espera o pagamento NOVO ser gravado, e não some da tela só porque o acesso ainda vale', async () => {
     mockState.hasActiveSubscription = true
     createPixPaymentMock.mockResolvedValueOnce({
-      charge: { payment_id: 'novo-999', qr_code: 'codigo', qr_code_base64: 'b64', amount: 149.9, months: 3 },
+      charge: { payment_id: 'novo-999', qr_code: 'codigo', qr_code_base64: 'b64', amount: 129.9, months: 3 },
       error: null,
     })
     // assinatura ainda aponta pro pagamento ANTERIOR
     getMySubscriptionMock.mockResolvedValue({ payment_id: 'antigo-111' })
 
     renderAt('/subscribe?renovar=1')
-    fireEvent.click(await screen.findByText(/Pagar R\$\s*149,90/))
+    fireEvent.click(await screen.findByText(/Pagar R\$\s*129,90/))
 
     expect(await screen.findByText('codigo')).not.toBeNull()
     await waitFor(() => expect(getMySubscriptionMock).toHaveBeenCalled())

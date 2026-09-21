@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: 59.90,
+          transaction_amount: 49.90,
           currency_id: 'BRL',
         },
         payer_email: user.email || '',

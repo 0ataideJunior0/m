@@ -17,8 +17,8 @@ export interface PixPlan {
 }
 
 export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
-  mensal: { id: 'mensal', months: 1, amount: 59.9 },
-  trimestral: { id: 'trimestral', months: 3, amount: 149.9 },
+  mensal: { id: 'mensal', months: 1, amount: 49.9 },
+  trimestral: { id: 'trimestral', months: 3, amount: 129.9 },
   // Plano de verificação, restrito a admin (checado no servidor, em
   // create-pix-payment.ts). Existe para validar a cobrança de ponta a ponta
   // por R$ 0,01 depois de mexer em domínio, credencial ou webhook -- o tipo de
