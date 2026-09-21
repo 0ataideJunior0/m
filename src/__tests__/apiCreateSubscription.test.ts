@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
 
 const { getUserMock, preApprovalCreateMock } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
@@ -18,6 +18,17 @@ vi.mock('mercadopago', () => ({
 }))
 
 import handler from '../../api/create-subscription'
+
+// Os preços dependem da data (promoção até 26/09). Fixa o relógio dentro do
+// prazo para que estes testes não passem a falhar quando a promoção acabar.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-22T12:00:00-03:00'))
+})
+afterAll(() => {
+  vi.useRealTimers()
+})
+
 
 function createMockRes() {
   const res: any = {}

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { Payment } from 'mercadopago'
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { PIX_PLANS, ADMIN_ONLY_PLANS, isPixPlanId } from './_lib/pixPlans.js'
+import { getPixPlan, ADMIN_ONLY_PLANS, isPixPlanId } from './_lib/pixPlans.js'
 import { buildPixExternalReference } from './_lib/pixPeriod.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
   // O valor sai daqui, nunca do corpo da requisição.
-  const plan = PIX_PLANS[planId]
+  const plan = getPixPlan(planId)
 
   const supabaseAdmin = createSupabaseAdmin()
   const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)

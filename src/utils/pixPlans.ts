@@ -5,6 +5,8 @@
  * Estes números existem só para exibição; src/__tests__/pixPlans.test.ts
  * falha se divergirem da fonte de verdade.
  */
+import { isPromoActive } from './promo'
+
 export type PixPlanId = 'mensal' | 'trimestral' | 'teste'
 
 export interface PixPlanDisplay {
@@ -43,6 +45,23 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
     badge: 'Economize R$ 19,80',
   },
 ]
+
+// Depois do prazo da promoção o servidor cobra estes valores.
+export const PIX_PLANS_DISPLAY_REGULAR: PixPlanDisplay[] = [
+  { id: 'mensal', months: 1, amount: 59.9, title: '1 mês', subtitle: 'Acesso por 30 dias' },
+  PIX_PLANS_DISPLAY.find((p) => p.id === 'teste')!,
+  {
+    id: 'trimestral',
+    months: 3,
+    amount: 149.9,
+    title: '3 meses',
+    subtitle: 'Equivale a R$ 49,97 por mês',
+    badge: 'Economize R$ 29,80',
+  },
+]
+
+export const getPixPlansDisplay = (now: Date = new Date()): PixPlanDisplay[] =>
+  isPromoActive(now) ? PIX_PLANS_DISPLAY : PIX_PLANS_DISPLAY_REGULAR
 
 export const formatBRL = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
