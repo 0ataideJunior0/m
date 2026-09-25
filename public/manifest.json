@@ -1,0 +1,19 @@
+{
+  "name": "MusaFit — Treinos para mulheres, dia a dia",
+  "short_name": "MusaFit",
+  "description": "Programas de treino estruturados para mulheres, com vídeo em cada exercício e progresso salvo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf5ff",
+  "theme_color": "#9333ea",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "240x240",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
