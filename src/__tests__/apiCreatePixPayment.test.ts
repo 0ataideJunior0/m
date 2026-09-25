@@ -84,7 +84,7 @@ describe('POST /api/create-pix-payment', () => {
 
   it('rejeita plano que não existe', async () => {
     const res = createMockRes()
-    await handler(authedReq({ plan: 'anual' }) as any, res)
+    await handler(authedReq({ plan: 'bienal' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(paymentCreateMock).not.toHaveBeenCalled()
   })

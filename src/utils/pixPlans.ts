@@ -7,7 +7,7 @@
  */
 import { isPromoActive } from './promo'
 
-export type PixPlanId = 'mensal' | 'trimestral' | 'teste'
+export type PixPlanId = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'teste'
 
 export interface PixPlanDisplay {
   id: PixPlanId
@@ -44,9 +44,27 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
     subtitle: 'Equivale a R$ 43,30 por mês',
     badge: 'Economize R$ 19,80',
   },
+  {
+    id: 'semestral',
+    months: 6,
+    amount: 233.4,
+    title: '6 meses',
+    subtitle: 'Equivale a R$ 38,90 por mês',
+    badge: 'Economize R$ 66,00',
+  },
+  {
+    id: 'anual',
+    months: 12,
+    amount: 358.8,
+    title: '12 meses',
+    subtitle: 'Equivale a R$ 29,90 por mês',
+    badge: 'Economize R$ 240,00',
+  },
 ]
 
-// Depois do prazo da promoção o servidor cobra estes valores.
+// Depois do prazo da promoção o servidor cobra estes valores. Semestral e
+// anual não fazem parte da promoção que vence — preço e período iguais aos
+// de cima, só a comparação de economia muda (o mensal fica mais caro).
 export const PIX_PLANS_DISPLAY_REGULAR: PixPlanDisplay[] = [
   { id: 'mensal', months: 1, amount: 59.9, title: '1 mês', subtitle: 'Acesso por 30 dias' },
   PIX_PLANS_DISPLAY.find((p) => p.id === 'teste')!,
@@ -57,6 +75,14 @@ export const PIX_PLANS_DISPLAY_REGULAR: PixPlanDisplay[] = [
     title: '3 meses',
     subtitle: 'Equivale a R$ 49,97 por mês',
     badge: 'Economize R$ 29,80',
+  },
+  {
+    ...PIX_PLANS_DISPLAY.find((p) => p.id === 'semestral')!,
+    badge: 'Economize R$ 126,00',
+  },
+  {
+    ...PIX_PLANS_DISPLAY.find((p) => p.id === 'anual')!,
+    badge: 'Economize R$ 360,00',
   },
 ]
 

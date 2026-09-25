@@ -10,7 +10,7 @@
  */
 import { isPromoActive } from './promo.js'
 
-export type PixPlanId = 'mensal' | 'trimestral' | 'teste'
+export type PixPlanId = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'teste'
 
 export interface PixPlan {
   id: PixPlanId
@@ -19,10 +19,14 @@ export interface PixPlan {
 }
 
 // Preços da promoção de lançamento. Depois de PROMO_ENDS_AT valem os de
-// PIX_PLANS_REGULAR (ver getPixPlan).
+// PIX_PLANS_REGULAR (ver getPixPlan). Semestral e anual são exceção: não
+// fazem parte da promoção que vence (são planos novos, lançados sem prazo de
+// desconto) — por isso o mesmo objeto aparece nos dois dicionários abaixo.
 export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
   mensal: { id: 'mensal', months: 1, amount: 49.9 },
   trimestral: { id: 'trimestral', months: 3, amount: 129.9 },
+  semestral: { id: 'semestral', months: 6, amount: 233.4 },
+  anual: { id: 'anual', months: 12, amount: 358.8 },
   // Plano de verificação, restrito a admin (checado no servidor, em
   // create-pix-payment.ts). Existe para validar a cobrança de ponta a ponta
   // por R$ 0,01 depois de mexer em domínio, credencial ou webhook -- o tipo de
@@ -34,6 +38,8 @@ export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
 export const PIX_PLANS_REGULAR: Record<PixPlanId, PixPlan> = {
   mensal: { id: 'mensal', months: 1, amount: 59.9 },
   trimestral: { id: 'trimestral', months: 3, amount: 149.9 },
+  semestral: PIX_PLANS.semestral,
+  anual: PIX_PLANS.anual,
   teste: PIX_PLANS.teste,
 }
 
@@ -43,5 +49,11 @@ export const getPixPlan = (id: PixPlanId, now: Date = new Date()): PixPlan =>
 export const ADMIN_ONLY_PLANS: PixPlanId[] = ['teste']
 
 export function isPixPlanId(value: unknown): value is PixPlanId {
-  return value === 'mensal' || value === 'trimestral' || value === 'teste'
+  return (
+    value === 'mensal' ||
+    value === 'trimestral' ||
+    value === 'semestral' ||
+    value === 'anual' ||
+    value === 'teste'
+  )
 }
