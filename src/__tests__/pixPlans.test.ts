@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PIX_PLANS, PIX_PLANS_REGULAR } from '../../api/_lib/pixPlans'
+import { PIX_PLANS } from '../../api/_lib/pixPlans'
 import { PIX_PLANS_DISPLAY, formatBRL } from '../utils/pixPlans'
 
 // A vitrine e o servidor guardam os mesmos números em arquivos separados (o
@@ -42,10 +42,5 @@ describe('planos de Pix: vitrine x servidor', () => {
     const economia = mensal * 12 - anual
     const display = PIX_PLANS_DISPLAY.find((p) => p.id === 'anual')!
     expect(display.badge).toContain(formatBRL(economia).replace(/\s/g, ' '))
-  })
-
-  it('semestral e anual têm o mesmo preço na promoção e depois dela (não são parte do prazo que vence)', () => {
-    expect(PIX_PLANS_REGULAR.semestral.amount).toBe(PIX_PLANS.semestral.amount)
-    expect(PIX_PLANS_REGULAR.anual.amount).toBe(PIX_PLANS.anual.amount)
   })
 })

@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { PreApproval } from 'mercadopago'
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { cardMonthlyPrice } from './_lib/promo.js'
+import { CARD_MONTHLY_PRICE } from './_lib/promo.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -37,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: cardMonthlyPrice(),
+          transaction_amount: CARD_MONTHLY_PRICE,
           currency_id: 'BRL',
         },
         payer_email: user.email || '',

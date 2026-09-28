@@ -7,8 +7,11 @@
  *
  * A vitrine em src/utils/pixPlans.ts repete esses números para renderizar a
  * tela; src/__tests__/pixPlans.test.ts falha se os dois divergirem.
+ *
+ * Os preços eram promocionais até 26/09/2026; a partir daí viraram o preço
+ * padrão (decisão do usuário) — não há mais distinção entre "promo" e
+ * "regular".
  */
-import { isPromoActive } from './promo.js'
 
 export type PixPlanId = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'teste'
 
@@ -18,10 +21,6 @@ export interface PixPlan {
   amount: number
 }
 
-// Preços da promoção de lançamento. Depois de PROMO_ENDS_AT valem os de
-// PIX_PLANS_REGULAR (ver getPixPlan). Semestral e anual são exceção: não
-// fazem parte da promoção que vence (são planos novos, lançados sem prazo de
-// desconto) — por isso o mesmo objeto aparece nos dois dicionários abaixo.
 export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
   mensal: { id: 'mensal', months: 1, amount: 49.9 },
   trimestral: { id: 'trimestral', months: 3, amount: 129.9 },
@@ -35,16 +34,7 @@ export const PIX_PLANS: Record<PixPlanId, PixPlan> = {
   teste: { id: 'teste', months: 1, amount: 0.01 },
 }
 
-export const PIX_PLANS_REGULAR: Record<PixPlanId, PixPlan> = {
-  mensal: { id: 'mensal', months: 1, amount: 59.9 },
-  trimestral: { id: 'trimestral', months: 3, amount: 149.9 },
-  semestral: PIX_PLANS.semestral,
-  anual: PIX_PLANS.anual,
-  teste: PIX_PLANS.teste,
-}
-
-export const getPixPlan = (id: PixPlanId, now: Date = new Date()): PixPlan =>
-  isPromoActive(now) ? PIX_PLANS[id] : PIX_PLANS_REGULAR[id]
+export const getPixPlan = (id: PixPlanId): PixPlan => PIX_PLANS[id]
 
 export const ADMIN_ONLY_PLANS: PixPlanId[] = ['teste']
 

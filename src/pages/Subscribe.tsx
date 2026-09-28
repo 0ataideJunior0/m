@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Copy, QrCode, CreditCard, Flame } from 'lucide-react'
+import { Copy, QrCode, CreditCard } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { createSubscription, getHasActiveSubscription, getMySubscription } from '../utils/subscription'
 import { createPixPayment, PixCharge } from '../utils/pixPayment'
 import { getPixPlansDisplay, PixPlanId, formatBRL } from '../utils/pixPlans'
-import {
-  isPromoActive,
-  formatPromoEnd,
-  promoCountdownLabel,
-  REGULAR_MONTHLY_PRICE,
-  PROMO_MONTHLY_PRICE,
-} from '../utils/promo'
+import { MONTHLY_PRICE } from '../utils/promo'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
@@ -43,7 +37,6 @@ export default function Subscribe() {
   // via Pix seria impossível.
   const renewing = searchParams.has('renovar')
   const destination = needsOnboarding ? '/onboarding' : '/home'
-  const promoActive = isPromoActive()
 
   // Admin não é redirecionado: /subscribe é onde ele roda a verificação de
   // R$ 0,01 depois de mexer em domínio, credencial ou webhook.
@@ -212,37 +205,13 @@ export default function Subscribe() {
           Acesso completo aos treinos e aos planos alimentares.
         </p>
 
-        {promoActive && (
-          <div
-            role="note"
-            className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 p-3 mb-6 flex items-start gap-3"
-          >
-            <Flame className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold">Promoção de lançamento — válida até {formatPromoEnd()}</p>
-              <p className="opacity-90 mt-0.5">
-                <strong>{promoCountdownLabel()}.</strong> Depois disso o mensal volta a{' '}
-                {formatBRL(REGULAR_MONTHLY_PRICE)}. Garanta o seu agora.
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="rounded-xl border border-gray-200 dark:border-border p-4 mb-5">
           <div className="flex items-center gap-2 mb-1">
             <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-300" />
             <span className="font-semibold text-gray-900 dark:text-text">Cartão de crédito</span>
           </div>
           <p className="text-sm text-gray-600 dark:text-text-muted mb-3">
-            {promoActive ? (
-              <>
-                <s className="opacity-70">{formatBRL(REGULAR_MONTHLY_PRICE)}</s>{' '}
-                <strong>{formatBRL(PROMO_MONTHLY_PRICE)}</strong>
-              </>
-            ) : (
-              formatBRL(REGULAR_MONTHLY_PRICE)
-            )}{' '}
-            por mês, com renovação automática. Cancele quando quiser.
+            {formatBRL(MONTHLY_PRICE)} por mês, com renovação automática. Cancele quando quiser.
           </p>
           <Button className="w-full" onClick={handleSubscribe} isLoading={creating}>
             Assinar agora

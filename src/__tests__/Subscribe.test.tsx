@@ -1,18 +1,7 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import Subscribe from '../pages/Subscribe'
-
-// Os preços dependem da data (promoção até 26/09). Fixa o relógio dentro do
-// prazo para que estes testes não passem a falhar quando a promoção acabar.
-beforeAll(() => {
-  vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date('2026-09-22T12:00:00-03:00'))
-})
-afterAll(() => {
-  vi.useRealTimers()
-})
-
 
 const { createSubscriptionMock, getHasActiveSubscriptionMock, getMySubscriptionMock, createPixPaymentMock } =
   vi.hoisted(() => ({
@@ -272,7 +261,7 @@ describe('Subscribe — plano de verificação restrito a admin', () => {
   })
 })
 
-describe('Subscribe — aviso de promoção temporária', () => {
+describe('Subscribe — preço padrão (sem promoção com prazo)', () => {
   beforeEach(() => {
     mockState.isAdmin = false
     mockState.hasActiveSubscription = false
@@ -289,28 +278,11 @@ describe('Subscribe — aviso de promoção temporária', () => {
       </MemoryRouter>
     )
 
-  it('mostra o prazo real, a contagem e para quanto o preço volta', () => {
-    renderSubscribe()
-
-    expect(screen.getByText(/Promoção de lançamento — válida até sábado, 26\/09/)).not.toBeNull()
-    expect(screen.getByText(/Faltam 5 dias/)).not.toBeNull()
-    expect(screen.getByText(/o mensal volta a R\$\s*59,90/)).not.toBeNull()
-  })
-
-  it('no último dia avisa que é o último dia', () => {
-    vi.setSystemTime(new Date('2026-09-26T10:00:00-03:00'))
-    renderSubscribe()
-    expect(screen.getByText(/Último dia/)).not.toBeNull()
-    vi.setSystemTime(new Date('2026-09-22T12:00:00-03:00'))
-  })
-
-  it('depois do prazo some o aviso e a vitrine volta aos preços cheios', () => {
-    vi.setSystemTime(new Date('2026-09-27T00:00:01-03:00'))
+  it('não mostra aviso de promoção nem preço riscado — R$ 49,90 é o preço padrão', () => {
     renderSubscribe()
 
     expect(screen.queryByText(/Promoção de lançamento/)).toBeNull()
-    expect(screen.getByText(/Pagar R\$\s*59,90/)).not.toBeNull()
-    expect(screen.getByText(/Pagar R\$\s*149,90/)).not.toBeNull()
-    vi.setSystemTime(new Date('2026-09-22T12:00:00-03:00'))
+    expect(screen.getByText(/R\$\s*49,90 por mês/)).not.toBeNull()
+    expect(screen.getByText(/Pagar R\$\s*129,90/)).not.toBeNull()
   })
 })

@@ -5,8 +5,6 @@
  * Estes números existem só para exibição; src/__tests__/pixPlans.test.ts
  * falha se divergirem da fonte de verdade.
  */
-import { isPromoActive } from './promo'
-
 export type PixPlanId = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'teste'
 
 export interface PixPlanDisplay {
@@ -62,32 +60,7 @@ export const PIX_PLANS_DISPLAY: PixPlanDisplay[] = [
   },
 ]
 
-// Depois do prazo da promoção o servidor cobra estes valores. Semestral e
-// anual não fazem parte da promoção que vence — preço e período iguais aos
-// de cima, só a comparação de economia muda (o mensal fica mais caro).
-export const PIX_PLANS_DISPLAY_REGULAR: PixPlanDisplay[] = [
-  { id: 'mensal', months: 1, amount: 59.9, title: '1 mês', subtitle: 'Acesso por 30 dias' },
-  PIX_PLANS_DISPLAY.find((p) => p.id === 'teste')!,
-  {
-    id: 'trimestral',
-    months: 3,
-    amount: 149.9,
-    title: '3 meses',
-    subtitle: 'Equivale a R$ 49,97 por mês',
-    badge: 'Economize R$ 29,80',
-  },
-  {
-    ...PIX_PLANS_DISPLAY.find((p) => p.id === 'semestral')!,
-    badge: 'Economize R$ 126,00',
-  },
-  {
-    ...PIX_PLANS_DISPLAY.find((p) => p.id === 'anual')!,
-    badge: 'Economize R$ 360,00',
-  },
-]
-
-export const getPixPlansDisplay = (now: Date = new Date()): PixPlanDisplay[] =>
-  isPromoActive(now) ? PIX_PLANS_DISPLAY : PIX_PLANS_DISPLAY_REGULAR
+export const getPixPlansDisplay = (): PixPlanDisplay[] => PIX_PLANS_DISPLAY
 
 export const formatBRL = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
