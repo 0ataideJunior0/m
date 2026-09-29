@@ -14,10 +14,14 @@ describe('ExerciseItem', () => {
     expect(screen.getByRole('checkbox', { name: /marcar agachamento como concluído/i })).toBeInTheDocument()
   })
 
-  it('shows the rest timer inside the card, defaulting to 90 seconds', () => {
+  it('shows the rest timer trigger inside the card, opening a 90s countdown in a modal', () => {
     render(<ExerciseItem exercise={exercise} isCompleted={false} onToggle={() => {}} hasVideo={false} />)
 
-    expect(screen.getByRole('button', { name: /iniciar descanso/i })).toHaveTextContent('1:30')
+    const trigger = screen.getByRole('button', { name: /descanso/i })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toHaveTextContent('1:30')
   })
 
   it('calls onToggle when the completion check is clicked', () => {

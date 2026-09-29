@@ -11,66 +11,75 @@ describe('RestTimer', () => {
     vi.useRealTimers()
   })
 
-  it('começa parado, mostrando os 90 segundos padrão', () => {
+  it('começa fechado, só com o botão de abrir o descanso', () => {
     render(<RestTimer />)
 
-    const button = screen.getByRole('button', { name: /iniciar descanso/i })
-    expect(button).toHaveTextContent('1:30')
+    expect(screen.getByRole('button', { name: /descanso/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('ao tocar, inicia a contagem regressiva segundo a segundo', () => {
+  it('ao clicar, abre o modal e já inicia a contagem em 90 segundos', () => {
     render(<RestTimer />)
 
-    fireEvent.click(screen.getByRole('button', { name: /iniciar descanso/i }))
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('1:30')
+  })
+
+  it('a contagem no modal decresce segundo a segundo', () => {
+    render(<RestTimer />)
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
+
     act(() => {
       vi.advanceTimersByTime(1000)
     })
-    expect(screen.getByRole('button')).toHaveTextContent('1:29')
+    expect(screen.getByRole('dialog')).toHaveTextContent('1:29')
 
     act(() => {
       vi.advanceTimersByTime(29_000)
     })
-    expect(screen.getByRole('button')).toHaveTextContent('1:00')
+    expect(screen.getByRole('dialog')).toHaveTextContent('1:00')
   })
 
-  it('tocar de novo enquanto conta reinicia para 90 segundos', () => {
+  it('fechar o modal no meio da contagem cancela e reinicia pra próxima vez', () => {
     render(<RestTimer />)
-
-    const button = screen.getByRole('button', { name: /iniciar descanso/i })
-    fireEvent.click(button)
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
     act(() => {
       vi.advanceTimersByTime(10_000)
     })
-    expect(button).toHaveTextContent('1:20')
 
-    fireEvent.click(button)
-    expect(button).toHaveTextContent('1:30')
+    fireEvent.click(screen.getByRole('button', { name: /fechar/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('1:30')
   })
 
-  it('ao chegar a zero, vibra (se suportado) e volta pro estado parado em seguida', () => {
+  it('ao chegar a zero, vibra (se suportado) e fecha o modal sozinho em seguida', () => {
     const vibrateMock = vi.fn()
     Object.defineProperty(navigator, 'vibrate', { value: vibrateMock, configurable: true })
 
     render(<RestTimer />)
-    fireEvent.click(screen.getByRole('button', { name: /iniciar descanso/i }))
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
 
     act(() => {
       vi.advanceTimersByTime(90_000)
     })
-    expect(screen.getByRole('button')).toHaveTextContent('0:00')
+    expect(screen.getByRole('dialog')).toHaveTextContent('0:00')
     expect(vibrateMock).toHaveBeenCalled()
 
     act(() => {
       vi.advanceTimersByTime(1000)
     })
-    expect(screen.getByRole('button', { name: /iniciar descanso/i })).toHaveTextContent('1:30')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('não quebra quando o navegador não suporta vibração', () => {
     Object.defineProperty(navigator, 'vibrate', { value: undefined, configurable: true })
 
     render(<RestTimer />)
-    fireEvent.click(screen.getByRole('button', { name: /iniciar descanso/i }))
+    fireEvent.click(screen.getByRole('button', { name: /descanso/i }))
 
     expect(() => {
       act(() => {
