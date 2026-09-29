@@ -14,6 +14,12 @@ describe('ExerciseItem', () => {
     expect(screen.getByRole('checkbox', { name: /marcar agachamento como concluído/i })).toBeInTheDocument()
   })
 
+  it('shows the rest timer inside the card, defaulting to 90 seconds', () => {
+    render(<ExerciseItem exercise={exercise} isCompleted={false} onToggle={() => {}} hasVideo={false} />)
+
+    expect(screen.getByRole('button', { name: /iniciar descanso/i })).toHaveTextContent('1:30')
+  })
+
   it('calls onToggle when the completion check is clicked', () => {
     const onToggle = vi.fn()
     render(<ExerciseItem exercise={exercise} isCompleted={false} onToggle={onToggle} hasVideo={false} />)

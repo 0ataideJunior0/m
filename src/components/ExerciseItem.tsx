@@ -1,5 +1,6 @@
 import { CheckCircle, Circle, Play } from 'lucide-react'
 import type { Exercise } from '../types'
+import RestTimer from './RestTimer'
 
 interface Props {
   exercise: Exercise
@@ -61,7 +62,7 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
           )}
         </button>
       </div>
-      <div className="mt-3 pt-3 border-t border-border">
+      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
         {hasVideo ? (
           <button
             type="button"
@@ -75,6 +76,7 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
         ) : (
           <p className="text-xs text-text-muted">Vídeo indisponível</p>
         )}
+        <RestTimer />
       </div>
     </div>
   )
