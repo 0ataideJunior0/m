@@ -65,8 +65,8 @@ export default function RestTimer() {
         <Clock className="w-4 h-4" />
         Descanso
       </button>
-      <Modal open={open} onClose={handleClose} title="Descanso entre séries">
-        <div className="h-full flex flex-col items-center justify-center gap-2 p-8">
+      <Modal open={open} onClose={handleClose} title="Descanso entre séries" size="card">
+        <div className="flex flex-col items-center justify-center gap-2 p-8">
           <span
             className={`text-6xl font-bold tabular-nums ${
               secondsLeft === 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-text'
