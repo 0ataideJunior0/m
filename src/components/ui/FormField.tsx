@@ -10,12 +10,12 @@ interface FormFieldProps {
 export default function FormField({ label, htmlFor, error, children }: FormFieldProps) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-text-muted mb-1">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-text-muted mb-1">
         {label}
       </label>
       {children}
       {error && (
-        <p id={`${htmlFor}-error`} role="alert" className="mt-1 text-sm text-red-600">
+        <p id={`${htmlFor}-error`} role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

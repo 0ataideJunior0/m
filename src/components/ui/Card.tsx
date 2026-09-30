@@ -14,7 +14,7 @@ const paddingClasses: Record<NonNullable<CardProps['padding']>, string> = {
 export default function Card({ padding = 'md', className, children, ...rest }: CardProps) {
   return (
     <div
-      className={cn('bg-white dark:bg-surface rounded-2xl shadow-lg', paddingClasses[padding], className)}
+      className={cn('bg-surface border border-border-card rounded-3xl shadow-lg', paddingClasses[padding], className)}
       {...rest}
     >
       {children}

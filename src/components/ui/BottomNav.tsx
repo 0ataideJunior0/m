@@ -47,7 +47,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface border-t border-gray-200 dark:border-border flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]"
       aria-label="Navegação principal"
     >
       {items.map(({ label, icon: Icon, active, onClick }) => (
@@ -57,7 +57,7 @@ export default function BottomNav() {
           aria-current={active ? 'page' : undefined}
           className={cn(
             'flex-1 flex flex-col items-center justify-center py-2 text-xs transition',
-            active ? 'text-purple-600 dark:text-pink-400 font-medium' : 'text-gray-500 dark:text-text-muted'
+            active ? 'text-accent font-medium' : 'text-text-muted'
           )}
         >
           <Icon className="w-6 h-6 mb-0.5" />

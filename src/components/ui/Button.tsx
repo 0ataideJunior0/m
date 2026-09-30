@@ -9,10 +9,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'brand-gradient shadow-md hover:opacity-90',
-  secondary:
-    'bg-white dark:bg-surface border border-gray-300 dark:border-border text-gray-900 dark:text-text hover:bg-gray-50 dark:hover:bg-white/5',
-  danger: 'bg-red-500 text-white hover:bg-red-600',
+  primary: 'brand-gradient shadow-cta hover:shadow-cta-hover hover:opacity-90',
+  secondary: 'bg-surface border border-border text-text hover:bg-surface-hover',
+  danger: 'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700',
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -36,7 +35,7 @@ export default function Button({
       className={cn(
         'inline-flex items-center justify-center rounded-full font-medium transition transform active:scale-95',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-focus-ring focus:ring-offset-2',
         variantClasses[variant],
         sizeClasses[size],
         className
