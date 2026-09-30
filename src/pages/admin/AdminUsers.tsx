@@ -25,23 +25,23 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-border-card border-t-accent animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center mb-8">
-          <button onClick={() => navigate('/admin')} className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
+          <button onClick={() => navigate('/admin')} className="mr-4 p-2 rounded-lg hover:bg-surface-hover transition">
             <ArrowLeft className="w-6 h-6 text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-text">Usuárias</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">Usuárias</h1>
         </div>
 
-        <div className="bg-surface rounded-2xl shadow-lg overflow-x-auto">
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-border">

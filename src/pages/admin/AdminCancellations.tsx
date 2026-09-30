@@ -26,8 +26,8 @@ export default function AdminCancellations() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-border-card border-t-accent animate-spin" />
       </div>
     )
   }
@@ -36,27 +36,27 @@ export default function AdminCancellations() {
   for (const row of rows) counts.set(row.reason, (counts.get(row.reason) || 0) + 1)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center mb-8">
-          <button onClick={() => navigate('/admin')} className="mr-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
+          <button onClick={() => navigate('/admin')} className="mr-4 p-2 rounded-lg hover:bg-surface-hover transition">
             <ArrowLeft className="w-6 h-6 text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-text">Motivos de cancelamento</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">Motivos de cancelamento</h1>
         </div>
 
         {rows.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {CANCELLATION_REASONS_DISPLAY.map((r) => (
-              <div key={r.value} className="bg-surface rounded-xl shadow p-3 text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">{counts.get(r.value) || 0}</div>
+              <div key={r.value} className="bg-surface border border-border-card rounded-2xl shadow p-3 text-center">
+                <div className="text-2xl font-bold text-accent">{counts.get(r.value) || 0}</div>
                 <div className="text-xs text-text-muted mt-1">{r.label}</div>
               </div>
             ))}
           </div>
         )}
 
-        <div className="bg-surface rounded-2xl shadow-lg overflow-x-auto">
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-border">
