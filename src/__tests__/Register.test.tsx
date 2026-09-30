@@ -13,6 +13,7 @@ const signUpMock = vi.fn(async (email: string, _password: string) => ({
     updated_at: new Date().toISOString(),
   },
   error: null,
+  needsEmailConfirmation: false,
 }))
 
 vi.mock('../utils/auth', () => ({
@@ -67,5 +68,43 @@ describe('Register page', () => {
 
     expect(await screen.findByText('Subscribe Page')).not.toBeNull()
     expect(signUpMock).toHaveBeenCalledWith('maria@example.com', '123456')
+  })
+
+  // Com "Confirm email" ligado na Supabase, o cadastro devolve um user mas
+  // nenhuma sessão — logar como se tivesse dado certo (isAuthenticated=true
+  // sem sessão real) quebra tudo na primeira chamada autenticada. A tela
+  // precisa reconhecer esse caso e pedir pra checar o email, em vez de
+  // navegar pra assinatura como se já estivesse logada.
+  it('quando a conta precisa de confirmação por email, mostra aviso em vez de navegar como se estivesse logada', async () => {
+    signUpMock.mockResolvedValueOnce({
+      user: {
+        id: 'u2',
+        email: 'nova@example.com',
+        username: undefined,
+        onboardingCompletedAt: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      error: null,
+      needsEmailConfirmation: true,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <Routes>
+          <Route path="/register" element={<Register />} />
+          <Route path="/subscribe" element={<div>Subscribe Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'nova@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: '123456' } })
+    fireEvent.change(screen.getByLabelText(/confirmar senha/i), { target: { value: '123456' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }))
+
+    expect(await screen.findByText(/confirme seu email/i)).not.toBeNull()
+    expect(screen.queryByText('Subscribe Page')).toBeNull()
   })
 })

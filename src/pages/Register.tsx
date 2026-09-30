@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signUp } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
-import { Eye, EyeOff, Lock, Mail, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, CheckCircle2, MailCheck } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
 
 export default function Register() {
@@ -12,6 +12,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -63,10 +64,18 @@ export default function Register() {
     setLoading(true)
 
     try {
-      const { user, error } = await signUp(email.trim(), password)
+      const { user, error, needsEmailConfirmation } = await signUp(email.trim(), password)
 
       if (error) {
         setError(error.message)
+        return
+      }
+
+      if (user && needsEmailConfirmation) {
+        // Sem sessão ainda — logar como se tivesse dado certo deixaria a
+        // tela "logada" sem token de verdade, quebrando na primeira chamada
+        // autenticada. Espera a pessoa confirmar pelo email antes de seguir.
+        setAwaitingConfirmation(true)
         return
       }
 
@@ -81,6 +90,27 @@ export default function Register() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (awaitingConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8 text-center">
+          <MailCheck className="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
+          <h1 className="text-2xl font-bold text-text mb-2">Confirme seu email</h1>
+          <p className="text-text-muted mb-6">
+            Enviamos um link de confirmação para <strong>{email.trim()}</strong>. Abra o email e clique no link
+            para ativar sua conta.
+          </p>
+          <Link
+            to="/login"
+            className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+          >
+            Voltar para o login
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -27,7 +27,7 @@ const buildUser = async (authUser: {
 export const signUp = async (
   email: string,
   password: string
-): Promise<{ user: User | null; error: Error | null }> => {
+): Promise<{ user: User | null; error: Error | null; needsEmailConfirmation: boolean }> => {
   try {
     const { data, error } = await supabase.auth.signUp({ email, password })
 
@@ -35,12 +35,15 @@ export const signUp = async (
 
     if (data.user) {
       const user = await buildUser(data.user)
-      return { user, error: null }
+      // Com "Confirm email" ligado na Supabase, o cadastro devolve um user
+      // mas nenhuma sessão até a pessoa clicar no link do email — session
+      // null é como o app sabe que ainda não pode tratar isso como login.
+      return { user, error: null, needsEmailConfirmation: !data.session }
     }
 
-    return { user: null, error: null }
+    return { user: null, error: null, needsEmailConfirmation: false }
   } catch (error) {
-    return { user: null, error: error as Error }
+    return { user: null, error: error as Error, needsEmailConfirmation: false }
   }
 }
 
