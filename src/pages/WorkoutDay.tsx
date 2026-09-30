@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete } from '../utils/workouts'
 import { Workout as WorkoutType, Program } from '../types'
-import { Check, ArrowLeft, X } from 'lucide-react'
+import { Check, ArrowLeft } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
+import ExerciseVideoModal from '../components/ExerciseVideoModal'
 import { getExerciseKey } from '../utils/exerciseKeys'
-import { loadLocalProgress, saveLocalProgress, mergeServerLocal, clearLocalProgress } from '../utils/exerciseProgress'
-import { fetchExerciseProgress, upsertExerciseProgress, resetExerciseProgress } from '../utils/exerciseProgressRemote'
-import { useDialogA11y } from '../hooks/useDialogA11y'
-import { useToast } from '../hooks/useToast'
+import { clearLocalProgress } from '../utils/exerciseProgress'
+import { resetExerciseProgress } from '../utils/exerciseProgressRemote'
+import { useExerciseProgress } from '../hooks/useExerciseProgress'
+import { useExerciseVideoModal } from '../hooks/useExerciseVideoModal'
 import Toast from '../components/ui/Toast'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
@@ -23,15 +24,6 @@ export default function WorkoutDay() {
   const [workout, setWorkout] = useState<WorkoutType | null>(null)
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [videoTitle, setVideoTitle] = useState<string>('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [videoLoading, setVideoLoading] = useState(false)
-  const videoCache = useState<Map<string, string>>(() => new Map())[0]
-  const { toast, show: showToast, dismiss: dismissToast } = useToast()
-  const videoDialogRef = useRef<HTMLDivElement>(null)
-  const closeVideoModal = () => { setModalOpen(false); setVideoLoading(false) }
-  useDialogA11y(modalOpen && !!videoUrl, closeVideoModal, videoDialogRef)
 
   const weekdayNumber = parseInt(weekday || '1')
   const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
@@ -54,42 +46,13 @@ export default function WorkoutDay() {
       if (!prog) return
 
       const workoutData = await getWorkoutByProgramAndWeekday(prog.id, weekdayNumber)
-
       setWorkout(workoutData)
-      // Prefetch first exercise video if available
-      if (workoutData?.exercises?.[0]?.video) {
-        const url = resolveVideoUrl(workoutData.exercises[0].video)
-        videoCache.set(workoutData.exercises[0].exercise, url)
-      }
     } catch (error) {
       console.error('Error loading workout:', error)
     } finally {
       setLoading(false)
     }
   }
-
-  const resolveVideoUrl = (raw: string): string => {
-    const conn = (navigator as any).connection?.effectiveType as string | undefined
-    const isYouTube = /youtube\.com|youtu\.be/.test(raw)
-    if (isYouTube) {
-      const quality = conn?.includes('2g') ? 'small' : conn?.includes('3g') ? 'medium' : 'hd1080'
-      const base = raw.replace('watch?v=', 'embed/').replace('shorts/', 'embed/')
-      const sep = base.includes('?') ? '&' : '?'
-      return `${base}${sep}rel=0&modestbranding=1&controls=1&vq=${quality}`
-    }
-    return raw
-  }
-
-  const openExerciseVideo = openExerciseVideoFactory(
-    workout,
-    videoCache,
-    setVideoTitle,
-    setVideoUrl,
-    setModalOpen,
-    setVideoLoading,
-    resolveVideoUrl,
-    showToast,
-  )
 
   const handleCompleteWorkout = async () => {
     if (!user || !workout || !slug) return
@@ -112,14 +75,12 @@ export default function WorkoutDay() {
     }
   }
 
-  const { state: exProgress, setState: setExProgress } = useExerciseProgressState(user?.id, workout?.id)
-  const pendingRef = useRef<{ key: string; completed: boolean } | null>(null)
-  const debounceRef = useRef<any>(null)
-  const toggleExercise = useMemo(
-    () => toggleExerciseFactory(user?.id, workout?.id, exProgress, setExProgress, pendingRef, debounceRef),
-    [user?.id, workout?.id, exProgress]
-  )
+  const { exProgress, toggleExercise } = useExerciseProgress(user?.id, workout?.id)
   const lastActionRef = useRef<{ key: string; prev: boolean } | null>(null)
+  const {
+    videoUrl, videoTitle, modalOpen, videoLoading, videoDialogRef,
+    toast, dismissToast, openExerciseVideo, closeVideoModal, onVideoLoaded,
+  } = useExerciseVideoModal(workout)
 
   if (loading) {
     return (
@@ -276,46 +237,15 @@ export default function WorkoutDay() {
           </div>
         </div>
 
-        {/* Modal de vídeo por exercício */}
-        {modalOpen && videoUrl && (
-          <div ref={videoDialogRef} role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-scrim backdrop-blur-sm flex flex-col">
-            <div className="bg-surface/95 p-3 flex items-center justify-between">
-              <div className="font-semibold text-text-strong">{videoTitle || 'Vídeo do exercício'}</div>
-              <button
-                onClick={closeVideoModal}
-                className="ui-hover bg-surface border border-border text-text px-3 py-2 rounded-md flex items-center"
-                aria-label="Fechar"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Fechar
-              </button>
-            </div>
-            <div className="flex-1 bg-black relative">
-              {videoLoading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full border-4 border-border-card border-t-accent animate-spin"></div>
-                </div>
-              )}
-              {/youtube\.com|youtu\.be|vimeo\.com/.test(videoUrl) ? (
-                <iframe
-                  src={videoUrl}
-                  title="Vídeo do exercício"
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  onLoad={() => setVideoLoading(false)}
-                />
-              ) : (
-                <video
-                  controls
-                  className="w-full h-full"
-                  onCanPlay={() => setVideoLoading(false)}
-                >
-                  <source src={videoUrl} />
-                </video>
-              )}
-            </div>
-          </div>
-        )}
+        <ExerciseVideoModal
+          open={modalOpen}
+          videoUrl={videoUrl}
+          videoTitle={videoTitle}
+          videoLoading={videoLoading}
+          onVideoLoaded={onVideoLoaded}
+          onClose={closeVideoModal}
+          dialogRef={videoDialogRef}
+        />
 
         {/* Complete Button */}
         <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
@@ -340,89 +270,4 @@ export default function WorkoutDay() {
       <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   )
-}
-
-// Estado e sincronização
-function useExerciseProgressState(userId: string | undefined, workoutId: string | undefined) {
-  const [state, setState] = useState<Record<string, { completed: boolean; ts: number }>>({})
-  useEffect(() => {
-    if (!userId || !workoutId) return
-    const local = loadLocalProgress(userId, workoutId)
-    setState(local)
-    ;(async () => {
-      const remote = await fetchExerciseProgress(userId, workoutId)
-      setState(s => {
-        const merged = mergeServerLocal(remote, s)
-        saveLocalProgress(userId, workoutId, merged)
-        return merged
-      })
-    })()
-  }, [userId, workoutId])
-  return { state, setState }
-}
-
-function toggleExerciseFactory(
-  userId: string | undefined,
-  workoutId: string | undefined,
-  exProgress: Record<string, { completed: boolean; ts: number }>,
-  setExProgress: (v: any) => void,
-  pendingRef: React.MutableRefObject<{ key: string; completed: boolean } | null>,
-  debounceRef: React.MutableRefObject<any>,
-) {
-  return (exercise: WorkoutType['exercises'][number], index: number) => {
-    if (!userId || !workoutId) return
-    const key = getExerciseKey(exercise, index)
-    const next = !exProgress[key]?.completed
-    const ts = Date.now()
-    const updated = { ...exProgress, [key]: { completed: next, ts } }
-    setExProgress(updated)
-    saveLocalProgress(userId, workoutId, updated)
-    pendingRef.current = { key, completed: next }
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      const p = pendingRef.current
-      if (!p) return
-      try {
-        await upsertExerciseProgress(userId, workoutId, p.key, p.completed)
-        pendingRef.current = null
-      } catch (e) {
-        // retry simples
-        setTimeout(async () => {
-          try {
-            await upsertExerciseProgress(userId, workoutId, p.key, p.completed)
-            pendingRef.current = null
-          } catch {}
-        }, 2000)
-      }
-    }, 300)
-  }
-}
-
-
-function openExerciseVideoFactory(
-  workout: WorkoutType | null,
-  videoCache: Map<string, string>,
-  setVideoTitle: (s: string) => void,
-  setVideoUrl: (s: string | null) => void,
-  setModalOpen: (b: boolean) => void,
-  setVideoLoading: (b: boolean) => void,
-  resolveVideoUrl: (raw: string) => string,
-  showToast: (message: string, variant?: 'success' | 'error') => void,
-) {
-  return (exercise: WorkoutType['exercises'][number]) => {
-    const ownVideo = (exercise as any).video || (exercise as any).video_url || (exercise as any).videoUrl || (exercise as any).url_video || ''
-    const title = ownVideo ? exercise.exercise : 'Vídeo do treino'
-    setVideoTitle(title)
-    const raw = ownVideo || workout?.video_url || ''
-    if (!raw) {
-      showToast('Vídeo não disponível para este exercício.')
-      return
-    }
-    const cached = videoCache.get(title)
-    const url = cached || resolveVideoUrl(raw)
-    if (!cached) videoCache.set(title, url)
-    setVideoUrl(url)
-    setModalOpen(true)
-    setVideoLoading(true)
-  }
 }
