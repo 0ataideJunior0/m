@@ -6,6 +6,7 @@ import { getIsAdmin } from '../utils/profile'
 import { Eye, EyeOff, Lock, Mail, CheckCircle2, MailCheck } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
 import Button from '../components/ui/Button'
+import AmbientGlow from '../components/ui/AmbientGlow'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -95,7 +96,8 @@ export default function Register() {
 
   if (awaitingConfirmation) {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
+        <AmbientGlow className="w-96 h-96 -top-32 -right-24" />
         <div className="max-w-md w-full bg-surface border border-border-card rounded-3xl shadow-xl p-8 text-center">
           <MailCheck className="w-12 h-12 text-accent mx-auto mb-4" aria-hidden="true" />
           <h1 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">Confirme seu email</h1>
@@ -115,7 +117,8 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
+      <AmbientGlow className="w-96 h-96 -top-32 -right-24" />
       <div className="max-w-md w-full bg-surface border border-border-card rounded-3xl shadow-xl p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-text-strong mb-2">

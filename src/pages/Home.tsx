@@ -5,6 +5,7 @@ import { getPrograms } from '../utils/workouts'
 import { Trophy, Flame } from 'lucide-react'
 import { Program } from '../types'
 import PixExpiryBanner from '../components/PixExpiryBanner'
+import AmbientGlow from '../components/ui/AmbientGlow'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -54,7 +55,8 @@ export default function Home() {
   if (!isAuthenticated || !user) return null
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg relative overflow-hidden">
+      <AmbientGlow className="w-80 h-80 -top-24 -left-24" />
       <div className="max-w-5xl mx-auto px-4 pt-6 pb-24">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center">

@@ -6,6 +6,7 @@ import { getIsAdmin } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
 import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react'
 import Button from '../components/ui/Button'
+import AmbientGlow from '../components/ui/AmbientGlow'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -59,7 +60,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
+      <AmbientGlow className="w-96 h-96 -top-32 -right-24" />
       <div className="max-w-md w-full">
         {/* Header visual */}
         <div className="text-center mb-6">
