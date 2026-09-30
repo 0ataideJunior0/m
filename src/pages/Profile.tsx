@@ -15,6 +15,7 @@ import FormField from '../components/ui/FormField'
 import Input from '../components/ui/Input'
 import ChoiceGroup from '../components/ui/ChoiceGroup'
 import Toast from '../components/ui/Toast'
+import AmbientGlow from '../components/ui/AmbientGlow'
 import { useToast } from '../hooks/useToast'
 
 const SEX_LABELS: Record<Sex, string> = { feminino: 'Feminino', masculino: 'Masculino' }
@@ -215,7 +216,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-bg animate-fade-in">
+    <div className="min-h-screen bg-bg animate-fade-in relative overflow-hidden">
+      <AmbientGlow className="w-80 h-80 -top-24 -right-24" />
       <div className="max-w-4xl mx-auto px-4 pt-6 pb-40">
         <div className="flex items-center mb-4">
           <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-surface-hover">
