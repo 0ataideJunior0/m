@@ -63,14 +63,14 @@ export default function MySubscription() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <PageHeader title="Minha assinatura" onBack={() => navigate('/profile')} />
 
@@ -78,8 +78,8 @@ export default function MySubscription() {
           {subscription ? (
             <>
               <div className="mb-4">
-                <div className="text-sm text-gray-500 dark:text-text-muted">Status</div>
-                <div className="text-lg font-bold text-gray-900 dark:text-text">
+                <div className="text-sm text-text-muted">Status</div>
+                <div className="text-lg font-extrabold tracking-tight text-text-strong">
                   {isPix ? 'Acesso via Pix' : STATUS_LABELS[subscription.status] || subscription.status}
                 </div>
               </div>
@@ -87,10 +87,10 @@ export default function MySubscription() {
                 (subscription.status === 'authorized' ||
                   (subscription.status === 'cancelled' && new Date(subscription.next_payment_date) > new Date())) && (
                   <div className="mb-6">
-                    <div className="text-sm text-gray-500 dark:text-text-muted">
+                    <div className="text-sm text-text-muted">
                       {isPix || subscription.status === 'cancelled' ? 'Acesso liberado até' : 'Próxima cobrança'}
                     </div>
-                    <div className="text-gray-900 dark:text-text">
+                    <div className="text-text">
                       {new Date(subscription.next_payment_date).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
@@ -109,14 +109,14 @@ export default function MySubscription() {
               )}
             </>
           ) : (
-            <p className="text-gray-600 dark:text-text-muted">Nenhuma assinatura encontrada.</p>
+            <p className="text-text-muted">Nenhuma assinatura encontrada.</p>
           )}
         </Card>
       </div>
 
       <Modal open={showCancelModal} onClose={() => setShowCancelModal(false)} title="Cancelar assinatura">
         <div className="p-4 space-y-5">
-          <p className="text-gray-600 dark:text-text-muted text-sm">
+          <p className="text-text-muted text-sm">
             Antes de ir, nos conta o motivo — isso nos ajuda a melhorar o MusaFit.
           </p>
 
@@ -129,7 +129,7 @@ export default function MySubscription() {
           />
 
           <div>
-            <label htmlFor="cancel-comment" className="block text-sm font-medium text-gray-700 dark:text-text-muted mb-1">
+            <label htmlFor="cancel-comment" className="block text-sm font-medium text-text-muted mb-1">
               Quer contar mais? (opcional)
             </label>
             <textarea
@@ -138,7 +138,7 @@ export default function MySubscription() {
               onChange={(e) => setComment(e.target.value)}
               rows={3}
               maxLength={1000}
-              className="w-full rounded-xl border border-gray-300 dark:border-border bg-white dark:bg-surface text-gray-900 dark:text-text p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-xl border border-border bg-surface-sunken text-text p-3 text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
             />
           </div>
 
