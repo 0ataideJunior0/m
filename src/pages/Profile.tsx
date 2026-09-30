@@ -204,71 +204,71 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="animate-pulse text-center">
-          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-4 bg-purple-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-purple-200 rounded w-24 mx-auto"></div>
+          <div className="w-16 h-16 bg-border-card rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-border-card rounded w-32 mx-auto mb-2"></div>
+          <div className="h-4 bg-border-card rounded w-24 mx-auto"></div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg animate-fade-in">
+    <div className="min-h-screen bg-bg animate-fade-in">
       <div className="max-w-4xl mx-auto px-4 pt-6 pb-40">
         <div className="flex items-center mb-4">
-          <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-            <ChevronLeft className="w-6 h-6 text-gray-800 dark:text-text" />
+          <button onClick={() => navigate(-1)} className="mr-3 p-2 rounded-lg hover:bg-surface-hover">
+            <ChevronLeft className="w-6 h-6 text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-text flex-1">Meu Perfil</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong flex-1">Meu Perfil</h1>
           <button
             onClick={toggleTheme}
             aria-label="Alternar tema claro/escuro"
-            className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+            className="p-2 rounded-lg hover:bg-surface-hover"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-gray-800 dark:text-text" /> : <Moon className="w-5 h-5 text-gray-800 dark:text-text" />}
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-text" /> : <Moon className="w-5 h-5 text-text" />}
           </button>
         </div>
 
-        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-8 mb-6 text-center animate-slide-up" style={{ transform: `translateY(${offsetY}px)` }}>
-          <div className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center shadow-md">
-            <span className="text-white text-2xl md:text-3xl font-bold">{initials}</span>
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-8 mb-6 text-center animate-slide-up" style={{ transform: `translateY(${offsetY}px)` }}>
+          <div className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 brand-gradient flex items-center justify-center shadow-md">
+            <span className="text-2xl md:text-3xl font-bold">{initials}</span>
           </div>
-          <div className="font-bold text-xl text-gray-900 dark:text-text mb-1">{displayName}</div>
-          <div className="text-gray-600 dark:text-text-muted">{user?.email}</div>
+          <div className="font-bold text-xl text-text-strong mb-1">{displayName}</div>
+          <div className="text-text-muted">{user?.email}</div>
         </div>
 
         {/* Progresso geral */}
-        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6 animate-slide-up" aria-labelledby="progress-title">
           <div className="flex items-center mb-2">
-            <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span id="progress-title" className="text-lg font-bold text-gray-900 dark:text-text">Seu progresso</span>
+            <Trophy className="w-5 h-5 text-accent mr-2" />
+            <span id="progress-title" className="text-lg font-extrabold tracking-tight text-text-strong">Seu progresso</span>
           </div>
-          <p className="text-sm text-gray-600 dark:text-text-muted mb-4">Acompanhe seus treinos concluídos e conquistas</p>
+          <p className="text-sm text-text-muted mb-4">Acompanhe seus treinos concluídos e conquistas</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl p-6 text-center bg-purple-50 dark:bg-purple-950/30 transition-transform duration-300 hover:scale-[1.02]">
-              <Calendar className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-              <div id="progress-bar-fill" className="text-4xl font-bold text-gray-900 dark:text-text">{completedDays}</div>
-              <div className="text-gray-600 dark:text-text-muted text-sm">Treinos Concluídos</div>
+            <div className="rounded-2xl p-6 text-center bg-accent/10 transition-transform duration-300 hover:scale-[1.02]">
+              <Calendar className="w-6 h-6 text-accent mx-auto mb-2" />
+              <div id="progress-bar-fill" className="text-4xl font-bold text-text-strong">{completedDays}</div>
+              <div className="text-text-muted text-sm">Treinos Concluídos</div>
             </div>
 
-            <div className="rounded-xl p-6 text-center bg-green-50 dark:bg-green-950/30 transition-transform duration-300 hover:scale-[1.02]">
-              <Sparkles className="w-6 h-6 text-green-500 mx-auto mb-2" />
-              <div className="text-4xl font-bold text-gray-900 dark:text-text">{timeUsingApp}</div>
-              <div className="text-gray-600 dark:text-text-muted text-sm">Usando o MusaFit</div>
+            <div className="rounded-2xl p-6 text-center bg-surface-sunken transition-transform duration-300 hover:scale-[1.02]">
+              <Sparkles className="w-6 h-6 text-success mx-auto mb-2" />
+              <div className="text-4xl font-bold text-text-strong">{timeUsingApp}</div>
+              <div className="text-text-muted text-sm">Usando o MusaFit</div>
             </div>
           </div>
         </div>
 
         {/* Conquistas por categorias */}
-        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg p-6 mb-6 animate-slide-up">
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6 animate-slide-up">
           <div className="flex items-center mb-2">
-            <Trophy className="w-5 h-5 text-pink-500 mr-2" />
-            <span className="text-lg font-bold text-gray-900 dark:text-text">Conquistas</span>
+            <Trophy className="w-5 h-5 text-accent mr-2" />
+            <span className="text-lg font-extrabold tracking-tight text-text-strong">Conquistas</span>
           </div>
-          <p className="text-sm text-gray-600 dark:text-text-muted mb-6">Categorias: Frequência, Desempenho, Consistência</p>
+          <p className="text-sm text-text-muted mb-6">Categorias: Frequência, Desempenho, Consistência</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { name: 'Frequência', target: 10 },
@@ -278,16 +278,16 @@ export default function Profile() {
               const partial = Math.min(completedDays, c.target)
               const pct = Math.round((partial / c.target) * 100)
               return (
-                <button key={c.name} className="rounded-xl p-4 bg-gray-50 dark:bg-white/5 text-left hover:bg-gray-100 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label={`Detalhes da conquista ${c.name}`}
+                <button key={c.name} className="rounded-xl p-4 bg-surface-sunken text-left hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-focus-ring" aria-label={`Detalhes da conquista ${c.name}`}
                   onClick={() => showToast(`${c.name}: ${pct}% concluído`, 'success')}>
                   <div className="flex items-center mb-2">
-                    <Target className="w-5 h-5 text-purple-600 mr-2" />
-                    <span className="font-medium text-gray-900 dark:text-text">{c.name}</span>
+                    <Target className="w-5 h-5 text-accent mr-2" />
+                    <span className="font-medium text-text-strong">{c.name}</span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${pct}%` }}></div>
+                  <div className="w-full bg-border-card rounded-full h-2">
+                    <div className="bg-accent h-2 rounded-full" style={{ width: `${pct}%` }}></div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-600 dark:text-text-muted">{partial}/{c.target}</div>
+                  <div className="mt-2 text-xs text-text-muted">{partial}/{c.target}</div>
                 </button>
               )
             })}
@@ -297,23 +297,23 @@ export default function Profile() {
         {/* Dados pessoais */}
         <Card className="mb-6 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-lg font-bold text-gray-900 dark:text-text">Dados pessoais</span>
+            <span className="text-lg font-extrabold tracking-tight text-text-strong">Dados pessoais</span>
             <Button variant="secondary" size="icon" onClick={openPersonalModal} aria-label="Editar dados pessoais">
               <Pencil className="w-4 h-4" />
             </Button>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-sm text-gray-600 dark:text-text-muted">Nome</div>
-              <div className="font-medium text-gray-900 dark:text-text truncate">{user?.username || '—'}</div>
+              <div className="text-sm text-text-muted">Nome</div>
+              <div className="font-medium text-text-strong truncate">{user?.username || '—'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-text-muted">Idade</div>
-              <div className="font-medium text-gray-900 dark:text-text">{user?.age ?? '—'}</div>
+              <div className="text-sm text-text-muted">Idade</div>
+              <div className="font-medium text-text-strong">{user?.age ?? '—'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-text-muted">Sexo</div>
-              <div className="font-medium text-gray-900 dark:text-text">{user?.sex ? SEX_LABELS[user.sex] : '—'}</div>
+              <div className="text-sm text-text-muted">Sexo</div>
+              <div className="font-medium text-text-strong">{user?.sex ? SEX_LABELS[user.sex] : '—'}</div>
             </div>
           </div>
         </Card>
@@ -321,12 +321,12 @@ export default function Profile() {
         {/* Objetivo */}
         <Card className="mb-6 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-lg font-bold text-gray-900 dark:text-text">Objetivo</span>
+            <span className="text-lg font-extrabold tracking-tight text-text-strong">Objetivo</span>
             <Button variant="secondary" size="icon" onClick={openGoalModal} aria-label="Editar objetivo">
               <Pencil className="w-4 h-4" />
             </Button>
           </div>
-          <div className="text-center font-medium text-gray-900 dark:text-text">
+          <div className="text-center font-medium text-text-strong">
             {user?.goal ? GOAL_LABELS[user.goal] : '—'}
           </div>
         </Card>
@@ -334,19 +334,19 @@ export default function Profile() {
         {/* Medidas */}
         <Card className="mb-6 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-lg font-bold text-gray-900 dark:text-text">Medidas</span>
+            <span className="text-lg font-extrabold tracking-tight text-text-strong">Medidas</span>
             <Button variant="secondary" size="icon" onClick={openMeasuresModal} aria-label="Editar medidas">
               <Pencil className="w-4 h-4" />
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
-              <div className="text-sm text-gray-600 dark:text-text-muted">Altura</div>
-              <div className="font-medium text-gray-900 dark:text-text">{user?.heightCm ? `${user.heightCm} cm` : '—'}</div>
+              <div className="text-sm text-text-muted">Altura</div>
+              <div className="font-medium text-text-strong">{user?.heightCm ? `${user.heightCm} cm` : '—'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-text-muted">Peso</div>
-              <div className="font-medium text-gray-900 dark:text-text">{user?.weightKg ? `${user.weightKg} kg` : '—'}</div>
+              <div className="text-sm text-text-muted">Peso</div>
+              <div className="font-medium text-text-strong">{user?.weightKg ? `${user.weightKg} kg` : '—'}</div>
             </div>
           </div>
         </Card>
@@ -410,7 +410,7 @@ export default function Profile() {
         {!isAdmin && (
           <button
             onClick={() => navigate('/minha-assinatura')}
-            className="w-full bg-white dark:bg-surface rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-medium"
+            className="w-full bg-surface border border-border-card rounded-3xl shadow-lg p-4 mb-6 flex items-center justify-center text-accent-text hover:bg-accent/10 font-medium"
           >
             <CreditCard className="w-5 h-5 mr-2" /> Minha assinatura
           </button>
@@ -419,7 +419,7 @@ export default function Profile() {
         {isAdmin && (
           <button
             onClick={() => navigate('/admin')}
-            className="w-full bg-white dark:bg-surface rounded-2xl shadow-lg p-4 mb-6 flex items-center justify-center text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-medium"
+            className="w-full bg-surface border border-border-card rounded-3xl shadow-lg p-4 mb-6 flex items-center justify-center text-accent-text hover:bg-accent/10 font-medium"
           >
             <Shield className="w-5 h-5 mr-2" /> Painel Admin
           </button>
@@ -434,7 +434,7 @@ export default function Profile() {
                 useAuthStore.getState().logout()
                 navigate('/login')
               }}
-              className="w-full bg-red-500 text-white py-4 rounded-full shadow-lg hover:bg-red-600 font-medium transition-transform duration-300 hover:scale-[1.02] active:scale-95"
+              className="w-full bg-red-500 dark:bg-red-600 text-white py-4 rounded-full shadow-lg hover:bg-red-600 dark:hover:bg-red-700 font-medium transition-transform duration-300 hover:scale-[1.02] active:scale-95"
             >
               {clicked ? 'Saindo...' : 'Sair da Conta'}
             </button>
