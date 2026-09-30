@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 
-const { profilesOrderMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock } = vi.hoisted(() => {
+const { profilesOrderMock, profilesSingleMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock } = vi.hoisted(() => {
   const profilesOrderMock = vi.fn()
-  const profilesEqMock = vi.fn(() => ({ order: profilesOrderMock }))
+  const profilesSingleMock = vi.fn()
+  const profilesEqMock = vi.fn(() => ({ order: profilesOrderMock, single: profilesSingleMock }))
   const profilesSelectMock = vi.fn(() => ({ eq: profilesEqMock }))
   const progressInMock = vi.fn()
   const progressSelectMock = vi.fn(() => ({ in: progressInMock }))
@@ -11,14 +12,14 @@ const { profilesOrderMock, profilesEqMock, profilesSelectMock, progressInMock, p
     if (table === 'user_progress') return { select: progressSelectMock }
     throw new Error(`unexpected table ${table}`)
   })
-  return { profilesOrderMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock }
+  return { profilesOrderMock, profilesSingleMock, profilesEqMock, profilesSelectMock, progressInMock, progressSelectMock, fromMock }
 })
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: fromMock },
 }))
 
-import { listNonAdminUsers } from '../utils/adminUsers'
+import { listNonAdminUsers, getUserProfileSummary } from '../utils/adminUsers'
 
 describe('listNonAdminUsers', () => {
   beforeEach(() => {
@@ -57,5 +58,28 @@ describe('listNonAdminUsers', () => {
 
     expect(result).toEqual([])
     expect(progressSelectMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('getUserProfileSummary', () => {
+  it('retorna id, email e username da usuária', async () => {
+    profilesSingleMock.mockResolvedValueOnce({
+      data: { id: 'u1', email: 'ana@example.com', username: 'Ana' },
+      error: null,
+    })
+
+    const result = await getUserProfileSummary('u1')
+
+    expect(profilesSelectMock).toHaveBeenCalledWith('id, email, username')
+    expect(profilesEqMock).toHaveBeenCalledWith('id', 'u1')
+    expect(result).toEqual({ id: 'u1', email: 'ana@example.com', username: 'Ana' })
+  })
+
+  it('retorna null quando a usuária não existe', async () => {
+    profilesSingleMock.mockResolvedValueOnce({ data: null, error: new Error('not found') })
+
+    const result = await getUserProfileSummary('inexistente')
+
+    expect(result).toBeNull()
   })
 })

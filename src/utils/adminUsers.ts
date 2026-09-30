@@ -40,3 +40,23 @@ export const listNonAdminUsers = async (): Promise<AdminUserSummary[]> => {
     completedDays: counts.get(p.id) || 0,
   }))
 }
+
+export interface UserProfileSummary {
+  id: string
+  email: string
+  username: string | null
+}
+
+/** Usada pra identificar de quem é o treino pessoal sendo editado — não
+ *  reaproveita `getProfile` (utils/profile.ts) porque aquela não traz email
+ *  e é usada pelo fluxo de autenticação, sem relação com o painel admin. */
+export const getUserProfileSummary = async (userId: string): Promise<UserProfileSummary | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, username')
+    .eq('id', userId)
+    .single()
+
+  if (error || !data) return null
+  return data as UserProfileSummary
+}
