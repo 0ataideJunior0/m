@@ -51,3 +51,50 @@ export const createWorkoutAdmin = async (
   if (error) throw error
   return data as Workout
 }
+
+export const getUserWorkout = async (userId: string): Promise<Workout | null> => {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data as Workout | null
+}
+
+export const saveUserWorkoutAdmin = async (
+  userId: string,
+  workoutId: string | null,
+  payload: WorkoutUpdatePayload
+): Promise<Workout> => {
+  if (workoutId) {
+    const { data, error } = await supabase
+      .from('workouts')
+      .update(payload)
+      .eq('id', workoutId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Workout
+  }
+
+  const { data, error } = await supabase
+    .from('workouts')
+    .insert({ user_id: userId, ...payload })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Workout
+}
+
+export const deleteUserWorkoutAdmin = async (workoutId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('workouts')
+    .delete()
+    .eq('id', workoutId)
+
+  if (error) throw error
+}

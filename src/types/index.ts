@@ -25,8 +25,8 @@ export interface UserProgress {
   created_at: string
   workout?: {
     title: string
-    weekday: number
-    program_id: string
+    weekday: number | null
+    program_id: string | null
   } | null
 }
 
@@ -40,8 +40,12 @@ export interface Program {
 
 export interface Workout {
   id: string
-  program_id: string
-  weekday: number
+  /** Nulo quando é um treino pessoal (veja `user_id`) em vez de catálogo. */
+  program_id: string | null
+  /** Nulo quando é um treino pessoal. */
+  weekday: number | null
+  /** Preenchido só em treinos pessoais, montados pela admin pra uma usuária específica. */
+  user_id: string | null
   title: string
   exercises: Exercise[]
   video_url: string

@@ -100,6 +100,22 @@ export const getWorkoutByProgramAndWeekday = async (programId: string, weekday: 
   }
 }
 
+export const getMyWorkout = async (userId: string): Promise<Workout | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data ? normalizeWorkout(data) : null
+  } catch (error) {
+    console.error('Error fetching personal workout:', error)
+    return null
+  }
+}
+
 export const getUserProgress = async (userId: string): Promise<UserProgress[]> => {
   try {
     const { data, error } = await supabase
