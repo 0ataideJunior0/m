@@ -154,7 +154,16 @@ export default function AdminUserWorkoutEdit() {
         </div>
 
         <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-extrabold tracking-tight text-text-strong mb-4">Exercícios</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-extrabold tracking-tight text-text-strong">Exercícios</h2>
+            <button
+              type="button"
+              onClick={addExercise}
+              className="inline-flex items-center px-4 py-2 rounded-lg border border-accent/40 text-accent-text hover:bg-accent/10"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Adicionar exercício
+            </button>
+          </div>
           <div className="space-y-4">
             {exercises.map((ex, index) => (
               <div key={index} className="border border-border rounded-lg p-4">
@@ -222,13 +231,6 @@ export default function AdminUserWorkoutEdit() {
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={addExercise}
-            className="mt-4 inline-flex items-center px-4 py-2 rounded-lg border border-accent/40 text-accent-text hover:bg-accent/10"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Adicionar exercício
-          </button>
         </div>
 
         {workoutId && (
