@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   line-height: 1.5;
   font-weight: 400;
 
@@ -12,19 +12,49 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --color-bg: 250 245 255;
+  /* Design system "Musafit" — tema claro (cream) */
+  --color-bg: 250 240 234;
   --color-surface: 255 255 255;
-  --color-text: 17 24 39;
-  --color-text-muted: 75 85 99;
-  --color-border: 229 231 235;
+  --color-surface-sunken: 250 240 234;
+  --color-surface-hover: 235 214 203;
+  --color-surface-glass: rgba(250, 240, 234, 0.85);
+  --color-text: 33 26 44;
+  --color-text-strong: 33 26 44;
+  --color-text-muted: rgba(33, 26, 44, 0.7);
+  --color-text-placeholder: rgba(33, 26, 44, 0.55);
+  --color-border: 235 214 203;
+  --color-border-subtle: 235 214 203;
+  --color-border-card: rgba(221, 152, 175, 0.35);
+  --color-accent-text: 162 78 108;
+  --color-focus-ring: 33 26 44;
+  --color-success: 4 120 87;
+
+  /* Design system "Musafit" — acento e neutros que não variam por tema */
+  --color-accent: 221 152 175;
+  --color-accent-strong: 200 127 151;
+  --color-accent-hover: 229 168 188;
+  --color-on-accent: 33 26 44;
+  --color-rating: 251 191 36;
+  --color-scrim: rgba(0, 0, 0, 0.8);
 }
 
 .dark {
-  --color-bg: 24 16 32;
-  --color-surface: 39 29 51;
-  --color-text: 243 244 246;
-  --color-text-muted: 156 163 175;
-  --color-border: 63 51 78;
+  /* Design system "Musafit" — tema escuro */
+  --color-bg: 33 26 44;
+  --color-surface: 43 34 56;
+  --color-surface-sunken: 26 20 35;
+  --color-surface-hover: 52 42 69;
+  --color-surface-glass: rgba(33, 26, 44, 0.85);
+  --color-text: 247 225 215;
+  --color-text-strong: 255 255 255;
+  --color-text-muted: rgba(247, 225, 215, 0.7);
+  --color-text-placeholder: rgba(247, 225, 215, 0.55);
+  --color-border: 68 53 90;
+  --color-border-subtle: 54 43 72;
+  --color-border-card: rgb(68 53 90);
+  --color-accent-text: 221 152 175;
+  --color-focus-ring: 221 152 175;
+  --color-success: 52 211 153;
 }
 
 /* Custom scrollbar for better UX */
@@ -38,12 +68,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c084fc;
+  background: #dd98af;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a855f7;
+  background: #c87f97;
 }
 
 /* Smooth transitions */
@@ -69,7 +99,7 @@
     @apply transition duration-300 ease-out hover:scale-[1.02];
   }
   .ui-link {
-    @apply transition-colors duration-300 hover:text-purple-700 underline underline-offset-2;
+    @apply transition-colors duration-300 hover:text-accent-strong underline underline-offset-2;
   }
   .ui-fade-in {
     @apply animate-fade-in;
@@ -93,6 +123,12 @@
     @apply animate-shimmer;
   }
   .brand-gradient {
-    @apply bg-gradient-to-r from-brand-from to-brand-to text-white;
+    @apply bg-gradient-to-r from-brand-from to-brand-to text-on-accent;
+  }
+  .font-accent {
+    font-family: "Playfair Display", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: rgb(var(--color-accent-text));
   }
 }
