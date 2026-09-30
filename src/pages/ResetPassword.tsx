@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Lock, CheckCircle } from 'lucide-react'
+import Button from '../components/ui/Button'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -42,9 +43,9 @@ export default function ResetPassword() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-purple-200 dark:bg-purple-900/40 rounded-full mx-auto mb-4 animate-pulse" />
+          <div className="w-16 h-16 bg-border-card rounded-full mx-auto mb-4 animate-pulse" />
           <div className="text-text-muted">Validando link de recuperação...</div>
         </div>
       </div>
@@ -52,10 +53,10 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-md mx-auto px-4 py-6">
-        <div className="bg-surface rounded-2xl shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-text mb-2">Definir nova senha</h1>
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6">
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">Definir nova senha</h1>
           <p className="text-sm text-text-muted mb-6">Escolha uma nova senha para sua conta</p>
           <form onSubmit={updatePassword} className="space-y-4">
             <div className="relative">
@@ -67,7 +68,7 @@ export default function ResetPassword() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="Nova senha"
               />
             </div>
@@ -80,24 +81,20 @@ export default function ResetPassword() {
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="Confirmar senha"
               />
             </div>
-            <button
-              type="submit"
-              disabled={status==='updating'}
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-            >
-              {status==='updating' ? 'Redefinindo...' : 'Redefinir senha'}
-            </button>
+            <Button type="submit" disabled={status==='updating'} isLoading={status==='updating'} className="w-full">
+              Redefinir senha
+            </Button>
           </form>
           {message && (
-            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{message}</div>
+            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600 dark:text-red-400' : 'text-success'}`}>{message}</div>
           )}
         </div>
         {status==='success' && (
-          <div className="mt-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center text-green-700 dark:text-green-400">
+          <div className="mt-4 bg-success/10 border border-success/30 rounded-lg p-3 text-center text-success">
             <CheckCircle className="w-5 h-5 inline mr-1" /> Senha atualizada!
           </div>
         )}

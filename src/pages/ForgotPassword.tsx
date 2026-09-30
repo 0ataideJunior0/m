@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, ChevronLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import Button from '../components/ui/Button'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
@@ -27,13 +28,13 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-md mx-auto px-4 py-6">
-        <button onClick={() => navigate(-1)} className="mb-4 p-2 rounded-lg hover:bg-black/5">
+        <button onClick={() => navigate(-1)} className="mb-4 p-2 rounded-lg hover:bg-surface-hover">
           <ChevronLeft className="w-6 h-6 text-text" />
         </button>
-        <div className="bg-surface rounded-2xl shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-text mb-2">Recuperar senha</h1>
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6">
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">Recuperar senha</h1>
           <p className="text-sm text-text-muted mb-6">Informe seu email para receber o link de redefinição</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
@@ -47,20 +48,16 @@ export default function ForgotPassword() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="seu@email.com"
               />
             </div>
-            <button
-              type="submit"
-              disabled={status==='sending' || !email}
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-            >
-              {status==='sending' ? 'Enviando...' : 'Enviar link de recuperação'}
-            </button>
+            <Button type="submit" disabled={status==='sending' || !email} isLoading={status==='sending'} className="w-full">
+              Enviar link de recuperação
+            </Button>
           </form>
           {message && (
-            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{message}</div>
+            <div className={`mt-4 text-sm ${status==='error' ? 'text-red-600 dark:text-red-400' : 'text-success'}`}>{message}</div>
           )}
         </div>
       </div>
