@@ -4,7 +4,8 @@ import { signIn } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
-import { Mail, Lock, Eye, EyeOff, Dumbbell, Sparkles } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react'
+import Button from '../components/ui/Button'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -58,7 +59,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Header visual */}
         <div className="text-center mb-6">
@@ -67,16 +68,20 @@ export default function Login() {
             alt="Logo MusaFit"
             className="w-20 h-20 rounded-full mx-auto mb-3 shadow-md object-contain animate-fade-in"
           />
-          <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">MusaFit</div>
+          <div className="text-3xl font-extrabold tracking-tight text-text-strong">
+            Musa<span className="font-accent">Fit</span>
+          </div>
           <div className="flex items-center justify-center text-sm text-text-muted mt-1">
-            <Sparkles className="w-4 h-4 text-pink-500 mr-1" />
+            <Sparkles className="w-4 h-4 text-accent mr-1" />
             Destrave sua Transformação
           </div>
         </div>
 
-        <div className="bg-surface rounded-2xl shadow-xl p-8 animate-slide-up">
+        <div className="bg-surface border border-border-card rounded-3xl shadow-xl p-8 animate-slide-up">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-text">Bem-vinda de Volta</h2>
+            <h2 className="text-2xl font-extrabold tracking-tight text-text-strong">
+              Bem-vinda de <span className="font-accent">Volta</span>
+            </h2>
             <p className="text-text-muted text-sm">Entre para continuar seu progresso</p>
           </div>
 
@@ -102,7 +107,7 @@ export default function Login() {
                     setEmail(e.target.value)
                     setFieldErrors((f) => ({ ...f, email: undefined }))
                   }}
-                  className="w-full pl-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-10 px-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                   placeholder="seu@email.com"
                   aria-invalid={!!fieldErrors.email}
                   aria-describedby={fieldErrors.email ? 'email-error' : undefined}
@@ -128,7 +133,7 @@ export default function Login() {
                     setPassword(e.target.value)
                     setFieldErrors((f) => ({ ...f, password: undefined }))
                   }}
-                  className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition tracking-widest"
+                  className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition tracking-widest"
                   placeholder="Digite sua senha"
                   aria-invalid={!!fieldErrors.password}
                   aria-describedby={fieldErrors.password ? 'password-error' : undefined}
@@ -149,25 +154,21 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => navigate('/forgot')}
-                  className="text-sm text-purple-700 dark:text-purple-300 hover:text-purple-800 dark:hover:text-purple-200 underline underline-offset-2"
+                  className="text-sm text-accent-text hover:opacity-80 underline underline-offset-2"
                 >
                   Esqueci minha senha
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 px-4 rounded-full shadow-md hover:from-purple-700 hover:to-pink-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium transform hover:scale-[1.02] active:scale-95"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
+            <Button type="submit" disabled={loading} isLoading={loading} className="w-full">
+              Entrar
+            </Button>
           </form>
 
           <div className="text-center text-sm text-text-muted mt-6">
             Não tem uma conta?
-            <Link to="/register" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium ml-1">Cadastre-se</Link>
+            <Link to="/register" className="text-accent-text hover:opacity-80 font-medium ml-1">Cadastre-se</Link>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
 import { Eye, EyeOff, Lock, Mail, CheckCircle2, MailCheck } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
+import Button from '../components/ui/Button'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -94,17 +95,17 @@ export default function Register() {
 
   if (awaitingConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8 text-center">
-          <MailCheck className="w-12 h-12 text-purple-600 mx-auto mb-4" aria-hidden="true" />
-          <h1 className="text-2xl font-bold text-text mb-2">Confirme seu email</h1>
+      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-surface border border-border-card rounded-3xl shadow-xl p-8 text-center">
+          <MailCheck className="w-12 h-12 text-accent mx-auto mb-4" aria-hidden="true" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">Confirme seu email</h1>
           <p className="text-text-muted mb-6">
             Enviamos um link de confirmação para <strong>{email.trim()}</strong>. Abra o email e clique no link
             para ativar sua conta.
           </p>
           <Link
             to="/login"
-            className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+            className="text-accent-text hover:opacity-80 font-medium"
           >
             Voltar para o login
           </Link>
@@ -114,10 +115,12 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-surface border border-border-card rounded-3xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text mb-2">MusaFit</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-text-strong mb-2">
+            Musa<span className="font-accent">Fit</span>
+          </h1>
           <p className="text-text-muted">Crie sua conta para começar o desafio</p>
         </div>
 
@@ -126,8 +129,8 @@ export default function Register() {
             <span>Progresso do cadastro</span>
             <span>{progressPct}%</span>
           </div>
-          <div className="w-full h-2 bg-pink-100 dark:bg-pink-950/30 rounded-full">
-            <div className="h-2 bg-purple-500 rounded-full" style={{ width: `${progressPct}%` }} />
+          <div className="w-full h-2 bg-border-card rounded-full">
+            <div className="h-2 bg-accent rounded-full" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
@@ -159,11 +162,11 @@ export default function Register() {
                   validateFields()
                 }}
                 onBlur={() => setTouched(t => ({ ...t, email: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="seu@email.com"
               />
               {emailOk && touched.email && (
-                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" aria-hidden="true" />
+                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 text-success w-5 h-5" aria-hidden="true" />
               )}
             </div>
             {fieldErrors.email && (
@@ -192,7 +195,7 @@ export default function Register() {
                 validateFields(false)
               }}
                 onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="Digite sua senha"
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'password-error' : undefined}
@@ -232,7 +235,7 @@ export default function Register() {
                 validateFields(false)
               }}
                 onBlur={() => setTouched(t => ({ ...t, confirmPassword: true }))}
-                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface text-text rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-10 px-4 py-3 border border-border bg-surface-sunken text-text rounded-xl focus:ring-2 focus:ring-focus-ring focus:border-transparent outline-none transition"
                 placeholder="Confirme sua senha"
                 aria-invalid={!!fieldErrors.confirmPassword}
                 aria-describedby={fieldErrors.confirmPassword ? 'confirm-error' : undefined}
@@ -246,7 +249,7 @@ export default function Register() {
                 {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
               {confirmOk && touched.confirmPassword && (
-                <CheckCircle2 className="absolute right-10 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" aria-hidden="true" />
+                <CheckCircle2 className="absolute right-10 top-1/2 -translate-y-1/2 text-success w-5 h-5" aria-hidden="true" />
               )}
             </div>
             {fieldErrors.confirmPassword && (
@@ -254,18 +257,14 @@ export default function Register() {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-          >
-            {loading ? 'Criando conta...' : 'Criar Conta'}
-          </button>
+          <Button type="submit" disabled={loading} isLoading={loading} className="w-full">
+            Criar Conta
+          </Button>
         </form>
 
         <p className="text-center text-sm text-text-muted mt-6">
           Já tem uma conta?{' '}
-          <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium">
+          <Link to="/login" className="text-accent-text hover:opacity-80 font-medium">
             Entrar
           </Link>
         </p>
