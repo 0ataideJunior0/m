@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getPrograms } from '../utils/workouts'
-import { Trophy, Flame } from 'lucide-react'
-import { Program } from '../types'
+import { getPrograms, getMyWorkout } from '../utils/workouts'
+import { Trophy, Flame, Dumbbell } from 'lucide-react'
+import { Program, Workout } from '../types'
 import PixExpiryBanner from '../components/PixExpiryBanner'
 import AmbientGlow from '../components/ui/AmbientGlow'
 
@@ -11,6 +11,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading } = useAuthStore()
   const [programs, setPrograms] = useState<Program[]>([])
+  const [myWorkout, setMyWorkout] = useState<Workout | null>(null)
   const [loading, setLoading] = useState(true)
   const [logoSrc, setLogoSrc] = useState('/logo.png')
   const logoCandidates = useMemo(() => ['/logo.png', '/logo.svg', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
@@ -28,8 +29,9 @@ export default function Home() {
   const load = async () => {
     if (!user) return
     try {
-      const data = await getPrograms()
+      const [data, personalWorkout] = await Promise.all([getPrograms(), getMyWorkout(user.id)])
       setPrograms(data)
+      setMyWorkout(personalWorkout)
     } finally {
       setLoading(false)
     }
@@ -80,6 +82,22 @@ export default function Home() {
         </div>
 
         <PixExpiryBanner />
+
+        {myWorkout && (
+          <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
+            <div className="flex items-center mb-2">
+              <Dumbbell className="w-5 h-5 text-accent mr-2" />
+              <div className="text-xl font-extrabold tracking-tight text-text-strong">Seu treino personalizado</div>
+            </div>
+            <p className="text-text-muted mb-4">{myWorkout.title}</p>
+            <button
+              onClick={() => navigate('/meu-treino')}
+              className="brand-gradient w-full py-3 rounded-xl shadow-cta hover:shadow-cta-hover hover:opacity-90 transition transform hover:scale-[1.01] active:scale-95"
+            >
+              Ver meu treino
+            </button>
+          </div>
+        )}
 
         <div id="treinos" className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
           <div className="text-xl font-extrabold tracking-tight text-text-strong mb-4">Treinos</div>

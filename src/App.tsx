@@ -16,6 +16,7 @@ const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
 const WorkoutDay = lazy(() => import('./pages/WorkoutDay'))
+const MyWorkout = lazy(() => import('./pages/MyWorkout'))
 const ProgramDays = lazy(() => import('./pages/ProgramDays'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Home = lazy(() => import('./pages/Home'))
@@ -30,6 +31,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminProgramList = lazy(() => import('./pages/admin/AdminProgramList'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
+const AdminUserWorkoutEdit = lazy(() => import('./pages/admin/AdminUserWorkoutEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminCancellations = lazy(() => import('./pages/admin/AdminCancellations'))
 
@@ -133,6 +135,7 @@ function App() {
             <Route path="/hiit" element={<RequireSubscription><RequireOnboarding><HIIT /></RequireOnboarding></RequireSubscription>} />
             <Route path="/program/:slug" element={<RequireSubscription><RequireOnboarding><ProgramDays /></RequireOnboarding></RequireSubscription>} />
             <Route path="/program/:slug/day/:weekday" element={<RequireSubscription><RequireOnboarding><WorkoutDay /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/meu-treino" element={<RequireSubscription><RequireOnboarding><MyWorkout /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-ganho" element={<RequireSubscription><RequireOnboarding><MealPlan type="mass_gain" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-perda" element={<RequireSubscription><RequireOnboarding><MealPlan type="fat_loss" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
@@ -140,6 +143,7 @@ function App() {
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/users" element={<RequireOnboarding><RequireAdmin><AdminUsers /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/users/:userId/workout" element={<RequireOnboarding><RequireAdmin><AdminUserWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/cancellations" element={<RequireOnboarding><RequireAdmin><AdminCancellations /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>

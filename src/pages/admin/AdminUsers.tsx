@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, Dumbbell } from 'lucide-react'
 import { listNonAdminUsers, AdminUserSummary } from '../../utils/adminUsers'
 
 export default function AdminUsers() {
@@ -49,6 +49,7 @@ export default function AdminUsers() {
                 <th className="px-4 py-3 text-sm font-medium text-text-muted">Username</th>
                 <th className="px-4 py-3 text-sm font-medium text-text-muted">Cadastro</th>
                 <th className="px-4 py-3 text-sm font-medium text-text-muted">Progresso</th>
+                <th className="px-4 py-3 text-sm font-medium text-text-muted"></th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +59,14 @@ export default function AdminUsers() {
                   <td className="px-4 py-3 text-text-muted">{u.username || '—'}</td>
                   <td className="px-4 py-3 text-text-muted">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-text-muted">{u.completedDays}/30</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <Link
+                      to={`/admin/users/${u.id}/workout`}
+                      className="inline-flex items-center gap-1 text-accent-text hover:opacity-80 text-sm font-medium"
+                    >
+                      <Dumbbell className="w-4 h-4" /> Treino pessoal
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
