@@ -53,7 +53,7 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
           aria-label={`Marcar ${exercise.exercise} como concluído`}
           className={`ml-auto inline-flex items-center justify-center w-11 h-11 rounded-full border ${
             isCompleted ? 'border-green-500 bg-green-100 dark:bg-green-900/40' : 'border-border bg-surface'
-          } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+          } focus:outline-none focus:ring-2 focus:ring-focus-ring`}
         >
           {isCompleted ? (
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -68,7 +68,7 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
             type="button"
             onClick={onWatchVideo}
             aria-label={`Ver execução de ${exercise.exercise}`}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
           >
             <Play className="w-4 h-4" />
             Ver execução
