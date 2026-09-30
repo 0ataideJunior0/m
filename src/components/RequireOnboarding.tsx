@@ -6,8 +6,8 @@ export default function RequireOnboarding({ children }: { children: JSX.Element 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-purple-600 animate-spin" />
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-border-card border-t-accent animate-spin" />
       </div>
     )
   }

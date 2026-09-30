@@ -17,7 +17,7 @@ interface ChoiceGroupProps {
 export default function ChoiceGroup({ label, name, options, value, onChange, error }: ChoiceGroupProps) {
   return (
     <div>
-      <span className="block text-sm font-medium text-gray-700 dark:text-text-muted mb-2">{label}</span>
+      <span className="block text-sm font-medium text-text-muted mb-2">{label}</span>
       <div role="radiogroup" aria-label={label} className={cn('grid gap-3', options.length <= 2 ? 'grid-cols-2' : 'grid-cols-3')}>
         {options.map((option) => {
           const selected = value === option.value
@@ -31,10 +31,10 @@ export default function ChoiceGroup({ label, name, options, value, onChange, err
               onClick={() => onChange(option.value)}
               className={cn(
                 'rounded-2xl px-4 py-4 text-center font-medium transition transform active:scale-95',
-                'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2',
+                'focus:outline-none focus:ring-2 focus:ring-focus-ring focus:ring-offset-2',
                 selected
                   ? 'brand-gradient shadow-md'
-                  : 'bg-white dark:bg-surface border border-gray-300 dark:border-border text-gray-900 dark:text-text hover:bg-gray-50 dark:hover:bg-white/5'
+                  : 'bg-surface border border-border text-text hover:bg-surface-hover'
               )}
             >
               {option.label}

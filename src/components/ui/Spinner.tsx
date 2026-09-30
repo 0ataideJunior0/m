@@ -18,7 +18,7 @@ export default function Spinner({ size = 'md', label = 'Carregando...', classNam
       role="status"
       aria-label={label}
       className={cn(
-        'rounded-full border-pink-200 dark:border-border border-t-purple-600 animate-spin',
+        'rounded-full border-border-card border-t-accent animate-spin',
         sizeClasses[size],
         className
       )}

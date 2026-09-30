@@ -60,7 +60,7 @@ export default function RestTimer() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
       >
         <Clock className="w-4 h-4" />
         Descanso
@@ -69,12 +69,12 @@ export default function RestTimer() {
         <div className="flex flex-col items-center justify-center gap-2 p-8">
           <span
             className={`text-6xl font-bold tabular-nums ${
-              secondsLeft === 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-text'
+              secondsLeft === 0 ? 'text-success' : 'text-text-strong'
             }`}
           >
             {formatTime(secondsLeft)}
           </span>
-          <p className="text-gray-500 dark:text-text-muted text-sm">
+          <p className="text-text-muted text-sm">
             {secondsLeft === 0 ? 'Pode voltar!' : 'Aproveite pra respirar'}
           </p>
         </div>

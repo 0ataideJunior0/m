@@ -7,7 +7,7 @@ export default function RequireSubscription({ children }: { children: JSX.Elemen
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <Spinner size="lg" />
       </div>
     )
