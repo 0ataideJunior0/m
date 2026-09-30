@@ -137,16 +137,16 @@ export default function Onboarding() {
   if (!isAuthenticated || !user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-surface rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-surface border border-border-card rounded-3xl shadow-xl p-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-text mb-1">Vamos te conhecer</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-strong mb-1">Vamos te conhecer</h1>
           <p className="text-text-muted text-sm">Passo {step + 1} de {TOTAL_STEPS}</p>
         </div>
 
         <div className="mb-8">
-          <div className="w-full h-2 bg-pink-100 dark:bg-pink-950/30 rounded-full">
-            <div className="h-2 bg-purple-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+          <div className="w-full h-2 bg-border-card rounded-full">
+            <div className="h-2 bg-accent rounded-full transition-all" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
