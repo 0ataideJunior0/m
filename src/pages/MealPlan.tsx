@@ -26,14 +26,14 @@ export default function MealPlan({ type }: { type: PlanType }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-bg dark:to-bg">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="print:hidden">
           <PageHeader
@@ -61,7 +61,7 @@ export default function MealPlan({ type }: { type: PlanType }) {
               )
             )
           ) : (
-            <p className="text-gray-600 dark:text-text-muted">Plano alimentar indisponível no momento.</p>
+            <p className="text-text-muted">Plano alimentar indisponível no momento.</p>
           )}
         </Card>
       </div>
