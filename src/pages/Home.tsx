@@ -128,7 +128,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => navigate('/hiit')}
-              aria-label="Ver Treino HIIT Opcional"
+              aria-label="Ver Treino HIIT"
               style={{ backgroundImage: 'url(/programs/hiit.webp)' }}
               className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-[#1A1423]"
             >
