@@ -62,13 +62,13 @@ export default function ExerciseItem({ exercise, isCompleted, onToggle, hasVideo
           )}
         </button>
       </div>
-      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+      <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         {hasVideo ? (
           <button
             type="button"
             onClick={onWatchVideo}
             aria-label={`Ver execução de ${exercise.exercise}`}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 h-11 px-2 sm:px-3 text-sm sm:text-base whitespace-nowrap rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
           >
             <Play className="w-4 h-4" />
             Ver execução

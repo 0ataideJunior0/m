@@ -60,7 +60,7 @@ export default function RestTimer() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 h-11 px-2 sm:px-3 text-sm sm:text-base whitespace-nowrap rounded-md text-accent-text hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-focus-ring"
       >
         <Clock className="w-4 h-4" />
         Descanso
