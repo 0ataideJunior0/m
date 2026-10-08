@@ -122,15 +122,23 @@ export default function Home() {
         <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
           <div className="flex items-center mb-2">
             <Flame className="w-5 h-5 text-red-500 mr-2" />
-            <div className="text-xl font-extrabold tracking-tight text-text-strong">HIIT Opcional • Gordura + Abdômen</div>
+            <div className="text-xl font-extrabold tracking-tight text-text-strong">HIIT • Gordura + Abdômen</div>
           </div>
-          <p className="text-text-muted">30 minutos no formato 40s ON / 20s OFF. Ideal para quem deseja acelerar a queima de gordura.</p>
-          <button
-            onClick={() => navigate('/hiit')}
-            className="brand-gradient mt-4 w-full py-3 rounded-xl shadow-cta hover:shadow-cta-hover hover:opacity-90 transition transform hover:scale-[1.01] active:scale-95"
-          >
-            Ver Treino HIIT Opcional
-          </button>
+          <p className="text-text-muted mb-4">30 minutos no formato 40s ON / 20s OFF. Ideal para quem deseja acelerar a queima de gordura.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              onClick={() => navigate('/hiit')}
+              aria-label="Ver Treino HIIT Opcional"
+              style={{ backgroundImage: 'url(/programs/hiit.webp)' }}
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-[#1A1423]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Treino</div>
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">HIIT</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Planos Alimentares */}
