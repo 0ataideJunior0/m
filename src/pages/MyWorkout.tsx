@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getMyWorkout, markWorkoutComplete } from '../utils/workouts'
 import { Workout as WorkoutType } from '../types'
-import { Check, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
 import ExerciseVideoModal from '../components/ExerciseVideoModal'
 import { getExerciseKey } from '../utils/exerciseKeys'
@@ -12,10 +12,14 @@ import { resetExerciseProgress } from '../utils/exerciseProgressRemote'
 import { useExerciseProgress } from '../hooks/useExerciseProgress'
 import { useExerciseVideoModal } from '../hooks/useExerciseVideoModal'
 import Toast from '../components/ui/Toast'
+import WorkoutActionBar, { WorkoutSessionStatus } from '../components/WorkoutActionBar'
+import { useActiveWorkout } from '../hooks/useActiveWorkout'
 
 export default function MyWorkout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, isAuthenticated } = useAuthStore()
+  const { active, start, clear: clearActive } = useActiveWorkout(user?.id)
 
   const [workout, setWorkout] = useState<WorkoutType | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,6 +57,7 @@ export default function MyWorkout() {
           console.error('Workout marked complete but exercise checklist reset failed for workout', workout.id)
         }
         clearLocalProgress(user.id, workout.id)
+        clearActive()
         navigate('/home')
       }
     } catch (error) {
@@ -63,6 +68,13 @@ export default function MyWorkout() {
   }
 
   const { exProgress, toggleExercise } = useExerciseProgress(user?.id, workout?.id)
+
+  const sessionStatus: WorkoutSessionStatus = !active ? 'idle' : active.workoutId === workout?.id ? 'active' : 'blocked'
+
+  const handleStartWorkout = () => {
+    if (!workout || active) return
+    start({ workoutId: workout.id, title: workout.title, path: location.pathname })
+  }
   const {
     videoUrl, videoTitle, modalOpen, videoLoading, videoDialogRef,
     toast, dismissToast, openExerciseVideo, closeVideoModal, onVideoLoaded,
@@ -173,25 +185,14 @@ export default function MyWorkout() {
           dialogRef={videoDialogRef}
         />
 
-        {/* Complete Button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
-          <div className="max-w-4xl mx-auto">
-            <button
-              onClick={handleCompleteWorkout}
-              disabled={completing}
-              className="w-full brand-gradient py-4 px-6 rounded-full shadow-cta hover:shadow-cta-hover hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-focus-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg flex items-center justify-center"
-            >
-              {completing ? (
-                'Marcando...'
-              ) : (
-                <>
-                  <Check className="w-5 h-5 mr-2" />
-                  Marcar como Concluído
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        <WorkoutActionBar
+          status={sessionStatus}
+          onStart={handleStartWorkout}
+          onComplete={handleCompleteWorkout}
+          completing={completing}
+          blockedTitle={active?.title}
+          onGoToActive={active ? () => navigate(active.path) : undefined}
+        />
       </div>
       <Toast toast={toast} onDismiss={dismissToast} />
     </div>

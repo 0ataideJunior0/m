@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import MyWorkout from '../pages/MyWorkout'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { getActiveWorkout, startActiveWorkout } from '../utils/activeWorkout'
 
 const getMyWorkoutMock = vi.fn(async () => ({
   id: 'w1',
@@ -36,6 +37,10 @@ const renderMyWorkout = () =>
     </MemoryRouter>
   )
 
+beforeEach(() => {
+  localStorage.clear()
+})
+
 describe('MyWorkout', () => {
   it('renderiza os exercícios do treino pessoal em lista simples (sem agrupamento de bi-set)', async () => {
     renderMyWorkout()
@@ -67,12 +72,45 @@ describe('MyWorkout', () => {
     expect(dialog).toBeInTheDocument()
   })
 
-  it('ao concluir o treino, navega de volta pra Home', async () => {
+  it('ao concluir o treino iniciado, navega de volta pra Home e encerra a sessão', async () => {
     renderMyWorkout()
 
     await screen.findByText('Treino da Ana')
+    fireEvent.click(screen.getByRole('button', { name: /iniciar treino/i }))
     fireEvent.click(screen.getByRole('button', { name: /marcar como concluído/i }))
 
     expect(await screen.findByText('Home Page')).toBeInTheDocument()
+    expect(getActiveWorkout('u1')).toBeNull()
+  })
+
+  it('antes de iniciar só existe o botão de iniciar — não dá pra concluir', async () => {
+    renderMyWorkout()
+
+    await screen.findByText('Treino da Ana')
+    expect(screen.getByRole('button', { name: /iniciar treino/i })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: /marcar como concluído/i })).toBeNull()
+  })
+
+  it('iniciar grava a sessão e ela sobrevive a fechar e reabrir a tela', async () => {
+    const first = renderMyWorkout()
+    await screen.findByText('Treino da Ana')
+    fireEvent.click(screen.getByRole('button', { name: /iniciar treino/i }))
+    expect(getActiveWorkout('u1')?.workoutId).toBe('w1')
+    first.unmount()
+
+    renderMyWorkout()
+    await screen.findByText('Treino da Ana')
+    expect(screen.getByRole('button', { name: /marcar como concluído/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /iniciar treino/i })).toBeNull()
+  })
+
+  it('com outro treino em andamento, não deixa iniciar este e avisa qual está aberto', async () => {
+    startActiveWorkout('u1', { workoutId: 'outro', title: 'Treino Avançado', path: '/program/avancado/day/2' })
+    renderMyWorkout()
+
+    await screen.findByText('Treino da Ana')
+    expect(screen.getByRole('status')).toHaveTextContent('Treino Avançado')
+    expect(screen.getByRole('button', { name: /iniciar treino/i })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /marcar como concluído/i })).toBeNull()
   })
 })
