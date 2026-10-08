@@ -152,6 +152,14 @@ export const markWorkoutComplete = async (userId: string, workoutId: string): Pr
       }, { onConflict: 'user_id,workout_id' })
 
     if (error) throw error
+
+    // Melhor esforço: o log alimenta heatmap/sequência/conquistas, mas a
+    // conclusão em si já está salva e não pode falhar por causa dele.
+    const { error: logError } = await supabase
+      .from('workout_completions')
+      .insert({ user_id: userId, workout_id: workoutId })
+    if (logError) console.error('Error logging workout completion:', logError)
+
     return true
   } catch (error) {
     console.error('Error marking workout complete:', error)

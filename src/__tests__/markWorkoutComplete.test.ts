@@ -1,13 +1,16 @@
 import { describe, it, expect, vi } from 'vitest'
 
-const { maybeSingleMock, eqMock2, eqMock1, selectMock, upsertMock, fromMock } = vi.hoisted(() => {
+const { maybeSingleMock, eqMock2, eqMock1, selectMock, upsertMock, insertMock, fromMock } = vi.hoisted(() => {
   const maybeSingleMock = vi.fn()
   const eqMock2 = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
   const eqMock1 = vi.fn(() => ({ eq: eqMock2 }))
   const selectMock = vi.fn(() => ({ eq: eqMock1 }))
   const upsertMock = vi.fn()
-  const fromMock = vi.fn(() => ({ select: selectMock, upsert: upsertMock }))
-  return { maybeSingleMock, eqMock2, eqMock1, selectMock, upsertMock, fromMock }
+  const insertMock = vi.fn(async () => ({ error: null }))
+  const fromMock = vi.fn((table: string) =>
+    table === 'workout_completions' ? { insert: insertMock } : { select: selectMock, upsert: upsertMock }
+  )
+  return { maybeSingleMock, eqMock2, eqMock1, selectMock, upsertMock, insertMock, fromMock }
 })
 
 vi.mock('../lib/supabase', () => ({
@@ -53,6 +56,34 @@ describe('markWorkoutComplete', () => {
 
     const result = await markWorkoutComplete('u1', 'w1')
     expect(result).toBe(false)
+  })
+
+  it('registra cada conclusão no log de conclusões, alimentando heatmap e sequência', async () => {
+    maybeSingleMock.mockResolvedValueOnce({ data: { completion_count: 3 }, error: null })
+    upsertMock.mockResolvedValueOnce({ error: null })
+
+    await markWorkoutComplete('u1', 'w1')
+
+    expect(fromMock).toHaveBeenCalledWith('workout_completions')
+    expect(insertMock).toHaveBeenCalledWith({ user_id: 'u1', workout_id: 'w1' })
+  })
+
+  it('não registra no log quando o upsert falha', async () => {
+    insertMock.mockClear()
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
+    upsertMock.mockResolvedValueOnce({ error: new Error('boom') })
+
+    await markWorkoutComplete('u1', 'w1')
+
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('falha ao gravar o log não desfaz a conclusão', async () => {
+    maybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
+    upsertMock.mockResolvedValueOnce({ error: null })
+    insertMock.mockResolvedValueOnce({ error: new Error('log indisponível') })
+
+    expect(await markWorkoutComplete('u1', 'w1')).toBe(true)
   })
 
   it('não grava a chave completed no payload do upsert', async () => {
