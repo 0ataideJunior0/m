@@ -12,9 +12,11 @@ vi.mock('../lib/supabase', () => ({
 import {
   listWorkoutsForProgramAdmin,
   updateWorkoutAdmin,
-  getUserWorkout,
+  getUserWorkoutForDay,
   saveUserWorkoutAdmin,
   deleteUserWorkoutAdmin,
+  copyProgramToUserAdmin,
+  setHideCatalogAdmin,
 } from '../utils/adminWorkouts'
 
 describe('listWorkoutsForProgramAdmin', () => {
@@ -68,41 +70,86 @@ describe('updateWorkoutAdmin', () => {
   })
 })
 
-describe('getUserWorkout', () => {
-  it('retorna o treino pessoal da usuária pelo user_id', async () => {
-    const maybeSingleMock = vi.fn().mockResolvedValueOnce({
-      data: { id: 'w9', user_id: 'u1', title: 'Treino da Bia', exercises: [], video_url: '', program_id: null, weekday: null },
-      error: null,
-    })
-    const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
-    const selectMock = vi.fn(() => ({ eq: eqMock }))
-    fromMock.mockReturnValueOnce({ select: selectMock })
+/** Query encadeável que resolve `result` em qualquer ponto da cadeia. */
+const fakeQuery = (result: unknown) => {
+  const q: any = {}
+  for (const m of ['select', 'eq', 'order', 'insert', 'update', 'delete', 'upsert', 'maybeSingle', 'single']) {
+    q[m] = vi.fn(() => q)
+  }
+  q.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => Promise.resolve(result).then(resolve, reject)
+  return q
+}
 
-    const result = await getUserWorkout('u1')
+describe('getUserWorkoutForDay', () => {
+  it('busca o treino pessoal da usuária naquele dia da semana', async () => {
+    const q = fakeQuery({ data: { id: 'w9', user_id: 'u1', weekday: 3, title: 'Treino da Bia' }, error: null })
+    fromMock.mockReturnValueOnce(q)
+
+    const result = await getUserWorkoutForDay('u1', 3)
 
     expect(fromMock).toHaveBeenCalledWith('workouts')
-    expect(eqMock).toHaveBeenCalledWith('user_id', 'u1')
+    expect(q.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(q.eq).toHaveBeenCalledWith('weekday', 3)
     expect(result?.title).toBe('Treino da Bia')
   })
 
-  it('retorna null quando a usuária não tem treino pessoal', async () => {
-    const maybeSingleMock = vi.fn().mockResolvedValueOnce({ data: null, error: null })
-    const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
-    const selectMock = vi.fn(() => ({ eq: eqMock }))
-    fromMock.mockReturnValueOnce({ select: selectMock })
+  it('retorna null quando o dia é de descanso', async () => {
+    fromMock.mockReturnValueOnce(fakeQuery({ data: null, error: null }))
 
-    const result = await getUserWorkout('u1')
-
-    expect(result).toBeNull()
+    expect(await getUserWorkoutForDay('u1', 7)).toBeNull()
   })
 
   it('lança erro quando a query falha', async () => {
-    const maybeSingleMock = vi.fn().mockResolvedValueOnce({ data: null, error: new Error('boom') })
-    const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
-    const selectMock = vi.fn(() => ({ eq: eqMock }))
-    fromMock.mockReturnValueOnce({ select: selectMock })
+    fromMock.mockReturnValueOnce(fakeQuery({ data: null, error: new Error('boom') }))
 
-    await expect(getUserWorkout('u1')).rejects.toThrow('boom')
+    await expect(getUserWorkoutForDay('u1', 1)).rejects.toThrow('boom')
+  })
+})
+
+describe('copyProgramToUserAdmin', () => {
+  it('atualiza dias existentes, cria os que faltam e transforma em descanso o que o programa não tem', async () => {
+    fromMock.mockClear()
+    const ex = [{ exercise: 'Agachamento', reps: '12' }]
+    const programWeek = fakeQuery({
+      data: [
+        { id: 'p-w1', weekday: 1, title: 'Seg', video_url: 'v1', exercises: ex },
+        { id: 'p-w2', weekday: 2, title: 'Ter', video_url: null, exercises: ex },
+      ],
+      error: null,
+    })
+    const userWeek = fakeQuery({ data: [{ id: 'u-w2', weekday: 2 }, { id: 'u-w3', weekday: 3 }], error: null })
+    const insertDay1 = fakeQuery({ data: { id: 'novo' }, error: null })
+    const updateDay2 = fakeQuery({ data: { id: 'u-w2' }, error: null })
+    const deleteDay3 = fakeQuery({ error: null })
+    fromMock
+      .mockReturnValueOnce(programWeek)
+      .mockReturnValueOnce(userWeek)
+      .mockReturnValueOnce(insertDay1)
+      .mockReturnValueOnce(updateDay2)
+      .mockReturnValueOnce(deleteDay3)
+
+    await copyProgramToUserAdmin('u1', 'p1')
+
+    expect(programWeek.eq).toHaveBeenCalledWith('program_id', 'p1')
+    expect(userWeek.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(insertDay1.insert).toHaveBeenCalledWith({ user_id: 'u1', weekday: 1, title: 'Seg', video_url: 'v1', exercises: ex })
+    expect(updateDay2.update).toHaveBeenCalledWith({ title: 'Ter', video_url: '', exercises: ex })
+    expect(updateDay2.eq).toHaveBeenCalledWith('id', 'u-w2')
+    expect(deleteDay3.delete).toHaveBeenCalled()
+    expect(deleteDay3.eq).toHaveBeenCalledWith('id', 'u-w3')
+    expect(fromMock).toHaveBeenCalledTimes(5)
+  })
+})
+
+describe('setHideCatalogAdmin', () => {
+  it('grava a preferência no plano da aluna', async () => {
+    const q = fakeQuery({ error: null })
+    fromMock.mockReturnValueOnce(q)
+
+    await setHideCatalogAdmin('u1', true)
+
+    expect(fromMock).toHaveBeenCalledWith('personal_plans')
+    expect(q.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'u1', hide_catalog: true }))
   })
 })
 
@@ -116,10 +163,10 @@ describe('saveUserWorkoutAdmin', () => {
     const insertMock = vi.fn(() => ({ select: selectMock }))
     fromMock.mockReturnValueOnce({ insert: insertMock })
 
-    const result = await saveUserWorkoutAdmin('u1', null, { title: 'Treino novo', video_url: '', exercises: [] })
+    const result = await saveUserWorkoutAdmin('u1', 4, null, { title: 'Treino novo', video_url: '', exercises: [] })
 
     expect(fromMock).toHaveBeenCalledWith('workouts')
-    expect(insertMock).toHaveBeenCalledWith({ user_id: 'u1', title: 'Treino novo', video_url: '', exercises: [] })
+    expect(insertMock).toHaveBeenCalledWith({ user_id: 'u1', weekday: 4, title: 'Treino novo', video_url: '', exercises: [] })
     expect(result.id).toBe('w-novo')
   })
 
@@ -133,7 +180,7 @@ describe('saveUserWorkoutAdmin', () => {
     const updateMock = vi.fn(() => ({ eq: eqMock }))
     fromMock.mockReturnValueOnce({ update: updateMock })
 
-    const result = await saveUserWorkoutAdmin('u1', 'w-existente', { title: 'Editado', video_url: '', exercises: [] })
+    const result = await saveUserWorkoutAdmin('u1', 4, 'w-existente', { title: 'Editado', video_url: '', exercises: [] })
 
     expect(updateMock).toHaveBeenCalledWith({ title: 'Editado', video_url: '', exercises: [] })
     expect(eqMock).toHaveBeenCalledWith('id', 'w-existente')
@@ -147,7 +194,7 @@ describe('saveUserWorkoutAdmin', () => {
     fromMock.mockReturnValueOnce({ insert: insertMock })
 
     await expect(
-      saveUserWorkoutAdmin('u1', null, { title: '', video_url: '', exercises: [] })
+      saveUserWorkoutAdmin('u1', 1, null, { title: '', video_url: '', exercises: [] })
     ).rejects.toThrow('falhou')
   })
 })

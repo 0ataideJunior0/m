@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getPrograms, getMyWorkout } from '../utils/workouts'
+import { getPrograms, getMyWeek, getMyPlan } from '../utils/workouts'
+import { WEEKDAY_NAMES, todayWeekday } from '../utils/weekdays'
 import { Trophy, Flame, Dumbbell } from 'lucide-react'
 import { Program, Workout } from '../types'
 import PixExpiryBanner from '../components/PixExpiryBanner'
@@ -11,7 +12,8 @@ export default function Home() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading } = useAuthStore()
   const [programs, setPrograms] = useState<Program[]>([])
-  const [myWorkout, setMyWorkout] = useState<Workout | null>(null)
+  const [myWeek, setMyWeek] = useState<Workout[]>([])
+  const [hideCatalog, setHideCatalog] = useState(false)
   const [loading, setLoading] = useState(true)
   const [logoSrc, setLogoSrc] = useState('/logo.png')
   const logoCandidates = useMemo(() => ['/logo.png', '/logo.svg', '/logo.webp', '/logo.jpg', '/logo.ico'], [])
@@ -29,13 +31,19 @@ export default function Home() {
   const load = async () => {
     if (!user) return
     try {
-      const [data, personalWorkout] = await Promise.all([getPrograms(), getMyWorkout(user.id)])
+      const [data, week, plan] = await Promise.all([getPrograms(), getMyWeek(user.id), getMyPlan(user.id)])
       setPrograms(data)
-      setMyWorkout(personalWorkout)
+      setMyWeek(week)
+      setHideCatalog(plan.hideCatalog)
     } finally {
       setLoading(false)
     }
   }
+
+  const today = todayWeekday()
+  const todayWorkout = myWeek.find((w) => w.weekday === today) || null
+  // A admin pode esconder o catálogo pra quem tem semana própria; sem semana, o catálogo sempre aparece.
+  const showCatalog = !(hideCatalog && myWeek.length > 0)
 
   const displayName = useMemo(() => {
     const name = (user?.username || user?.email.split('@')[0] || '').trim()
@@ -83,41 +91,61 @@ export default function Home() {
 
         <PixExpiryBanner />
 
-        {myWorkout && (
+        {myWeek.length > 0 && (
           <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
             <div className="flex items-center mb-2">
               <Dumbbell className="w-5 h-5 text-accent mr-2" />
-              <div className="text-xl font-extrabold tracking-tight text-text-strong">Seu treino personalizado</div>
+              <div className="text-xl font-extrabold tracking-tight text-text-strong">Sua semana personalizada</div>
             </div>
-            <p className="text-text-muted mb-4">{myWorkout.title}</p>
-            <button
-              onClick={() => navigate('/meu-treino')}
-              className="brand-gradient w-full py-3 rounded-xl shadow-cta hover:shadow-cta-hover hover:opacity-90 transition transform hover:scale-[1.01] active:scale-95"
-            >
-              Ver meu treino
-            </button>
+            <p className="text-text-muted mb-4">
+              {todayWorkout
+                ? `Hoje (${WEEKDAY_NAMES[today - 1].toLowerCase()}): ${todayWorkout.title}`
+                : 'Hoje é dia de descanso.'}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {todayWorkout && (
+                <button
+                  onClick={() => navigate(`/meu-treino/dia/${today}`)}
+                  className="brand-gradient flex-1 py-3 rounded-xl shadow-cta hover:shadow-cta-hover hover:opacity-90 transition transform hover:scale-[1.01] active:scale-95"
+                >
+                  Treino de hoje
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/meu-treino')}
+                className={
+                  todayWorkout
+                    ? 'flex-1 py-3 rounded-xl border border-border bg-surface text-text font-medium hover:bg-surface-hover transition'
+                    : 'brand-gradient flex-1 py-3 rounded-xl shadow-cta hover:shadow-cta-hover hover:opacity-90 transition transform hover:scale-[1.01] active:scale-95'
+                }
+              >
+                Ver minha semana
+              </button>
+            </div>
           </div>
         )}
 
-        <div id="treinos" className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
-          <div className="text-xl font-extrabold tracking-tight text-text-strong mb-4">Treinos</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {programs.map((program) => (
-              <button
-                key={program.id}
-                onClick={() => navigate(`/program/${program.slug}`)}
-                style={{ backgroundImage: `url(/programs/${program.slug}.webp)` }}
-                className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-[#1A1423]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Treino</div>
-                  <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">{program.name}</div>
-                </div>
-              </button>
-            ))}
+        {showCatalog && (
+          <div id="treinos" className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
+            <div className="text-xl font-extrabold tracking-tight text-text-strong mb-4">Treinos</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {programs.map((program) => (
+                <button
+                  key={program.id}
+                  onClick={() => navigate(`/program/${program.slug}`)}
+                  style={{ backgroundImage: `url(/programs/${program.slug}.webp)` }}
+                  className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-[#1A1423]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Treino</div>
+                    <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">{program.name}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
           <div className="flex items-center mb-2">

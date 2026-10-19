@@ -235,7 +235,7 @@ export default function AdminUsers() {
                       to={`/admin/users/${u.id}/workout`}
                       className="inline-flex items-center px-3 py-1.5 rounded-full border border-border bg-surface text-sm font-medium text-text hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-focus-ring"
                     >
-                      <Dumbbell className="w-4 h-4 mr-1.5" /> Treino pessoal
+                      <Dumbbell className="w-4 h-4 mr-1.5" /> Semana de treino
                     </Link>
                   </div>
                 </li>

@@ -4,11 +4,13 @@ import Home from '../pages/Home'
 import { MemoryRouter } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
-const getMyWorkoutMock = vi.fn(async () => null as any)
+const getMyWeekMock = vi.fn(async () => [] as any[])
+const getMyPlanMock = vi.fn(async () => ({ hideCatalog: false }))
 
 vi.mock('../utils/workouts', () => ({
-  getPrograms: vi.fn(async () => []),
-  getMyWorkout: (...args: unknown[]) => getMyWorkoutMock(...(args as [string])),
+  getPrograms: vi.fn(async () => [{ id: 'p1', slug: 'avancado', name: 'Avançado', sort_order: 1, created_at: '' }]),
+  getMyWeek: (...args: unknown[]) => getMyWeekMock(...(args as [])),
+  getMyPlan: (...args: unknown[]) => getMyPlanMock(...(args as [])),
 }))
 
 // A Home renderiza o PixExpiryBanner, que consulta a assinatura. Sem assinatura
@@ -19,8 +21,8 @@ vi.mock('../utils/subscription', () => ({
 
 beforeEach(() => {
   useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false })
-  getMyWorkoutMock.mockClear()
-  getMyWorkoutMock.mockResolvedValue(null)
+  getMyWeekMock.mockReset().mockResolvedValue([])
+  getMyPlanMock.mockReset().mockResolvedValue({ hideCatalog: false })
 })
 
 describe('Home welcome', () => {
@@ -83,38 +85,70 @@ describe('Home treino personalizado', () => {
     })
   }
 
-  it('não mostra o card quando a usuária não tem treino pessoal', async () => {
-    setLoggedInUser()
+  const day = (weekday: number, title: string) => ({
+    id: `w${weekday}`,
+    program_id: null,
+    weekday,
+    user_id: 'u1',
+    title,
+    video_url: '',
+    created_at: '',
+    exercises: [],
+  })
+  const todayNumber = ((new Date().getDay() + 6) % 7) + 1
+  const otherDay = (todayNumber % 7) + 1
+
+  const renderHome = () =>
     render(
       <MemoryRouter>
         <Home />
       </MemoryRouter>
     )
+
+  it('sem semana pessoal, não mostra o card e mostra os programas', async () => {
+    setLoggedInUser()
+    renderHome()
 
     await screen.findByText(/olá, maria!/i)
-    expect(screen.queryByText(/seu treino personalizado/i)).toBeNull()
+    expect(screen.queryByText(/sua semana personalizada/i)).toBeNull()
+    expect(screen.getByText('Avançado')).toBeInTheDocument()
   })
 
-  it('mostra o card com o título do treino quando existe um treino pessoal', async () => {
+  it('mostra o treino de hoje da semana pessoal', async () => {
     setLoggedInUser()
-    getMyWorkoutMock.mockResolvedValueOnce({
-      id: 'w1',
-      program_id: null,
-      weekday: null,
-      user_id: 'u1',
-      title: 'Treino da Maria',
-      video_url: '',
-      created_at: '',
-      exercises: [],
-    })
+    getMyWeekMock.mockResolvedValue([day(todayNumber, 'Glúteo da Maria')])
+    renderHome()
 
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>
-    )
+    expect(await screen.findByText(/sua semana personalizada/i)).toBeInTheDocument()
+    expect(screen.getByText(/Glúteo da Maria/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Treino de hoje' })).toBeInTheDocument()
+  })
 
-    expect(await screen.findByText(/seu treino personalizado/i)).toBeInTheDocument()
-    expect(screen.getByText('Treino da Maria')).toBeInTheDocument()
+  it('em dia de descanso, avisa e só oferece ver a semana', async () => {
+    setLoggedInUser()
+    getMyWeekMock.mockResolvedValue([day(otherDay, 'Outro dia')])
+    renderHome()
+
+    expect(await screen.findByText('Hoje é dia de descanso.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Treino de hoje' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ver minha semana' })).toBeInTheDocument()
+  })
+
+  it('esconde os programas do catálogo quando a admin marcou e ela tem semana', async () => {
+    setLoggedInUser()
+    getMyWeekMock.mockResolvedValue([day(todayNumber, 'Treino')])
+    getMyPlanMock.mockResolvedValue({ hideCatalog: true })
+    renderHome()
+
+    await screen.findByText(/sua semana personalizada/i)
+    expect(screen.queryByText('Avançado')).toBeNull()
+  })
+
+  it('com o catálogo escondido mas sem semana, os programas continuam aparecendo', async () => {
+    setLoggedInUser()
+    getMyPlanMock.mockResolvedValue({ hideCatalog: true })
+    renderHome()
+
+    expect(await screen.findByText('Avançado')).toBeInTheDocument()
   })
 })

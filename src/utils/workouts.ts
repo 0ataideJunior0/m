@@ -100,12 +100,30 @@ export const getWorkoutByProgramAndWeekday = async (programId: string, weekday: 
   }
 }
 
-export const getMyWorkout = async (userId: string): Promise<Workout | null> => {
+/** Semana pessoal da aluna (até 7 dias, montada pela admin), por dia da semana. */
+export const getMyWeek = async (userId: string): Promise<Workout[]> => {
   try {
     const { data, error } = await supabase
       .from('workouts')
       .select('*')
       .eq('user_id', userId)
+      .order('weekday', { ascending: true })
+
+    if (error) throw error
+    return (data || []).map(normalizeWorkout)
+  } catch (error) {
+    console.error('Error fetching personal week:', error)
+    return []
+  }
+}
+
+export const getMyWorkoutForDay = async (userId: string, weekday: number): Promise<Workout | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('weekday', weekday)
       .maybeSingle()
 
     if (error) throw error
@@ -113,6 +131,23 @@ export const getMyWorkout = async (userId: string): Promise<Workout | null> => {
   } catch (error) {
     console.error('Error fetching personal workout:', error)
     return null
+  }
+}
+
+/** Preferências do plano pessoal. Sem linha = padrão (catálogo visível). */
+export const getMyPlan = async (userId: string): Promise<{ hideCatalog: boolean }> => {
+  try {
+    const { data, error } = await supabase
+      .from('personal_plans')
+      .select('hide_catalog')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return { hideCatalog: !!data?.hide_catalog }
+  } catch (error) {
+    console.error('Error fetching personal plan:', error)
+    return { hideCatalog: false }
   }
 }
 

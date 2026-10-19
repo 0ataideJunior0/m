@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { getProgramBySlug, getWorkoutByProgramAndWeekday, markWorkoutComplete } from '../utils/workouts'
+import { getProgramBySlug, getWorkoutByProgramAndWeekday, getMyWorkoutForDay, markWorkoutComplete } from '../utils/workouts'
 import { Workout as WorkoutType, Program } from '../types'
 import { ArrowLeft } from 'lucide-react'
 import ExerciseItem from '../components/ExerciseItem'
@@ -17,7 +17,9 @@ import { useActiveWorkout } from '../hooks/useActiveWorkout'
 
 const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
 
-export default function WorkoutDay() {
+/** `personal`: um dia da semana pessoal da aluna (/meu-treino/dia/:weekday)
+ *  em vez de um dia de programa do catálogo (/program/:slug/day/:weekday). */
+export default function WorkoutDay({ personal = false }: { personal?: boolean }) {
   const { slug, weekday } = useParams<{ slug: string; weekday: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,6 +33,7 @@ export default function WorkoutDay() {
 
   const weekdayNumber = parseInt(weekday || '1')
   const weekdayLabel = WEEKDAY_NAMES[weekdayNumber - 1] || 'Dia'
+  const backPath = personal ? '/meu-treino' : `/program/${slug}`
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,9 +45,14 @@ export default function WorkoutDay() {
   }, [isAuthenticated, slug, weekday, navigate])
 
   const loadWorkoutAndProgress = async () => {
-    if (!user || !slug) return
+    if (!user) return
 
     try {
+      if (personal) {
+        setWorkout(await getMyWorkoutForDay(user.id, weekdayNumber))
+        return
+      }
+      if (!slug) return
       const prog = await getProgramBySlug(slug)
       setProgram(prog)
       if (!prog) return
@@ -59,7 +67,7 @@ export default function WorkoutDay() {
   }
 
   const handleCompleteWorkout = async () => {
-    if (!user || !workout || !slug) return
+    if (!user || !workout) return
 
     setCompleting(true)
     try {
@@ -71,7 +79,7 @@ export default function WorkoutDay() {
         }
         clearLocalProgress(user.id, workout.id)
         clearActive()
-        navigate(`/program/${slug}`)
+        navigate(backPath)
       }
     } catch (error) {
       console.error('Error completing workout:', error)
@@ -110,12 +118,14 @@ export default function WorkoutDay() {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">Treino não encontrado</h2>
+          <h2 className="text-2xl font-extrabold tracking-tight text-text-strong mb-2">
+            {personal ? `${weekdayLabel} é dia de descanso` : 'Treino não encontrado'}
+          </h2>
           <button
-            onClick={() => navigate('/home')}
+            onClick={() => navigate(personal ? '/meu-treino' : '/home')}
             className="text-accent-text hover:opacity-80"
           >
-            Voltar à Home
+            {personal ? 'Ver minha semana' : 'Voltar à Home'}
           </button>
         </div>
       </div>
@@ -128,7 +138,7 @@ export default function WorkoutDay() {
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
-            onClick={() => navigate(`/program/${slug}`)}
+            onClick={() => navigate(backPath)}
             className="mr-4 p-2 rounded-lg hover:bg-surface-hover transition"
           >
             <ArrowLeft className="w-6 h-6 text-text" />
@@ -137,7 +147,7 @@ export default function WorkoutDay() {
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong leading-tight break-words">
               {workout.title}
             </h1>
-            <p className="text-text-muted">{weekdayLabel} • {program?.name}</p>
+            <p className="text-text-muted">{weekdayLabel} • {personal ? 'Sua semana' : program?.name}</p>
           </div>
         </div>
 

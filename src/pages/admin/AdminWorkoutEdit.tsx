@@ -3,10 +3,9 @@ import { useParams } from 'react-router-dom'
 import { getProgramBySlug, getWorkoutByProgramAndWeekday } from '../../utils/workouts'
 import { updateWorkoutAdmin, createWorkoutAdmin, listWorkoutsForProgramAdmin } from '../../utils/adminWorkouts'
 import { Program, Workout } from '../../types'
+import { WEEKDAY_NAMES, WEEKDAY_SHORT } from '../../utils/weekdays'
 import WorkoutEditor, { WorkoutPayload } from '../../components/admin/WorkoutEditor'
 
-const WEEKDAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
-const WEEKDAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 export default function AdminWorkoutEdit() {
   const { slug, weekday } = useParams<{ slug: string; weekday: string }>()

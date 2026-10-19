@@ -42,9 +42,9 @@ export interface Workout {
   id: string
   /** Nulo quando é um treino pessoal (veja `user_id`) em vez de catálogo. */
   program_id: string | null
-  /** Nulo quando é um treino pessoal. */
+  /** Dia da semana (1 = segunda … 7 = domingo), no catálogo e na semana pessoal. */
   weekday: number | null
-  /** Preenchido só em treinos pessoais, montados pela admin pra uma usuária específica. */
+  /** Preenchido só em treinos pessoais (a semana que a admin monta pra uma usuária específica). */
   user_id: string | null
   title: string
   exercises: Exercise[]

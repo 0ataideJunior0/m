@@ -32,6 +32,7 @@ const AdminProgramList = lazy(() => import('./pages/admin/AdminProgramList'))
 const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUserWorkoutEdit = lazy(() => import('./pages/admin/AdminUserWorkoutEdit'))
+const AdminUserWeek = lazy(() => import('./pages/admin/AdminUserWeek'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminCancellations = lazy(() => import('./pages/admin/AdminCancellations'))
 
@@ -136,6 +137,7 @@ function App() {
             <Route path="/program/:slug" element={<RequireSubscription><RequireOnboarding><ProgramDays /></RequireOnboarding></RequireSubscription>} />
             <Route path="/program/:slug/day/:weekday" element={<RequireSubscription><RequireOnboarding><WorkoutDay /></RequireOnboarding></RequireSubscription>} />
             <Route path="/meu-treino" element={<RequireSubscription><RequireOnboarding><MyWorkout /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/meu-treino/dia/:weekday" element={<RequireSubscription><RequireOnboarding><WorkoutDay personal /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-ganho" element={<RequireSubscription><RequireOnboarding><MealPlan type="mass_gain" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-perda" element={<RequireSubscription><RequireOnboarding><MealPlan type="fat_loss" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
@@ -143,7 +145,8 @@ function App() {
             <Route path="/admin/programs/:slug" element={<RequireOnboarding><RequireAdmin><AdminWorkoutList /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/programs/:slug/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/users" element={<RequireOnboarding><RequireAdmin><AdminUsers /></RequireAdmin></RequireOnboarding>} />
-            <Route path="/admin/users/:userId/workout" element={<RequireOnboarding><RequireAdmin><AdminUserWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/users/:userId/workout" element={<RequireOnboarding><RequireAdmin><AdminUserWeek /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/users/:userId/workout/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminUserWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/cancellations" element={<RequireOnboarding><RequireAdmin><AdminCancellations /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
