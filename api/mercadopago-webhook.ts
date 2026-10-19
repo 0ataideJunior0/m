@@ -8,6 +8,7 @@ import {
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { addMonths, parsePixExternalReference } from './_lib/pixPeriod.js'
+import { isPrepaidSource } from './_lib/prepaid.js'
 
 const UNIQUE_VIOLATION = '23505'
 
@@ -150,7 +151,7 @@ async function handlePreapproval(dataId: string, supabaseAdmin: SupabaseAdmin, r
   // preservar a data maior. Sem isto, assinar no cartão ENCURTARIA o acesso já
   // pago — exatamente o que a decisão P0.3 do PLANO-PIX.md descartou.
   let nextPaymentDate = resource.next_payment_date || null
-  if (existing?.source === 'pix' && existing.next_payment_date) {
+  if (isPrepaidSource(existing?.source) && existing?.next_payment_date) {
     const pixUntil = new Date(existing.next_payment_date)
     if (!nextPaymentDate || pixUntil > new Date(nextPaymentDate)) {
       console.log('mercadopago-webhook: preservando acesso via Pix mais longo que a data do cartão', {
@@ -231,7 +232,7 @@ async function handlePixPayment(dataId: string, supabaseAdmin: SupabaseAdmin, re
   // pagos (decisão P0.3). Só soma sobre acesso que veio de Pix — período de
   // cartão é gerenciado pelo próprio MP.
   let base = now
-  if (existing?.source === 'pix' && existing.next_payment_date) {
+  if (isPrepaidSource(existing?.source) && existing?.next_payment_date) {
     const currentEnd = new Date(existing.next_payment_date)
     if (currentEnd > now) base = currentEnd
   }

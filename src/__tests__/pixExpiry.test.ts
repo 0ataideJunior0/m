@@ -40,6 +40,10 @@ describe('getPixExpiryWarning', () => {
     expect(warning?.urgent).toBe(true)
   })
 
+  it('avisa também sobre acesso liberado manualmente pela admin, que não renova sozinho', () => {
+    expect(getPixExpiryWarning(sub({ source: 'manual', payment_id: null }), NOW)?.daysLeft).toBe(5)
+  })
+
   it('não avisa sobre assinatura no cartão, que renova sozinha', () => {
     expect(getPixExpiryWarning(sub({ source: 'preapproval' }), NOW)).toBeNull()
   })

@@ -69,7 +69,7 @@ export interface AuthError {
 
 export type SubscriptionStatus = 'pending' | 'authorized' | 'paused' | 'cancelled'
 
-export type SubscriptionSource = 'preapproval' | 'pix'
+export type SubscriptionSource = 'preapproval' | 'pix' | 'manual'
 
 export interface Subscription {
   id: string

@@ -15,7 +15,7 @@ export interface PixExpiryWarning {
 }
 
 /**
- * Só vale para acesso comprado via Pix: assinatura no cartão renova sozinha e
+ * Só vale para acesso pré-pago (Pix ou liberado pela admin): assinatura no cartão renova sozinha e
  * avisar sobre "vencimento" ali seria ruído.
  *
  * Devolve null quando não há o que avisar — o componente que chama não precisa
@@ -26,7 +26,7 @@ export function getPixExpiryWarning(
   now: Date = new Date()
 ): PixExpiryWarning | null {
   if (!subscription) return null
-  if (subscription.source !== 'pix') return null
+  if (subscription.source !== 'pix' && subscription.source !== 'manual') return null
   if (subscription.status !== 'authorized') return null
   if (!subscription.next_payment_date) return null
 

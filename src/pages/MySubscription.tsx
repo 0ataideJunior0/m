@@ -59,7 +59,8 @@ export default function MySubscription() {
     setCancelling(false)
   }
 
-  const isPix = subscription?.source === 'pix'
+  // Pré-pago (Pix ou liberado pela admin): período fechado, sem cobrança recorrente.
+  const isPrepaid = subscription?.source === 'pix' || subscription?.source === 'manual'
 
   if (loading) {
     return (
@@ -80,7 +81,7 @@ export default function MySubscription() {
               <div className="mb-4">
                 <div className="text-sm text-text-muted">Status</div>
                 <div className="text-lg font-extrabold tracking-tight text-text-strong">
-                  {isPix ? 'Acesso via Pix' : STATUS_LABELS[subscription.status] || subscription.status}
+                  {isPrepaid ? (subscription.source === 'manual' ? 'Acesso liberado pela equipe' : 'Acesso via Pix') : STATUS_LABELS[subscription.status] || subscription.status}
                 </div>
               </div>
               {subscription.next_payment_date &&
@@ -88,17 +89,17 @@ export default function MySubscription() {
                   (subscription.status === 'cancelled' && new Date(subscription.next_payment_date) > new Date())) && (
                   <div className="mb-6">
                     <div className="text-sm text-text-muted">
-                      {isPix || subscription.status === 'cancelled' ? 'Acesso liberado até' : 'Próxima cobrança'}
+                      {isPrepaid || subscription.status === 'cancelled' ? 'Acesso liberado até' : 'Próxima cobrança'}
                     </div>
                     <div className="text-text">
                       {new Date(subscription.next_payment_date).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                 )}
-              {/* Pix não é recorrente: não há o que cancelar, e o botão de
+              {/* Pré-pago não é recorrente: não há o que cancelar, e o botão de
                   cancelamento falharia (não existe preapproval no Mercado Pago).
                   O que faz sentido oferecer é renovar. */}
-              {isPix ? (
+              {isPrepaid ? (
                 <Button onClick={() => navigate('/subscribe?renovar=1')}>Renovar acesso</Button>
               ) : (
                 subscription.status !== 'cancelled' && (

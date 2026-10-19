@@ -154,6 +154,39 @@ describe('POST /api/mercadopago-webhook', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('assinar no cartão não encurta um acesso liberado manualmente que vai além da data do cartão', async () => {
+    validateMock.mockImplementationOnce(() => undefined)
+    preApprovalGetMock.mockResolvedValueOnce({
+      id: 'preapproval-777',
+      external_reference: 'user-1',
+      status: 'authorized',
+      next_payment_date: '2026-08-18T00:00:00.000Z',
+    })
+    maybeSingleMock.mockResolvedValueOnce({
+      data: {
+        preapproval_id: null,
+        created_at: '2026-07-01T00:00:00.000Z',
+        source: 'manual',
+        next_payment_date: '2026-12-01T00:00:00.000Z',
+      },
+      error: null,
+    })
+
+    const req: any = {
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': 'preapproval-777', type: 'subscription_preapproval' },
+      body: {},
+    }
+    const res = createMockRes()
+    await handler(req, res)
+
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ preapproval_id: 'preapproval-777', next_payment_date: '2026-12-01T00:00:00.000Z' }),
+      { onConflict: 'user_id' }
+    )
+  })
+
   it('ignora notificação atrasada de uma preapproval já superada por uma assinatura mais nova', async () => {
     validateMock.mockImplementationOnce(() => undefined)
     preApprovalGetMock.mockResolvedValueOnce({
@@ -406,6 +439,30 @@ describe('POST /api/mercadopago-webhook — pagamentos Pix', () => {
     // 19/09 + 3 meses = 19/12, e não 19/11 (que seria descartar o mês restante)
     expect(upsertMock).toHaveBeenCalledWith(
       expect.objectContaining({ next_payment_date: '2026-12-19T12:00:00.000Z' }),
+      { onConflict: 'user_id' }
+    )
+  })
+
+  it('Pix pago em cima de um mês liberado manualmente soma ao que resta dele', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+    paymentGetMock.mockResolvedValueOnce({
+      id: 223,
+      status: 'approved',
+      transaction_amount: 49.9,
+      external_reference: 'user-1|pix|1',
+    })
+    maybeSingleMock.mockResolvedValueOnce({
+      data: { source: 'manual', status: 'authorized', next_payment_date: '2026-09-10T12:00:00.000Z' },
+      error: null,
+    })
+
+    const res = createMockRes()
+    await handler(pixReq('pay-223') as any, res)
+    vi.useRealTimers()
+
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'pix', next_payment_date: '2026-10-10T12:00:00.000Z' }),
       { onConflict: 'user_id' }
     )
   })
