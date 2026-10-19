@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import AdminUserWorkoutEdit from '../pages/admin/AdminUserWorkoutEdit'
 
@@ -41,11 +41,11 @@ describe('AdminUserWorkoutEdit', () => {
   it('carrega o treino pessoal existente e salva as alterações', async () => {
     renderPage()
 
-    await screen.findByText(/Editar treino pessoal.*Ana/)
+    expect(await screen.findByRole('heading', { name: 'Treino pessoal de Ana' })).toBeInTheDocument()
     const titleInput = await screen.findByDisplayValue('Treino da Ana')
     fireEvent.change(titleInput, { target: { value: 'Treino Atualizado' } })
 
-    fireEvent.click(screen.getByText('Salvar alterações'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
     await waitFor(() => {
       expect(saveUserWorkoutAdminMock).toHaveBeenCalledWith('u1', 'w1', {
@@ -56,11 +56,13 @@ describe('AdminUserWorkoutEdit', () => {
     })
   })
 
-  it('não mostra o campo de Grupo (bi-set) — treino pessoal não agrupa', async () => {
+  it('não mostra o campo de bi-set nem a barra de dias — treino pessoal não agrupa', async () => {
     renderPage()
 
     await screen.findByDisplayValue('Treino da Ana')
-    expect(screen.queryByPlaceholderText(/grupo/i)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Agachamento' }))
+    expect(screen.queryByLabelText(/bi-set/i)).toBeNull()
+    expect(screen.queryByRole('navigation', { name: /dias/i })).toBeNull()
   })
 
   it('redireciona pra /admin/users quando a usuária não existe', async () => {
@@ -74,19 +76,23 @@ describe('AdminUserWorkoutEdit', () => {
     getUserWorkoutMock.mockResolvedValueOnce(null as any)
     renderPage()
 
-    await screen.findByText(/Criar treino pessoal/)
-    expect(screen.getByText('Criar treino')).toBeInTheDocument()
+    expect(await screen.findByText(/ainda não tem treino pessoal/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Criar treino' })).toBeInTheDocument()
     expect(screen.queryByText(/remover treino pessoal/i)).toBeNull()
   })
 
-  it('remove o treino pessoal ao clicar em "Remover treino pessoal"', async () => {
+  it('remove o treino pessoal só depois de confirmar', async () => {
     renderPage()
 
     await screen.findByDisplayValue('Treino da Ana')
-    fireEvent.click(screen.getByText(/remover treino pessoal/i))
+    fireEvent.click(screen.getByRole('button', { name: /remover treino pessoal/i }))
+    expect(deleteUserWorkoutAdminMock).not.toHaveBeenCalled()
+
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remover' }))
 
     await waitFor(() => {
       expect(deleteUserWorkoutAdminMock).toHaveBeenCalledWith('w1')
     })
+    expect(await screen.findByRole('button', { name: 'Criar treino' })).toBeInTheDocument()
   })
 })

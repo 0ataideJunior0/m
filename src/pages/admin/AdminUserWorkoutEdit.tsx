@@ -1,27 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trash2, ArrowUp, ArrowDown, Plus } from 'lucide-react'
 import { getUserWorkout, saveUserWorkoutAdmin, deleteUserWorkoutAdmin } from '../../utils/adminWorkouts'
 import { getUserProfileSummary, UserProfileSummary } from '../../utils/adminUsers'
-import { Exercise } from '../../types'
-import { useToast } from '../../hooks/useToast'
-import Toast from '../../components/ui/Toast'
-
-const EMPTY_EXERCISE: Exercise = { exercise: '', reps: '', sets: '', note: '', type: 'normal', video: '' }
+import { Workout } from '../../types'
+import WorkoutEditor, { WorkoutPayload } from '../../components/admin/WorkoutEditor'
 
 export default function AdminUserWorkoutEdit() {
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
 
   const [profile, setProfile] = useState<UserProfileSummary | null>(null)
-  const [workoutId, setWorkoutId] = useState<string | null>(null)
+  const [workout, setWorkout] = useState<Workout | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [title, setTitle] = useState('')
-  const [videoUrl, setVideoUrl] = useState('')
-  const [exercises, setExercises] = useState<Exercise[]>([])
-  const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
   useEffect(() => {
     load()
@@ -37,19 +27,7 @@ export default function AdminUserWorkoutEdit() {
         return
       }
       setProfile(summary)
-
-      const workout = await getUserWorkout(userId)
-      if (workout) {
-        setWorkoutId(workout.id)
-        setTitle(workout.title)
-        setVideoUrl(workout.video_url || '')
-        setExercises(workout.exercises || [])
-      } else {
-        setWorkoutId(null)
-        setTitle('')
-        setVideoUrl('')
-        setExercises([])
-      }
+      setWorkout(await getUserWorkout(userId))
     } catch (error) {
       console.error('Error loading personal workout:', error)
     } finally {
@@ -57,57 +35,16 @@ export default function AdminUserWorkoutEdit() {
     }
   }
 
-  const updateExercise = (index: number, patch: Partial<Exercise>) => {
-    setExercises((prev) => prev.map((ex, i) => (i === index ? { ...ex, ...patch } : ex)))
-  }
-
-  const moveExercise = (index: number, direction: -1 | 1) => {
-    setExercises((prev) => {
-      const target = index + direction
-      if (target < 0 || target >= prev.length) return prev
-      const next = [...prev]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next
-    })
-  }
-
-  const removeExercise = (index: number) => {
-    setExercises((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const addExercise = () => {
-    setExercises((prev) => [...prev, { ...EMPTY_EXERCISE }])
-  }
-
-  const handleSave = async () => {
+  const handleSave = async (payload: WorkoutPayload) => {
     if (!userId) return
-    setSaving(true)
-    try {
-      const saved = await saveUserWorkoutAdmin(userId, workoutId, { title, video_url: videoUrl, exercises })
-      setWorkoutId(saved.id)
-      showToast('Treino salvo com sucesso!', 'success')
-    } catch (error: any) {
-      showToast(`Erro ao salvar treino. ${error?.message || ''}`)
-    } finally {
-      setSaving(false)
-    }
+    const saved = await saveUserWorkoutAdmin(userId, workout?.id ?? null, payload)
+    setWorkout({ ...saved, ...payload })
   }
 
   const handleDelete = async () => {
-    if (!workoutId) return
-    setDeleting(true)
-    try {
-      await deleteUserWorkoutAdmin(workoutId)
-      setWorkoutId(null)
-      setTitle('')
-      setVideoUrl('')
-      setExercises([])
-      showToast('Treino pessoal removido.', 'success')
-    } catch (error: any) {
-      showToast(`Erro ao remover treino. ${error?.message || ''}`)
-    } finally {
-      setDeleting(false)
-    }
+    if (!workout) return
+    await deleteUserWorkoutAdmin(workout.id)
+    setWorkout(null)
   }
 
   if (loading) {
@@ -118,145 +55,25 @@ export default function AdminUserWorkoutEdit() {
     )
   }
 
+  const name = profile?.username || profile?.email || 'aluna'
+
   return (
-    <div className="min-h-screen bg-bg">
-      <div className="max-w-4xl mx-auto px-4 py-8 pb-32">
-        <div className="flex items-center mb-8">
-          <button onClick={() => navigate('/admin/users')} className="mr-4 p-2 rounded-lg hover:bg-surface-hover transition">
-            <ArrowLeft className="w-6 h-6 text-text" />
-          </button>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">
-            {workoutId ? 'Editar' : 'Criar'} treino pessoal — {profile?.username || profile?.email}
-          </h1>
-        </div>
-
-        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1" htmlFor="workout-title">Título</label>
-            <input
-              id="workout-title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-muted mb-1" htmlFor="workout-video">Vídeo do dia (URL)</label>
-            <input
-              id="workout-video"
-              type="text"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              className="w-full border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-extrabold tracking-tight text-text-strong">Exercícios</h2>
-            <button
-              type="button"
-              onClick={addExercise}
-              className="inline-flex items-center px-4 py-2 rounded-lg border border-accent/40 text-accent-text hover:bg-accent/10"
-            >
-              <Plus className="w-4 h-4 mr-1" /> Adicionar exercício
-            </button>
-          </div>
-          <div className="space-y-4">
-            {exercises.map((ex, index) => (
-              <div key={index} className="border border-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-text-muted">Exercício {index + 1}</span>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => moveExercise(index, -1)} aria-label="Mover para cima" className="p-1 rounded hover:bg-surface-hover">
-                      <ArrowUp className="w-4 h-4 text-text-muted" />
-                    </button>
-                    <button type="button" onClick={() => moveExercise(index, 1)} aria-label="Mover para baixo" className="p-1 rounded hover:bg-surface-hover">
-                      <ArrowDown className="w-4 h-4 text-text-muted" />
-                    </button>
-                    <button type="button" onClick={() => removeExercise(index)} aria-label="Remover exercício" className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40">
-                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Nome do exercício"
-                    value={ex.exercise}
-                    onChange={(e) => updateExercise(index, { exercise: e.target.value })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Repetições"
-                    value={ex.reps}
-                    onChange={(e) => updateExercise(index, { reps: e.target.value })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Séries"
-                    value={ex.sets || ''}
-                    onChange={(e) => updateExercise(index, { sets: e.target.value })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Nota"
-                    value={ex.note || ''}
-                    onChange={(e) => updateExercise(index, { note: e.target.value })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Vídeo (URL)"
-                    value={ex.video || ''}
-                    onChange={(e) => updateExercise(index, { video: e.target.value })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  />
-                  <select
-                    value={ex.type || 'normal'}
-                    onChange={(e) => updateExercise(index, { type: e.target.value as Exercise['type'] })}
-                    className="border border-border bg-surface-sunken text-text rounded-xl px-3 py-2"
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="warmup">Aquecimento</option>
-                    <option value="drop_set">Drop-set</option>
-                    <option value="core">Core</option>
-                  </select>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {workoutId && (
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="mb-6 inline-flex items-center px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50"
-          >
-            <Trash2 className="w-4 h-4 mr-1" /> {deleting ? 'Removendo...' : 'Remover treino pessoal'}
-          </button>
-        )}
-
-        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
-          <div className="max-w-4xl mx-auto">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full brand-gradient py-4 px-6 rounded-full shadow-cta hover:shadow-cta-hover hover:opacity-90 disabled:opacity-50 transition font-medium text-lg"
-            >
-              {saving ? 'Salvando...' : workoutId ? 'Salvar alterações' : 'Criar treino'}
-            </button>
-          </div>
-        </div>
-      </div>
-      <Toast toast={toast} onDismiss={dismissToast} />
-    </div>
+    <WorkoutEditor
+      key={userId}
+      heading={`Treino pessoal de ${name}`}
+      subtitle={workout ? 'Só ela vê este treino, na tela inicial do app.' : 'Ela ainda não tem treino pessoal. Monte um abaixo.'}
+      backTo="/admin/users"
+      initial={{
+        title: workout?.title || '',
+        videoUrl: workout?.video_url || '',
+        exercises: workout?.exercises || [],
+      }}
+      isNew={!workout}
+      showGroup={false}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      deleteLabel="Remover treino pessoal"
+      deleteDescription={`${name} deixa de ver este treino no app. Isso não pode ser desfeito.`}
+    />
   )
 }
