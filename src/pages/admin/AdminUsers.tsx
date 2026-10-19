@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Dumbbell, CalendarPlus } from 'lucide-react'
-import { listNonAdminUsers, grantAccess, AdminUserSummary, UserAccess } from '../../utils/adminUsers'
+import { ArrowLeft, Dumbbell, CalendarPlus, Search } from 'lucide-react'
+import { listNonAdminUsers, grantAccess, AdminUserSummary } from '../../utils/adminUsers'
+import { classifyAccess, filterUsers, countByFilter, AccessKind, UserFilter } from '../../utils/adminUsersView'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import ChoiceGroup from '../../components/ui/ChoiceGroup'
@@ -9,6 +10,7 @@ import FormField from '../../components/ui/FormField'
 import Input from '../../components/ui/Input'
 import Toast from '../../components/ui/Toast'
 import { useToast } from '../../hooks/useToast'
+import { cn } from '../../lib/utils'
 
 const MONTH_OPTIONS = [
   { value: '1', label: '1 mês' },
@@ -17,35 +19,52 @@ const MONTH_OPTIONS = [
   { value: '12', label: '12 meses' },
 ]
 
+const FILTERS: { value: UserFilter; label: string }[] = [
+  { value: 'all', label: 'Todas' },
+  { value: 'active', label: 'Ativas' },
+  { value: 'expiring', label: 'Vencendo' },
+  { value: 'expired', label: 'Vencidas' },
+  { value: 'none', label: 'Sem acesso' },
+]
+
 const SOURCE_LABELS: Record<string, string> = {
-  preapproval: 'cartão',
-  pix: 'Pix',
-  manual: 'liberado',
+  pix: 'via Pix',
+  manual: 'liberado pela equipe',
+}
+
+const STATUS_CLASSES: Record<AccessKind, string> = {
+  active: 'bg-success/10 text-success',
+  expiring: 'bg-accent/15 text-accent-text',
+  expired: 'bg-red-500/10 text-red-700 dark:text-red-400',
+  none: 'bg-surface-hover text-text-muted',
 }
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
+const formatMonthYear = (iso: string) =>
+  new Date(iso).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '')
 
-const hasActiveCard = (access: UserAccess) => access.active && access.source === 'preapproval'
+const displayName = (u: AdminUserSummary) => u.username || u.email.split('@')[0]
 
-function AccessBadge({ access }: { access: UserAccess }) {
-  if (access.active) {
-    return (
-      <span className="inline-flex flex-col">
-        <span className="text-sm font-bold text-success">{access.until ? `Ativo até ${formatDate(access.until)}` : 'Ativo'}</span>
-        {access.source && <span className="text-xs text-text-muted">{SOURCE_LABELS[access.source] ?? access.source}</span>}
-      </span>
-    )
-  }
-  if (access.until) {
-    return <span className="text-sm text-text-muted">Vencido em {formatDate(access.until)}</span>
-  }
-  return <span className="text-sm text-text-muted">Sem acesso</span>
+const initials = (u: AdminUserSummary) => {
+  const parts = displayName(u).split(/\s+/).filter(Boolean)
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?'
+}
+
+function StatusPill({ user }: { user: AdminUserSummary }) {
+  const { kind, label } = classifyAccess(user.access)
+  return (
+    <span className={cn('inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap', STATUS_CLASSES[kind])}>
+      {label}
+    </span>
+  )
 }
 
 export default function AdminUsers() {
   const navigate = useNavigate()
   const [users, setUsers] = useState<AdminUserSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<UserFilter>('all')
+  const [query, setQuery] = useState('')
   const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
   const [selected, setSelected] = useState<AdminUserSummary | null>(null)
@@ -59,14 +78,17 @@ export default function AdminUsers() {
 
   const load = async () => {
     try {
-      const data = await listNonAdminUsers()
-      setUsers(data)
+      setUsers(await listNonAdminUsers())
     } catch (error) {
       console.error('Error loading users:', error)
+      showToast('Não foi possível carregar as alunas.')
     } finally {
       setLoading(false)
     }
   }
+
+  const counts = useMemo(() => countByFilter(users), [users])
+  const visible = useMemo(() => filterUsers(users, filter, query), [users, filter, query])
 
   const openGrant = (user: AdminUserSummary) => {
     setSelected(user)
@@ -83,7 +105,7 @@ export default function AdminUsers() {
         showToast(error || 'Não foi possível liberar o acesso')
         return
       }
-      showToast(`Acesso de ${selected.username || selected.email} liberado até ${formatDate(accessUntil)}.`, 'success')
+      showToast(`Acesso de ${displayName(selected)} liberado até ${formatDate(accessUntil)}.`, 'success')
       setSelected(null)
       await load()
     } finally {
@@ -102,68 +124,124 @@ export default function AdminUsers() {
   const selectedAccess = selected?.access
   const stacksOnCurrent =
     !!selectedAccess?.active && !!selectedAccess.until && new Date(selectedAccess.until) > new Date()
-  const blockedByCard = !!selectedAccess && hasActiveCard(selectedAccess)
+  const blockedByCard = !!selectedAccess?.active && selectedAccess.source === 'preapproval'
 
   return (
     <div className="min-h-screen bg-bg">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
-          <button onClick={() => navigate('/admin')} className="mr-4 p-2 rounded-lg hover:bg-surface-hover transition">
+      <div className="max-w-3xl mx-auto px-4 py-6 pb-16">
+        <header className="flex items-center gap-2 mb-5">
+          <button
+            onClick={() => navigate('/admin')}
+            aria-label="Voltar ao painel"
+            className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-surface-hover transition"
+          >
             <ArrowLeft className="w-6 h-6 text-text" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">Usuárias</h1>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">Usuárias</h1>
+            <p className="text-sm text-text-muted">
+              {counts.all} {counts.all === 1 ? 'cadastrada' : 'cadastradas'} · {counts.active} com acesso
+            </p>
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-3 mb-5">
+          <label htmlFor="user-search" className="sr-only">
+            Buscar aluna
+          </label>
+          <Input
+            id="user-search"
+            type="search"
+            icon={<Search className="w-5 h-5" />}
+            placeholder="Buscar por nome ou e-mail"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
+          <div role="group" aria-label="Filtrar por situação" className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
+            {FILTERS.map((f) => {
+              const active = filter === f.value
+              return (
+                <button
+                  key={f.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setFilter(f.value)}
+                  className={cn(
+                    'shrink-0 min-h-11 px-4 rounded-full text-sm font-bold whitespace-nowrap transition focus:outline-none focus:ring-2 focus:ring-focus-ring',
+                    active ? 'brand-gradient shadow-md' : 'bg-surface border border-border text-text hover:bg-surface-hover'
+                  )}
+                >
+                  {f.label} <span className={active ? 'opacity-80' : 'text-text-muted'}>{counts[f.value]}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="bg-surface border border-border-card rounded-3xl shadow-lg overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">Email</th>
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">Username</th>
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">Cadastro</th>
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">Progresso</th>
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">Acesso</th>
-                <th className="px-4 py-3 text-sm font-medium text-text-muted">
-                  <span className="sr-only">Ações</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 text-text">{u.email}</td>
-                  <td className="px-4 py-3 text-text-muted">{u.username || '—'}</td>
-                  <td className="px-4 py-3 text-text-muted">{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-text-muted">{u.completedDays}/30</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <AccessBadge access={u.access} />
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <div className="inline-flex items-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() => openGrant(u)}
-                        aria-label={`Liberar acesso para ${u.email}`}
-                        className="inline-flex items-center gap-1 text-accent-text hover:opacity-80 text-sm font-medium"
-                      >
-                        <CalendarPlus className="w-4 h-4" /> Liberar acesso
-                      </button>
-                      <Link
-                        to={`/admin/users/${u.id}/workout`}
-                        className="inline-flex items-center gap-1 text-accent-text hover:opacity-80 text-sm font-medium"
-                      >
-                        <Dumbbell className="w-4 h-4" /> Treino pessoal
-                      </Link>
+        {users.length === 0 ? (
+          <p className="text-text-muted text-center mt-12">Nenhuma aluna cadastrada ainda.</p>
+        ) : visible.length === 0 ? (
+          <div className="text-center mt-12">
+            <p className="text-text-muted mb-3">Nenhuma aluna encontrada.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('')
+                setFilter('all')
+              }}
+              className="text-sm font-bold text-accent-text hover:opacity-80 underline"
+            >
+              Limpar busca e filtros
+            </button>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {visible.map((u) => {
+              const source = u.access.source ? SOURCE_LABELS[u.access.source] : undefined
+              return (
+                <li key={u.id} className="bg-surface border border-border-card rounded-3xl shadow-sm p-4">
+                  <div className="flex items-start gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="w-11 h-11 shrink-0 rounded-full bg-accent/15 text-accent-text flex items-center justify-center text-sm font-extrabold"
+                    >
+                      {initials(u)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-extrabold text-text-strong truncate">{displayName(u)}</span>
+                        <StatusPill user={u} />
+                      </div>
+                      <div className="text-sm text-text-muted truncate">{u.email}</div>
+                      <div className="text-xs text-text-muted mt-1">
+                        Desde {formatMonthYear(u.created_at)} · {u.completedDays}{' '}
+                        {u.completedDays === 1 ? 'treino' : 'treinos'}
+                        {source && ` · ${source}`}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
 
-        {users.length === 0 && (
-          <p className="text-text-muted text-center mt-8">Nenhuma usuária cadastrada ainda.</p>
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openGrant(u)}
+                      aria-label={`Liberar acesso para ${displayName(u)}`}
+                    >
+                      <CalendarPlus className="w-4 h-4 mr-1.5" /> Liberar acesso
+                    </Button>
+                    <Link
+                      to={`/admin/users/${u.id}/workout`}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full border border-border bg-surface text-sm font-medium text-text hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                    >
+                      <Dumbbell className="w-4 h-4 mr-1.5" /> Treino pessoal
+                    </Link>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
 
@@ -180,13 +258,19 @@ export default function AdminUsers() {
       >
         {selected && selectedAccess && (
           <div className="p-5 space-y-4">
-            <div>
-              <div className="font-bold text-text-strong break-all">{selected.username || selected.email}</div>
-              {selected.username && <div className="text-sm text-text-muted break-all">{selected.email}</div>}
-              <div className="mt-2">
-                <AccessBadge access={selectedAccess} />
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="w-11 h-11 shrink-0 rounded-full bg-accent/15 text-accent-text flex items-center justify-center text-sm font-extrabold"
+              >
+                {initials(selected)}
+              </span>
+              <div className="min-w-0">
+                <div className="font-extrabold text-text-strong truncate">{displayName(selected)}</div>
+                <div className="text-sm text-text-muted truncate">{selected.email}</div>
               </div>
             </div>
+            <StatusPill user={selected} />
 
             {blockedByCard ? (
               <p role="alert" className="text-sm text-red-700 dark:text-red-400">
