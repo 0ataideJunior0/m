@@ -105,7 +105,8 @@ export const grantAccess = async (
     if (!response.ok) return { accessUntil: null, error: body?.error || 'Erro ao liberar acesso' }
     return { accessUntil: body.accessUntil, error: null }
   } catch {
-    return { accessUntil: null, error: 'Erro ao liberar acesso' }
+    // Rede caiu, ou a rota /api não existe (ex.: `npm run dev` só sobe o Vite, sem as funções).
+    return { accessUntil: null, error: 'Não foi possível falar com o servidor. Tente de novo.' }
   }
 }
 

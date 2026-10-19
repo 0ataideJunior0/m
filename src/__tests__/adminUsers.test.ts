@@ -179,6 +179,14 @@ describe('grantAccess', () => {
     expect(result).toEqual({ accessUntil: null, error: 'Esta aluna tem assinatura ativa no cartão.' })
   })
 
+  it('quando a API não responde (ou responde algo que não é JSON), diz que não falou com o servidor', async () => {
+    fetchMock.mockResolvedValue({ ok: false, json: async () => { throw new SyntaxError('Unexpected token <') } })
+
+    const result = await grantAccess('u1', 1)
+
+    expect(result).toEqual({ accessUntil: null, error: 'Não foi possível falar com o servidor. Tente de novo.' })
+  })
+
   it('sem sessão, não chama a API', async () => {
     getSessionMock.mockResolvedValue({ data: { session: null } })
 
