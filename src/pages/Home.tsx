@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { getPrograms, getMyWeek, getMyPlan } from '../utils/workouts'
 import { WEEKDAY_NAMES, todayWeekday } from '../utils/weekdays'
-import { Trophy, Flame, Dumbbell } from 'lucide-react'
+import { Trophy, Flame, Dumbbell, ChefHat } from 'lucide-react'
 import { Program, Workout } from '../types'
 import PixExpiryBanner from '../components/PixExpiryBanner'
 import AmbientGlow from '../components/ui/AmbientGlow'
@@ -164,6 +164,28 @@ export default function Home() {
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Treino</div>
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">HIIT</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Receitas fitness */}
+        <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
+          <div className="flex items-center mb-2">
+            <ChefHat className="w-5 h-5 text-accent mr-2" />
+            <div className="text-xl font-extrabold tracking-tight text-text-strong">Receitas fitness</div>
+          </div>
+          <p className="text-text-muted mb-4">Receitas práticas com macros e vídeo do preparo.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              onClick={() => navigate('/receitas')}
+              aria-label="Ver receitas"
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] brand-gradient"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Receitas</div>
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Fitness</div>
               </div>
             </button>
           </div>

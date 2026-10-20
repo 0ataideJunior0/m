@@ -152,3 +152,31 @@ describe('Home treino personalizado', () => {
     expect(await screen.findByText('Avançado')).toBeInTheDocument()
   })
 })
+
+describe('Home card de receitas', () => {
+  it('o card de receitas fica depois do HIIT e antes dos planos alimentares', async () => {
+    useAuthStore.setState({
+      user: {
+        id: 'u1',
+        email: 'maria@example.com',
+        username: 'Maria',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    )
+
+    const hiit = await screen.findByRole('button', { name: 'Ver Treino HIIT' })
+    const receitas = screen.getByRole('button', { name: 'Ver receitas' })
+    const planos = screen.getByText('Planos Alimentares')
+
+    expect(hiit.compareDocumentPosition(receitas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(receitas.compareDocumentPosition(planos) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+})
