@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Dumbbell, Users, MessageSquareX } from 'lucide-react'
+import { ArrowLeft, ChefHat, Dumbbell, Users, MessageSquareX } from 'lucide-react'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -22,6 +22,15 @@ export default function AdminDashboard() {
             <Dumbbell className="w-8 h-8 text-accent mb-3" />
             <div className="text-lg font-bold text-text-strong mb-1">Treinos</div>
             <div className="text-sm text-text-muted">Editar título, vídeo e exercícios de cada dia</div>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/recipes')}
+            className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 text-left hover:shadow-xl transition"
+          >
+            <ChefHat className="w-8 h-8 text-accent mb-3" />
+            <div className="text-lg font-bold text-text-strong mb-1">Receitas</div>
+            <div className="text-sm text-text-muted">Cadastrar receitas, fotos e vídeos de preparo</div>
           </button>
 
           <button

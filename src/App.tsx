@@ -35,6 +35,8 @@ const AdminWorkoutList = lazy(() => import('./pages/admin/AdminWorkoutList'))
 const AdminWorkoutEdit = lazy(() => import('./pages/admin/AdminWorkoutEdit'))
 const AdminUserWorkoutEdit = lazy(() => import('./pages/admin/AdminUserWorkoutEdit'))
 const AdminUserWeek = lazy(() => import('./pages/admin/AdminUserWeek'))
+const AdminRecipes = lazy(() => import('./pages/admin/AdminRecipes'))
+const AdminRecipeEdit = lazy(() => import('./pages/admin/AdminRecipeEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminCancellations = lazy(() => import('./pages/admin/AdminCancellations'))
 
@@ -151,6 +153,9 @@ function App() {
             <Route path="/admin/users" element={<RequireOnboarding><RequireAdmin><AdminUsers /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/users/:userId/workout" element={<RequireOnboarding><RequireAdmin><AdminUserWeek /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/users/:userId/workout/day/:weekday" element={<RequireOnboarding><RequireAdmin><AdminUserWorkoutEdit /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/recipes" element={<RequireOnboarding><RequireAdmin><AdminRecipes /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/recipes/nova" element={<RequireOnboarding><RequireAdmin><AdminRecipeEdit /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/recipes/:id" element={<RequireOnboarding><RequireAdmin><AdminRecipeEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/cancellations" element={<RequireOnboarding><RequireAdmin><AdminCancellations /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
