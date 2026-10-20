@@ -89,3 +89,23 @@ export interface Subscription {
   created_at: string
   updated_at: string
 }
+
+export interface Recipe {
+  id: string
+  title: string
+  /** Macros da receita inteira (não por porção). Todos opcionais. */
+  calories: number | null
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+  /** Um item por linha. */
+  ingredients: string
+  steps: string
+  /** Caminho no bucket `recipe-images`. */
+  image_path: string | null
+  video_url: string | null
+  sort_order: number
+  published: boolean
+  created_at: string
+  updated_at: string
+}
