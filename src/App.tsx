@@ -25,6 +25,7 @@ const Subscribe = lazy(() => import('./pages/Subscribe'))
 const MySubscription = lazy(() => import('./pages/MySubscription'))
 const MealPlan = lazy(() => import('./pages/MealPlan'))
 const Recipes = lazy(() => import('./pages/Recipes'))
+const RecipeDetail = lazy(() => import('./pages/RecipeDetail'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetConfirm = lazy(() => import('./pages/ResetConfirm'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
@@ -140,6 +141,7 @@ function App() {
             <Route path="/meu-treino" element={<RequireSubscription><RequireOnboarding><MyWorkout /></RequireOnboarding></RequireSubscription>} />
             <Route path="/meu-treino/dia/:weekday" element={<RequireSubscription><RequireOnboarding><WorkoutDay personal /></RequireOnboarding></RequireSubscription>} />
             <Route path="/receitas" element={<RequireSubscription><RequireOnboarding><Recipes /></RequireOnboarding></RequireSubscription>} />
+            <Route path="/receitas/:id" element={<RequireSubscription><RequireOnboarding><RecipeDetail /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-ganho" element={<RequireSubscription><RequireOnboarding><MealPlan type="mass_gain" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/planos-perda" element={<RequireSubscription><RequireOnboarding><MealPlan type="fat_loss" /></RequireOnboarding></RequireSubscription>} />
             <Route path="/admin" element={<RequireOnboarding><RequireAdmin><AdminDashboard /></RequireAdmin></RequireOnboarding>} />
