@@ -63,7 +63,7 @@ beforeEach(() => {
   fromMock.mockReset()
   storageFromMock.mockClear()
   uploadMock.mockReset().mockResolvedValue({ error: null })
-  removeMock.mockReset().mockResolvedValue({ error: null })
+  removeMock.mockReset().mockResolvedValue({ data: [{ name: 'x' }], error: null })
 })
 
 describe('listRecipesAdmin', () => {
@@ -192,5 +192,11 @@ describe('removeRecipeImage', () => {
     await removeRecipeImage('recipes/a.webp')
 
     expect(removeMock).toHaveBeenCalledWith(['recipes/a.webp'])
+  })
+
+  it('o storage responde sem erro mas não apagou nada (falta de permissão): lança, não finge que deu certo', async () => {
+    removeMock.mockResolvedValueOnce({ data: [], error: null })
+
+    await expect(removeRecipeImage('recipes/a.webp')).rejects.toThrow(/não foi removida/i)
   })
 })

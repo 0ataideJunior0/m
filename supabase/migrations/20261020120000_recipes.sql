@@ -59,6 +59,12 @@ CREATE POLICY "Admins can update recipe images" ON storage.objects
   USING (bucket_id = 'recipe-images' AND public.is_admin())
   WITH CHECK (bucket_id = 'recipe-images' AND public.is_admin());
 
+-- O storage só apaga (remove) o que o SELECT enxerga: sem esta policy, o delete
+-- responde "ok" sem apagar nada. A leitura pública pela URL não passa por aqui.
+CREATE POLICY "Admins can read recipe images" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'recipe-images' AND public.is_admin());
+
 CREATE POLICY "Admins can delete recipe images" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'recipe-images' AND public.is_admin());

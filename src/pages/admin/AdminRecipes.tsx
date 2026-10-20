@@ -38,6 +38,8 @@ export default function AdminRecipes() {
       setRecipes(next.sort((x, y) => x.sort_order - y.sort_order))
     } catch {
       showToast('Erro ao reordenar. Tente de novo.')
+      // A troca pode ter ficado pela metade no banco: mostra o que realmente está lá.
+      listRecipesAdmin().then(setRecipes).catch(() => {})
     } finally {
       setMoving(false)
     }

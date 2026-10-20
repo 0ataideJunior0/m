@@ -142,7 +142,8 @@ export default function AdminRecipeEdit() {
   }
 
   const handleSave = useCallback(async () => {
-    if (saving) return
+    // Com a foto ainda subindo, o formulário não tem o caminho final dela (o botão já fica desabilitado; o Ctrl+S também precisa esperar).
+    if (saving || uploading) return
     const found: typeof errors = {}
     if (!form.title.trim()) found.title = 'Dê um título à receita.'
     const macros = {
@@ -193,7 +194,7 @@ export default function AdminRecipeEdit() {
       setSaving(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saving, form, recipe, isNew])
+  }, [saving, uploading, form, recipe, isNew])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

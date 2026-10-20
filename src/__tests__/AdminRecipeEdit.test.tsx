@@ -191,6 +191,25 @@ describe('AdminRecipeEdit — receita nova', () => {
   })
 })
 
+describe('AdminRecipeEdit — Ctrl+S durante o envio da foto', () => {
+  it('não salva enquanto a foto ainda está subindo (senão a receita pode apontar pra uma foto descartada)', async () => {
+    let finishUpload: (path: string) => void = () => {}
+    uploadRecipeImageMock.mockReturnValueOnce(new Promise<string>((resolve) => (finishUpload = resolve)))
+    renderExisting()
+
+    fireEvent.change(await screen.findByLabelText('Trocar foto'), { target: { files: [photo()] } })
+    await waitFor(() => expect(uploadRecipeImageMock).toHaveBeenCalled())
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+
+    expect(updateRecipeAdminMock).not.toHaveBeenCalled()
+
+    finishUpload('recipes/new.webp')
+    await screen.findByRole('img', { name: 'Prévia da foto' })
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    await waitFor(() => expect(updateRecipeAdminMock).toHaveBeenCalledWith('r1', expect.objectContaining({ image_path: 'recipes/new.webp' })))
+  })
+})
+
 describe('AdminRecipeEdit — receita existente', () => {
   it('carrega os dados, com a foto atual', async () => {
     renderExisting()

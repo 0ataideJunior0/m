@@ -91,6 +91,17 @@ describe('AdminRecipes', () => {
     })
   })
 
+  it('se trocar a ordem falhar, avisa e recarrega a lista do banco', async () => {
+    swapRecipeOrderAdminMock.mockRejectedValueOnce(new Error('rede'))
+    renderPage()
+    await screen.findByText('Panqueca')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mover Panqueca para baixo' }))
+
+    expect(await screen.findByText('Erro ao reordenar. Tente de novo.')).toBeInTheDocument()
+    await waitFor(() => expect(listRecipesAdminMock).toHaveBeenCalledTimes(2))
+  })
+
   it('as setas das pontas ficam desabilitadas', async () => {
     renderPage()
     await screen.findByText('Panqueca')

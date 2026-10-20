@@ -83,8 +83,10 @@ export const uploadRecipeImage = async (file: Blob): Promise<string> => {
   return path
 }
 
+/** O storage responde "ok" com lista vazia quando a policy não deixa apagar — isso também é falha. */
 export const removeRecipeImage = async (path: string): Promise<void> => {
-  const { error } = await supabase.storage.from(BUCKET).remove([path])
+  const { data, error } = await supabase.storage.from(BUCKET).remove([path])
 
   if (error) throw error
+  if (!data?.length) throw new Error('A foto não foi removida do armazenamento.')
 }
