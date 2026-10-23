@@ -169,11 +169,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Receitas fitness */}
+        {/* Receitas da Musa */}
         <div className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 mb-6">
           <div className="flex items-center mb-2">
             <ChefHat className="w-5 h-5 text-accent mr-2" />
-            <div className="text-xl font-extrabold tracking-tight text-text-strong">Receitas fitness</div>
+            <div className="text-xl font-extrabold tracking-tight text-text-strong">Receitas da Musa</div>
           </div>
           <p className="text-text-muted mb-4">Receitas práticas com macros e vídeo do preparo.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,7 +186,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Receitas</div>
-                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Fitness</div>
+                <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">da Musa</div>
               </div>
             </button>
           </div>

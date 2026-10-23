@@ -30,7 +30,7 @@ export default function Recipes() {
   return (
     <div className="min-h-screen bg-bg">
       <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
-        <PageHeader title="Receitas fitness" onBack={() => navigate('/home')} />
+        <PageHeader title="Receitas da Musa" onBack={() => navigate('/home')} />
 
         {recipes.length === 0 ? (
           <p className="text-text-muted text-center mt-12">Nenhuma receita por aqui ainda.</p>
