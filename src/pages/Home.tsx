@@ -180,9 +180,10 @@ export default function Home() {
             <button
               onClick={() => navigate('/receitas')}
               aria-label="Ver receitas"
-              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] brand-gradient"
+              style={{ backgroundImage: 'url(/programs/receitas.webp)' }}
+              className="relative aspect-[16/10] rounded-2xl shadow-md overflow-hidden text-left hover:shadow-lg transition transform hover:scale-[1.01] bg-cover bg-center bg-[#1A1423]"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Receitas</div>
                 <div className="text-white font-extrabold uppercase leading-tight text-2xl md:text-3xl">Fitness</div>
