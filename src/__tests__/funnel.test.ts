@@ -73,28 +73,85 @@ describe('computeFunnel', () => {
     expect(counts(steps)).toMatchObject({ checkout: 1, paid: 1 })
   })
 
-  it('conta link aberto, senha criada, onboarding e primeiro treino só de quem pagou', () => {
+  it('conta link aberto, senha criada, onboarding e primeiro treino só de quem é conta nova, em cascata', () => {
+    const sent = { access_email_sent_at: '2026-10-10T12:06:00.000Z' }
     const intents = [
       intent({
         email: 'a@x.com',
         status: 'paid',
         user_id: 'ua',
+        ...sent,
         link_opened_at: '2026-10-10T13:00:00.000Z',
         password_set_at: '2026-10-10T13:05:00.000Z',
       }),
-      intent({ email: 'b@x.com', status: 'paid', user_id: 'ub', link_opened_at: '2026-10-10T13:00:00.000Z' }),
-      intent({ email: 'c@x.com', status: 'paid', user_id: 'uc' }),
+      intent({ email: 'b@x.com', status: 'paid', user_id: 'ub', ...sent, link_opened_at: '2026-10-10T13:00:00.000Z' }),
+      intent({ email: 'c@x.com', status: 'paid', user_id: 'uc', ...sent }),
       // não pagou: mesmo com user_id nos conjuntos, não entra
       intent({ email: 'd@x.com', status: 'pending', user_id: 'ud' }),
     ]
-    const { steps } = computeFunnel(intents, new Set(['ua', 'ub', 'ud']), new Set(['ua', 'ud']), SINCE)
+    const { steps, returning } = computeFunnel(intents, new Set(['ua', 'ub', 'ud']), new Set(['ua', 'ub', 'ud']), SINCE)
     expect(counts(steps)).toEqual({
       checkout: 4,
       paid: 3,
       link_opened: 2,
       password_set: 1,
-      onboarding: 2,
+      onboarding: 1,
       first_workout: 1,
+    })
+    expect(returning).toBe(0)
+  })
+
+  it('quem já tinha conta (sem e-mail de acesso) entra em "returning" e não conta nas etapas de conta nova', () => {
+    const { steps, returning, paidWithoutPassword } = computeFunnel(
+      [intent({ email: 'renova@x.com', status: 'paid', user_id: 'ur', paid_at: '2026-10-12T10:00:00.000Z' })],
+      new Set(['ur']),
+      new Set(['ur']),
+      SINCE,
+    )
+    expect(counts(steps)).toEqual({
+      checkout: 1,
+      paid: 1,
+      link_opened: 0,
+      password_set: 0,
+      onboarding: 0,
+      first_workout: 0,
+    })
+    expect(returning).toBe(1)
+    expect(paidWithoutPassword).toEqual([])
+  })
+
+  it('uma pessoa é conta nova se qualquer intent pago dela teve e-mail de acesso', () => {
+    const { steps, returning } = computeFunnel(
+      [
+        intent({ email: 'a@x.com', status: 'paid', user_id: 'ua' }),
+        intent({ email: 'a@x.com', status: 'paid', user_id: 'ua', access_email_sent_at: '2026-10-11T10:00:00.000Z' }),
+      ],
+      new Set(),
+      new Set(),
+      SINCE,
+    )
+    expect(returning).toBe(0)
+    expect(counts(steps).paid).toBe(1)
+  })
+
+  it('as etapas são aninhadas: senha sem link aberto não conta, onboarding sem senha não conta', () => {
+    const sent = { access_email_sent_at: '2026-10-10T12:06:00.000Z' }
+    const { steps } = computeFunnel(
+      [
+        intent({ email: 'a@x.com', status: 'paid', user_id: 'ua', ...sent, password_set_at: '2026-10-10T13:05:00.000Z' }),
+        intent({ email: 'b@x.com', status: 'paid', user_id: 'ub', ...sent, link_opened_at: '2026-10-10T13:00:00.000Z' }),
+      ],
+      new Set(['ua', 'ub']),
+      new Set(['ua', 'ub']),
+      SINCE,
+    )
+    expect(counts(steps)).toEqual({
+      checkout: 2,
+      paid: 2,
+      link_opened: 1,
+      password_set: 0,
+      onboarding: 0,
+      first_workout: 0,
     })
   })
 
@@ -110,29 +167,34 @@ describe('computeFunnel', () => {
   })
 
   it('lista quem pagou e não criou a senha, uma linha por pessoa, mais recente primeiro', () => {
-    const older = intent({ email: 'velha@x.com', status: 'paid', paid_at: '2026-10-05T10:00:00.000Z' })
-    const newer = intent({ email: 'nova@x.com', status: 'paid', paid_at: '2026-10-12T10:00:00.000Z' })
-    const duplicate = intent({ email: 'nova@x.com', status: 'paid', paid_at: '2026-10-13T10:00:00.000Z' })
+    const sent = { access_email_sent_at: '2026-10-01T10:00:00.000Z' }
+    const older = intent({ email: 'velha@x.com', status: 'paid', paid_at: '2026-10-05T10:00:00.000Z', ...sent })
+    const newer = intent({ email: 'nova@x.com', status: 'paid', paid_at: '2026-10-12T10:00:00.000Z', ...sent })
+    const duplicate = intent({ email: 'nova@x.com', status: 'paid', paid_at: '2026-10-13T10:00:00.000Z', ...sent })
     const done = intent({
       email: 'ok@x.com',
       status: 'paid',
+      ...sent,
       paid_at: '2026-10-06T10:00:00.000Z',
       password_set_at: '2026-10-06T11:00:00.000Z',
     })
     // criou a senha em outro intent da mesma pessoa: também não entra
     const doneElsewhere = [
-      intent({ email: 'dois@x.com', status: 'paid', paid_at: '2026-10-07T10:00:00.000Z' }),
+      intent({ email: 'dois@x.com', status: 'paid', paid_at: '2026-10-07T10:00:00.000Z', ...sent }),
       intent({
         email: 'dois@x.com',
         status: 'paid',
+        ...sent,
         paid_at: '2026-10-08T10:00:00.000Z',
         password_set_at: '2026-10-08T11:00:00.000Z',
       }),
     ]
     const pending = intent({ email: 'pendente@x.com', status: 'pending' })
+    // renovação / conta que já existia: nunca recebeu link, não entra na lista
+    const renewal = intent({ email: 'renova@x.com', status: 'paid', user_id: 'ur', paid_at: '2026-10-14T10:00:00.000Z' })
 
     const { paidWithoutPassword } = computeFunnel(
-      [older, newer, duplicate, done, ...doneElsewhere, pending],
+      [older, newer, duplicate, done, ...doneElsewhere, pending, renewal],
       new Set(),
       new Set(),
       SINCE,

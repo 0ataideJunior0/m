@@ -148,6 +148,9 @@ export default function AdminFunnel() {
                         <span>{step.percent}</span>
                       </span>
                     </div>
+                    {step.key === 'paid' && funnel.returning > 0 && (
+                      <p className="text-xs text-text-muted mb-1.5">Já tinham conta: {funnel.returning}</p>
+                    )}
                     <div className="h-3 rounded-full bg-surface-hover overflow-hidden" aria-hidden="true">
                       <div className="h-full rounded-full bg-accent" style={{ width: `${step.width}%` }} />
                     </div>

@@ -34,7 +34,7 @@ const intent = (over: Partial<PurchaseIntent> = {}): PurchaseIntent => ({
   user_id: 'u1',
   created_at: '2026-10-20T12:00:00.000Z',
   paid_at: '2026-10-20T12:05:00.000Z',
-  access_email_sent_at: null,
+  access_email_sent_at: '2026-10-20T12:06:00.000Z',
   link_opened_at: null,
   password_set_at: null,
   ...over,
@@ -99,6 +99,21 @@ describe('AdminFunnel', () => {
     // onboarding vem depois de 0 pessoas na etapa anterior
     const onboarding = screen.getByText('Fez o onboarding').closest('li') as HTMLElement
     expect(within(onboarding).getByText('—')).not.toBeNull()
+  })
+
+  it('mostra quantas pessoas que pagaram já tinham conta, sem listá-las para reenvio', async () => {
+    loadFunnelDataMock.mockResolvedValue(
+      data([
+        intent(),
+        intent({ id: 'i2', email: 'renova@x.com', user_id: 'u2', access_email_sent_at: null }),
+      ]),
+    )
+    renderScreen()
+    const paid = (await screen.findByText('Pagou')).closest('li') as HTMLElement
+    expect(within(paid).getByText('Já tinham conta: 1')).not.toBeNull()
+    expect(screen.getByText('ana@example.com')).not.toBeNull()
+    expect(screen.queryByText('renova@x.com')).toBeNull()
+    expect(screen.getAllByRole('button', { name: /Reenviar acesso/ })).toHaveLength(1)
   })
 
   it('troca o período e chama loadFunnelData com a data nova', async () => {

@@ -32,6 +32,8 @@ export interface FunnelResult {
   steps: FunnelStep[]
   bySource: FunnelSourceRow[]
   paidWithoutPassword: PurchaseIntent[]
+  /** Pessoas que pagaram mas já tinham conta (nunca recebem o e-mail de acesso). */
+  returning: number
 }
 
 export interface FunnelData {
@@ -48,8 +50,11 @@ const byTime = (a: string | null, b: string | null) => new Date(a ?? 0).getTime(
 
 /**
  * Conta pessoas (e-mails distintos), não tentativas: quem abriu 3 checkouts
- * conta 1 vez. Onboarding e primeiro treino só valem para quem pagou e já tem
- * conta (user_id).
+ * conta 1 vez. Quem já tinha conta (renovação, conta antiga) paga sem receber o
+ * e-mail de acesso: vai para `returning`. "Conta nova" = algum intent pago da
+ * pessoa com access_email_sent_at. As etapas depois de "Pagou" só contam conta
+ * nova e são aninhadas (link, senha, onboarding, treino), então nenhuma passa
+ * da anterior.
  */
 export function computeFunnel(
   intents: PurchaseIntent[],
@@ -76,19 +81,27 @@ export function computeFunnel(
   }
   const sources = new Map<string, FunnelSourceRow>()
   const paidWithoutPassword: PurchaseIntent[] = []
+  let returning = 0
 
   for (const list of people.values()) {
     const paidIntents = list.filter((i) => i.status === 'paid')
     const paid = paidIntents.length > 0
+    const newBuyer = paidIntents.some((i) => i.access_email_sent_at)
     const passwordSet = paidIntents.some((i) => i.password_set_at)
     const userIds = paidIntents.map((i) => i.user_id).filter((id): id is string => !!id)
 
+    const linkOpened = newBuyer && paidIntents.some((i) => i.link_opened_at)
+    const passwordCreated = linkOpened && passwordSet
+    const onboarded = passwordCreated && userIds.some((id) => onboardedUserIds.has(id))
+    const worked = onboarded && userIds.some((id) => firstWorkoutUserIds.has(id))
+
     totals.checkout += 1
     if (paid) totals.paid += 1
-    if (paidIntents.some((i) => i.link_opened_at)) totals.link_opened += 1
-    if (passwordSet) totals.password_set += 1
-    if (userIds.some((id) => onboardedUserIds.has(id))) totals.onboarding += 1
-    if (userIds.some((id) => firstWorkoutUserIds.has(id))) totals.first_workout += 1
+    if (paid && !newBuyer) returning += 1
+    if (linkOpened) totals.link_opened += 1
+    if (passwordCreated) totals.password_set += 1
+    if (onboarded) totals.onboarding += 1
+    if (worked) totals.first_workout += 1
 
     // Uma origem por pessoa (a do primeiro checkout), para a tabela fechar com o total.
     const first = [...list].sort((a, b) => byTime(a.created_at, b.created_at))[0]
@@ -98,7 +111,7 @@ export function computeFunnel(
     if (paid) row.paid += 1
     sources.set(source, row)
 
-    if (paid && !passwordSet) {
+    if (newBuyer && !passwordSet) {
       paidWithoutPassword.push([...paidIntents].sort((a, b) => byTime(b.paid_at, a.paid_at))[0])
     }
   }
@@ -109,6 +122,7 @@ export function computeFunnel(
     steps: FUNNEL_STEPS.map((key) => ({ key, label: FUNNEL_STEP_LABELS[key], count: totals[key] })),
     bySource: [...sources.values()].sort((a, b) => b.checkout - a.checkout || b.paid - a.paid),
     paidWithoutPassword,
+    returning,
   }
 }
 
