@@ -1,10 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { randomUUID } from 'node:crypto'
-import { Payment } from 'mercadopago'
-import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { getPixPlan, ADMIN_ONLY_PLANS, isPixPlanId } from './_lib/pixPlans.js'
-import { buildPixExternalReference } from './_lib/pixPeriod.js'
+import { buildPrepaidExternalReference } from './_lib/pixPeriod.js'
+import { createPixCharge, ChargeResponseError, requestOrigin } from './_lib/charges.js'
+import { checkLoggedPurchase } from './_lib/loggedPurchase.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -12,98 +10,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const authHeader = (req.headers.authorization as string) || ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  if (!token) {
-    res.status(401).json({ error: 'Missing authorization token' })
+  const check = await checkLoggedPurchase(
+    req,
+    createSupabaseAdmin(),
+    'Você já tem uma assinatura ativa no cartão. Cancele antes de pagar via Pix.',
+  )
+  if ('status' in check) {
+    res.status(check.status).json({ error: check.error })
     return
   }
-
-  const planId = req.body?.plan
-  if (!isPixPlanId(planId)) {
-    res.status(400).json({ error: 'Invalid plan' })
-    return
-  }
-  // O valor sai daqui, nunca do corpo da requisição.
-  const plan = getPixPlan(planId)
-
-  const supabaseAdmin = createSupabaseAdmin()
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
-  if (userError || !userData.user) {
-    res.status(401).json({ error: 'Invalid session' })
-    return
-  }
-  const user = userData.user
-
-  // O plano de verificação custa R$ 0,01. Sem esta checagem no SERVIDOR,
-  // bastaria mandar {"plan":"teste"} na requisição para assinar por um
-  // centavo — esconder na interface não protegeria nada.
-  if (ADMIN_ONLY_PLANS.includes(planId)) {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (!profile?.is_admin) {
-      res.status(403).json({ error: 'Plano indisponível' })
-      return
-    }
-  }
-
-  // Regra de conflito (decisão P0.3 do docs/PLANO-PIX.md): quem tem assinatura
-  // recorrente viva no cartão não pode pagar Pix, senão seria cobrada duas
-  // vezes. Assinatura no cartão já cancelada (mesmo que ainda dentro do
-  // período pago) não bloqueia — não vai gerar cobrança nova. E Pix sobre Pix
-  // é justamente a renovação, que soma período no webhook.
-  const { data: existing } = await supabaseAdmin
-    .from('subscriptions')
-    .select('source, status')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (existing && existing.source === 'preapproval' && existing.status === 'authorized') {
-    res.status(409).json({
-      error: 'Você já tem uma assinatura ativa no cartão. Cancele antes de pagar via Pix.',
-    })
-    return
-  }
-
-  const host = (req.headers['x-forwarded-host'] as string) || (req.headers.host as string) || ''
-  const protocol = host.includes('localhost') ? 'http' : 'https'
+  const { user, plan } = check
 
   try {
-    const payment = new Payment(createMercadoPagoConfig())
-    const result = await payment.create({
-      body: {
-        transaction_amount: plan.amount,
-        description: `MusaFit - Acesso por ${plan.months} ${plan.months === 1 ? 'mês' : 'meses'}`,
-        payment_method_id: 'pix',
-        payer: { email: user.email || '' },
-        // O webhook lê daqui de quem é o pagamento e quantos meses creditar.
-        // Vai pelo Mercado Pago em vez de por uma linha nossa para não haver
-        // corrida: a notificação pode chegar antes de um INSERT nosso commitar.
-        external_reference: buildPixExternalReference(user.id, plan.months),
-        notification_url: `${protocol}://${host}/api/mercadopago-webhook`,
-      },
-      requestOptions: { idempotencyKey: randomUUID() },
+    const pix = await createPixCharge({
+      amount: plan.amount,
+      months: plan.months,
+      email: user.email || '',
+      externalReference: buildPrepaidExternalReference(user.id, plan.months, 'pix'),
+      notificationUrl: `${requestOrigin(req.headers)}/api/mercadopago-webhook`,
     })
 
-    const tx = result.point_of_interaction?.transaction_data
-    if (!tx?.qr_code) {
-      console.error('create-pix-payment: resposta sem QR Code', { paymentId: result.id, status: result.status })
+    res.status(200).json({ ...pix, amount: plan.amount, months: plan.months })
+  } catch (error) {
+    if (error instanceof ChargeResponseError) {
       res.status(502).json({ error: 'Não foi possível gerar o código Pix' })
       return
     }
-
-    res.status(200).json({
-      payment_id: String(result.id),
-      qr_code: tx.qr_code,
-      qr_code_base64: tx.qr_code_base64,
-      ticket_url: tx.ticket_url,
-      amount: plan.amount,
-      months: plan.months,
-    })
-  } catch (error) {
     console.error(
       'create-pix-payment error:',
       JSON.stringify(error, Object.getOwnPropertyNames(error as object))
