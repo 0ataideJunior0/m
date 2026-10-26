@@ -69,7 +69,7 @@ export interface AuthError {
 
 export type SubscriptionStatus = 'pending' | 'authorized' | 'paused' | 'cancelled'
 
-export type SubscriptionSource = 'preapproval' | 'pix' | 'manual'
+export type SubscriptionSource = 'preapproval' | 'pix' | 'manual' | 'card'
 
 export interface Subscription {
   id: string
@@ -108,4 +108,44 @@ export interface Recipe {
   published: boolean
   created_at: string
   updated_at: string
+}
+
+export type PurchaseIntentMethod = 'pix' | 'card'
+
+export type PurchaseIntentStatus = 'pending' | 'paid' | 'rejected'
+
+/** Linha de `purchase_intents`: uma tentativa de compra no checkout aberto. */
+export interface PurchaseIntent {
+  id: string
+  /** Já normalizado (trim + minúsculas). */
+  email: string
+  plan_id: string
+  method: PurchaseIntentMethod
+  months: number
+  amount: number
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  utm_content: string | null
+  utm_term: string | null
+  referrer: string | null
+  status: PurchaseIntentStatus
+  /** Último status bruto do Mercado Pago. */
+  last_payment_status: string | null
+  payment_id: string | null
+  user_id: string | null
+  created_at: string
+  paid_at: string | null
+  access_email_sent_at: string | null
+  link_opened_at: string | null
+  password_set_at: string | null
+}
+
+/** UTM do funil, gravado em `profiles.signup_utm` no cadastro. */
+export interface FunnelUtm {
+  source: string | null
+  medium: string | null
+  campaign: string | null
+  content: string | null
+  term: string | null
 }
