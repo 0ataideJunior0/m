@@ -7,10 +7,12 @@ import {
 } from 'mercadopago'
 import { createMercadoPagoConfig } from './_lib/mercadopagoConfig.js'
 import { createSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { addMonths, parsePixExternalReference } from './_lib/pixPeriod.js'
+import { parsePixExternalReference } from './_lib/pixPeriod.js'
 import { isPrepaidSource } from './_lib/prepaid.js'
-
-const UNIQUE_VIOLATION = '23505'
+import { parseIntentReference } from './_lib/checkoutRules.js'
+import { findAuthUserIdByEmail } from './_lib/authUsers.js'
+import { creditPrepaidPeriod } from './_lib/prepaidCredit.js'
+import { sendAccessEmail } from './_lib/accessEmail.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -104,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (isPreapprovalEvent) {
       await handlePreapproval(dataId, supabaseAdmin, res)
     } else {
-      await handlePixPayment(dataId, supabaseAdmin, res)
+      await handlePayment(dataId, supabaseAdmin, res)
     }
   } catch (error) {
     console.error('mercadopago-webhook processing error:', {
@@ -180,9 +182,15 @@ async function handlePreapproval(dataId: string, supabaseAdmin: SupabaseAdmin, r
   res.status(200).json({ ok: true })
 }
 
-async function handlePixPayment(dataId: string, supabaseAdmin: SupabaseAdmin, res: VercelResponse) {
+async function handlePayment(dataId: string, supabaseAdmin: SupabaseAdmin, res: VercelResponse) {
   const payment = new Payment(createMercadoPagoConfig())
   const resource = await payment.get({ id: dataId })
+
+  const intentId = parseIntentReference(resource.external_reference)
+  if (intentId) {
+    await handleIntentPayment(intentId, resource, supabaseAdmin, res)
+    return
+  }
 
   if (resource.status !== 'approved') {
     res.status(200).json({ ignored: true, reason: `payment status ${resource.status}` })
@@ -191,85 +199,209 @@ async function handlePixPayment(dataId: string, supabaseAdmin: SupabaseAdmin, re
 
   const parsed = parsePixExternalReference(resource.external_reference)
   if (!parsed) {
-    // Pagamento aprovado que não é dos nossos planos Pix (ou a primeira parcela
-    // de uma assinatura no cartão, que chega como payment e é tratada pelo
-    // fluxo de preapproval).
+    // Pagamento aprovado que não é dos nossos planos avulsos (ou a primeira
+    // parcela de uma assinatura no cartão, que chega como payment e é tratada
+    // pelo fluxo de preapproval).
     res.status(200).json({ ignored: true, reason: 'not a pix plan payment' })
     return
   }
-  const { userId, months } = parsed
-  const paymentId = String(resource.id)
 
-  // O livro-razão é o que torna isto idempotente: o UNIQUE em payment_id faz a
-  // segunda entrega da mesma notificação falhar aqui, antes de creditar
-  // período de novo. Sem isso, uma reentrega daria meses de graça.
-  const { error: ledgerError } = await supabaseAdmin.from('pix_payments').insert({
-    payment_id: paymentId,
-    user_id: userId,
-    months,
-    amount: resource.transaction_amount,
-    status: resource.status,
+  // Compra de quem está logada (Pix ou cartão avulso): a usuária já é a do
+  // external_reference, não há conta a criar nem e-mail a mandar.
+  const result = await creditPrepaidPeriod(supabaseAdmin, {
+    userId: parsed.userId,
+    months: parsed.months,
+    paymentId: String(resource.id),
+    amount: resource.transaction_amount as number,
+    source: parsed.method,
     raw: resource,
   })
-
-  if (ledgerError) {
-    if ((ledgerError as { code?: string }).code === UNIQUE_VIOLATION) {
-      res.status(200).json({ ignored: true, reason: 'payment already processed' })
-      return
-    }
-    throw ledgerError
+  if (result === 'duplicate') {
+    res.status(200).json({ ignored: true, reason: 'payment already processed' })
+    return
   }
+  res.status(200).json({ ok: true })
+}
 
-  const { data: existing } = await supabaseAdmin
-    .from('subscriptions')
-    .select('source, status, next_payment_date, preapproval_id')
-    .eq('user_id', userId)
-    .maybeSingle()
+type PaymentResource = Awaited<ReturnType<Payment['get']>>
 
-  const now = new Date()
+interface PurchaseIntentRow {
+  id: string
+  email: string
+  months: number
+  method: 'pix' | 'card'
+  status: 'pending' | 'paid' | 'rejected'
+  user_id: string | null
+  access_email_sent_at: string | null
+}
 
-  // Renovação antecipada soma ao que ainda resta, em vez de descartar os dias
-  // pagos (decisão P0.3). Só soma sobre acesso que veio de Pix — período de
-  // cartão é gerenciado pelo próprio MP.
-  let base = now
-  if (isPrepaidSource(existing?.source) && existing?.next_payment_date) {
-    const currentEnd = new Date(existing.next_payment_date)
-    if (currentEnd > now) base = currentEnd
-  }
-  const accessUntil = addMonths(base, months)
+/**
+ * Pagamento do checkout aberto (pagar primeiro, conta depois): o
+ * external_reference aponta para a intenção de compra, não para uma usuária.
+ *
+ * Ordem ao aprovar, e por quê:
+ *   1. resolver a usuária (intent.user_id → conta de auth com esse e-mail →
+ *      criar). Vem ANTES do crédito porque o livro-razão e a assinatura
+ *      precisam do user id. Só roda com pagamento aprovado, então nunca nasce
+ *      conta de quem não pagou. Numa reentrega a conta já existe (foi criada
+ *      antes do crédito) e é achada, não recriada.
+ *   2. creditar o período. O UNIQUE de pix_payments é o portão: período só é
+ *      creditado uma vez por pagamento.
+ *   3. 'duplicate' com o intent já pago E o e-mail já resolvido = reentrega de
+ *      algo concluído: para aqui, sem tocar em nada. Qualquer outro
+ *      'duplicate' é uma entrega anterior que caiu no meio do caminho (creditou
+ *      mas não marcou o intent ou não mandou o e-mail): segue para os passos
+ *      que faltam, que são idempotentes por conta própria.
+ *   4. marcar o intent pago — update condicional (status <> 'paid'), não
+ *      reescreve paid_at de um intent já pago.
+ *   5. e-mail de acesso, só se a conta não tem e-mail provado e ainda não foi
+ *      mandado (access_email_sent_at). Marca o envio depois de mandar: se o
+ *      envio falha, a notificação volta 500 e o MP reenvia.
+ *
+ * Fica de fora de propósito: duas entregas simultâneas do mesmo pagamento
+ * podem as duas mandar o e-mail (link duplicado para a mesma pessoa,
+ * inofensivo). A conta e o crédito continuam únicos.
+ */
+async function handleIntentPayment(
+  intentId: string,
+  resource: PaymentResource,
+  supabaseAdmin: SupabaseAdmin,
+  res: VercelResponse,
+) {
+  const paymentStatus = resource.status ?? ''
 
-  // Anomalia: o endpoint bloqueia Pix para quem tem cartão ativo, então isto
-  // não deveria acontecer. Se acontecer, a pessoa está sendo cobrada duas
-  // vezes e precisa de intervenção humana — mas o acesso dela é creditado do
-  // mesmo jeito, e a preapproval é preservada para o cancelamento continuar
-  // funcionando.
-  if (existing?.source === 'preapproval' && existing.status === 'authorized') {
-    console.error('mercadopago-webhook: Pix pago por usuária com assinatura ativa no cartão', {
-      userId,
-      paymentId,
-      preapprovalId: existing.preapproval_id,
-    })
-    await supabaseAdmin
-      .from('subscriptions')
-      .update({ next_payment_date: accessUntil.toISOString(), updated_at: now.toISOString() })
-      .eq('user_id', userId)
-    res.status(200).json({ ok: true, warning: 'user has an active card subscription' })
+  if (paymentStatus !== 'approved') {
+    // Nunca rebaixa um intent já pago (notificação atrasada de outra
+    // tentativa, ou estorno, que é tratado à parte). Recusa/cancelamento vira
+    // 'rejected'; qualquer outro status (ex.: nova tentativa em análise depois
+    // de um cartão recusado) volta o intent para 'pending'.
+    const { error } = await supabaseAdmin
+      .from('purchase_intents')
+      .update({
+        last_payment_status: paymentStatus,
+        status: paymentStatus === 'rejected' || paymentStatus === 'cancelled' ? 'rejected' : 'pending',
+      })
+      .eq('id', intentId)
+      .neq('status', 'paid')
+    if (error) throw error
+    res.status(200).json({ ok: true })
     return
   }
 
-  await supabaseAdmin.from('subscriptions').upsert(
-    {
-      user_id: userId,
-      preapproval_id: null,
-      source: 'pix',
-      payment_id: paymentId,
-      status: 'authorized',
-      next_payment_date: accessUntil.toISOString(),
-      raw: resource,
-      updated_at: now.toISOString(),
-    },
-    { onConflict: 'user_id' }
-  )
+  const { data: intent, error: intentError } = await supabaseAdmin
+    .from('purchase_intents')
+    .select('id, email, months, method, status, user_id, access_email_sent_at')
+    .eq('id', intentId)
+    .maybeSingle<PurchaseIntentRow>()
+  if (intentError) throw intentError
+  if (!intent) {
+    // Pagamento aprovado apontando para intent que não existe: precisa de
+    // gente olhando, mas reenviar não resolve.
+    console.error('mercadopago-webhook: pagamento aprovado de intent inexistente', {
+      intentId,
+      paymentId: resource.id,
+    })
+    res.status(200).json({ ignored: true, reason: 'unknown purchase intent' })
+    return
+  }
+
+  const paymentId = String(resource.id)
+  const userId = intent.user_id ?? (await findOrCreateUser(supabaseAdmin, intent.email))
+
+  const credit = await creditPrepaidPeriod(supabaseAdmin, {
+    userId,
+    months: intent.months,
+    paymentId,
+    amount: resource.transaction_amount as number,
+    source: intent.method,
+    raw: resource,
+  })
+
+  if (credit === 'duplicate' && intent.status === 'paid' && intent.access_email_sent_at) {
+    res.status(200).json({ ignored: true, reason: 'payment already processed' })
+    return
+  }
+
+  const now = new Date().toISOString()
+
+  if (intent.status !== 'paid') {
+    const { error } = await supabaseAdmin
+      .from('purchase_intents')
+      .update({
+        status: 'paid',
+        paid_at: now,
+        payment_id: paymentId,
+        user_id: userId,
+        last_payment_status: 'approved',
+      })
+      .eq('id', intentId)
+      .neq('status', 'paid')
+    if (error) throw error
+  }
+
+  if (!intent.access_email_sent_at) {
+    await sendAccessEmailIfUnproven(supabaseAdmin, intentId, userId, intent.email)
+  }
 
   res.status(200).json({ ok: true })
+}
+
+/**
+ * Conta existente é achada pelo e-mail de AUTENTICAÇÃO, nunca por
+ * profiles.email (que a aluna podia editar). Sem conta, cria sem senha e já
+ * confirmada — a senha é criada no primeiro acesso, pelo link do e-mail.
+ */
+async function findOrCreateUser(supabaseAdmin: SupabaseAdmin, email: string): Promise<string> {
+  const existing = await findAuthUserIdByEmail(supabaseAdmin, email)
+  if (existing) return existing
+
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({ email, email_confirm: true })
+  if (!error && data.user) return data.user.id
+
+  // Outra entrega do mesmo pagamento criou a conta entre a busca e o create.
+  if (error && isAlreadyRegistered(error)) {
+    const raced = await findAuthUserIdByEmail(supabaseAdmin, email)
+    if (raced) return raced
+  }
+  throw error ?? new Error('createUser returned no user')
+}
+
+function isAlreadyRegistered(error: { code?: string; message?: string }): boolean {
+  return error.code === 'email_exists' || /already (been )?registered/i.test(error.message ?? '')
+}
+
+async function sendAccessEmailIfUnproven(
+  supabaseAdmin: SupabaseAdmin,
+  intentId: string,
+  userId: string,
+  email: string,
+) {
+  // Conta com e-mail provado não recebe e-mail nosso (o MP já manda o
+  // comprovante). Sem prova, o link de acesso é o que tira de cena quem tinha
+  // criado a conta com um e-mail que não é dela.
+  const { data: verified, error: verifiedError } = await supabaseAdmin
+    .from('email_verifications')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (verifiedError) throw verifiedError
+  if (verified) return
+
+  // A origem do link vem da configuração, nunca do host da notificação.
+  const origin = (process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '')
+  if (!origin) {
+    console.error('mercadopago-webhook: PUBLIC_APP_URL não configurada; e-mail de acesso não enviado', {
+      intentId,
+      userId,
+    })
+    return
+  }
+
+  await sendAccessEmail(supabaseAdmin, email, origin)
+
+  const { error } = await supabaseAdmin
+    .from('purchase_intents')
+    .update({ access_email_sent_at: new Date().toISOString() })
+    .eq('id', intentId)
+  if (error) throw error
 }

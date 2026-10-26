@@ -8,6 +8,13 @@ const {
   updateMock,
   pixInsertMock,
   maybeSingleMock,
+  intentMaybeSingleMock,
+  intentUpdateMock,
+  intentUpdateFilters,
+  verificationMaybeSingleMock,
+  listUsersMock,
+  createUserMock,
+  signInWithOtpMock,
   fromMock,
   FakeInvalidWebhookSignatureError,
 } = vi.hoisted(() => {
@@ -15,14 +22,41 @@ const {
   const updateEqMock = vi.fn().mockResolvedValue({ error: null })
   const updateMock = vi.fn(() => ({ eq: updateEqMock }))
   const pixInsertMock = vi.fn().mockResolvedValue({ error: null })
+  // subscriptions
   const maybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
   const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
   const selectMock = vi.fn(() => ({ eq: eqMock }))
-  const fromMock = vi.fn((table: string) =>
-    table === 'pix_payments'
-      ? { insert: pixInsertMock }
-      : { upsert: upsertMock, select: selectMock, update: updateMock }
-  )
+  // purchase_intents
+  const intentMaybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
+  // Cada update registra os filtros que recebeu (eq/neq/is), para os testes
+  // conferirem que a gravação é condicional.
+  const intentUpdateFilters: Array<Array<[string, string, unknown]>> = []
+  const intentUpdateMock = vi.fn((_payload: unknown) => {
+    const filters: Array<[string, string, unknown]> = []
+    intentUpdateFilters.push(filters)
+    const chain: any = {
+      then: (resolve: (v: unknown) => unknown) => resolve({ error: null }),
+    }
+    for (const op of ['eq', 'neq', 'is']) {
+      chain[op] = (col: string, val: unknown) => {
+        filters.push([op, col, val])
+        return chain
+      }
+    }
+    return chain
+  })
+  // email_verifications
+  const verificationMaybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
+  const fromMock = vi.fn((table: string) => {
+    if (table === 'pix_payments') return { insert: pixInsertMock }
+    if (table === 'purchase_intents') {
+      return { select: () => ({ eq: () => ({ maybeSingle: intentMaybeSingleMock }) }), update: intentUpdateMock }
+    }
+    if (table === 'email_verifications') {
+      return { select: () => ({ eq: () => ({ maybeSingle: verificationMaybeSingleMock }) }) }
+    }
+    return { upsert: upsertMock, select: selectMock, update: updateMock }
+  })
   class FakeInvalidWebhookSignatureError extends Error {}
   return {
     validateMock: vi.fn(),
@@ -32,13 +66,23 @@ const {
     updateMock,
     pixInsertMock,
     maybeSingleMock,
+    intentMaybeSingleMock,
+    intentUpdateMock,
+    intentUpdateFilters,
+    verificationMaybeSingleMock,
+    listUsersMock: vi.fn(),
+    createUserMock: vi.fn(),
+    signInWithOtpMock: vi.fn(),
     fromMock,
     FakeInvalidWebhookSignatureError,
   }
 })
 
 vi.mock('../../api/_lib/supabaseAdmin', () => ({
-  createSupabaseAdmin: () => ({ from: fromMock }),
+  createSupabaseAdmin: () => ({
+    from: fromMock,
+    auth: { admin: { listUsers: listUsersMock, createUser: createUserMock }, signInWithOtp: signInWithOtpMock },
+  }),
 }))
 
 vi.mock('../../api/_lib/mercadopagoConfig', () => ({
@@ -583,5 +627,324 @@ describe('POST /api/mercadopago-webhook — formato IPN antigo', () => {
     await handler(req, createMockRes())
 
     expect(validateMock).toHaveBeenCalledWith(expect.objectContaining({ dataId: 'moderno' }))
+  })
+})
+
+describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão avulso', () => {
+  const INTENT_ID = '3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b'
+  const payReq = (dataId = 'pay-9') => ({
+    method: 'POST',
+    headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+    query: { 'data.id': dataId, type: 'payment' },
+    body: {},
+  })
+  const approvedIntentPayment = {
+    id: 777,
+    status: 'approved',
+    transaction_amount: 129.9,
+    external_reference: `intent|${INTENT_ID}`,
+  }
+  const pendingIntent = {
+    id: INTENT_ID,
+    email: 'ana@exemplo.com',
+    months: 3,
+    method: 'pix',
+    status: 'pending',
+    user_id: null,
+    access_email_sent_at: null,
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', 'secret-abc')
+    vi.stubEnv('PUBLIC_APP_URL', 'https://musafit.me')
+    validateMock.mockReset().mockImplementation(() => undefined)
+    fromMock.mockClear()
+    upsertMock.mockClear()
+    updateMock.mockClear()
+    maybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
+    paymentGetMock.mockReset()
+    pixInsertMock.mockReset().mockResolvedValue({ error: null })
+    intentMaybeSingleMock.mockReset().mockResolvedValue({ data: pendingIntent, error: null })
+    intentUpdateMock.mockClear()
+    intentUpdateFilters.length = 0
+    verificationMaybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
+    listUsersMock.mockReset().mockResolvedValue({ data: { users: [] }, error: null })
+    createUserMock.mockReset().mockResolvedValue({ data: { user: { id: 'new-user' } }, error: null })
+    signInWithOtpMock.mockReset().mockResolvedValue({ data: {}, error: null })
+  })
+
+  it('conta nova: cria a usuária, credita 3 meses, marca o intent pago e manda o link de acesso', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-26T12:00:00.000Z'))
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+    vi.useRealTimers()
+
+    expect(createUserMock).toHaveBeenCalledWith({ email: 'ana@exemplo.com', email_confirm: true })
+    expect(pixInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_id: '777', user_id: 'new-user', months: 3, amount: 129.9 }),
+    )
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'new-user', source: 'pix', next_payment_date: '2027-01-26T12:00:00.000Z' }),
+      { onConflict: 'user_id' },
+    )
+    expect(intentUpdateMock).toHaveBeenCalledWith({
+      status: 'paid',
+      paid_at: '2026-10-26T12:00:00.000Z',
+      payment_id: '777',
+      user_id: 'new-user',
+      last_payment_status: 'approved',
+    })
+    // marcar pago é condicional: nunca reescreve um intent já pago
+    expect(intentUpdateFilters[0]).toEqual([
+      ['eq', 'id', INTENT_ID],
+      ['neq', 'status', 'paid'],
+    ])
+    expect(signInWithOtpMock).toHaveBeenCalledWith({
+      email: 'ana@exemplo.com',
+      options: { shouldCreateUser: false, emailRedirectTo: 'https://musafit.me/primeiro-acesso' },
+    })
+    expect(intentUpdateMock).toHaveBeenCalledWith({ access_email_sent_at: '2026-10-26T12:00:00.000Z' })
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('cartão no checkout aberto grava source card', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    intentMaybeSingleMock.mockResolvedValueOnce({ data: { ...pendingIntent, method: 'card' }, error: null })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({ source: 'card' }), { onConflict: 'user_id' })
+  })
+
+  it('conta existente com e-mail provado: credita, sem createUser e sem e-mail', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'old-user', email: 'Ana@Exemplo.com' }] }, error: null })
+    verificationMaybeSingleMock.mockResolvedValueOnce({ data: { user_id: 'old-user' }, error: null })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'old-user' }))
+    expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid', user_id: 'old-user' }))
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('conta existente sem e-mail provado: credita e manda o link de acesso', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'old-user', email: 'ana@exemplo.com' }] }, error: null })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'old-user' }))
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('reentrega de intent já concluído (ledger 23505): não cria conta nem manda e-mail de novo', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    intentMaybeSingleMock.mockResolvedValueOnce({
+      data: {
+        ...pendingIntent,
+        status: 'paid',
+        user_id: 'new-user',
+        payment_id: '777',
+        access_email_sent_at: '2026-10-26T12:00:00.000Z',
+      },
+      error: null,
+    })
+    pixInsertMock.mockResolvedValueOnce({ error: { code: '23505' } })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(listUsersMock).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(intentUpdateMock).not.toHaveBeenCalled()
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('reentrega depois de falha parcial (período creditado, intent ainda pendente): termina conta e e-mail', async () => {
+    // A entrega anterior criou a conta e gravou o livro-razão, mas caiu antes
+    // de marcar o intent. A reentrega acha a conta pelo e-mail e conclui.
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'new-user', email: 'ana@exemplo.com' }] }, error: null })
+    pixInsertMock.mockResolvedValueOnce({ error: { code: '23505' } })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled() // período não é creditado duas vezes
+    expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid', user_id: 'new-user' }))
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1)
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('reentrega com intent pago mas e-mail ainda não enviado: manda o e-mail sem remarcar o intent', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    intentMaybeSingleMock.mockResolvedValueOnce({
+      data: { ...pendingIntent, status: 'paid', user_id: 'new-user', payment_id: '777' },
+      error: null,
+    })
+    pixInsertMock.mockResolvedValueOnce({ error: { code: '23505' } })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(intentUpdateMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'paid' }))
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1)
+    expect(intentUpdateMock).toHaveBeenCalledWith({ access_email_sent_at: expect.any(String) })
+  })
+
+  it('intent com user_id já preenchido: usa esse id e não busca por e-mail', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    intentMaybeSingleMock.mockResolvedValueOnce({ data: { ...pendingIntent, user_id: 'known-user' }, error: null })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(listUsersMock).not.toHaveBeenCalled()
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'known-user' }))
+  })
+
+  it('createUser corrido por outra entrega ("already registered"): busca de novo e segue', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock
+      .mockResolvedValueOnce({ data: { users: [] }, error: null })
+      .mockResolvedValueOnce({ data: { users: [{ id: 'raced-user', email: 'ana@exemplo.com' }] }, error: null })
+    createUserMock.mockResolvedValueOnce({
+      data: { user: null },
+      error: { code: 'email_exists', message: 'A user with this email address has already been registered' },
+    })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'raced-user' }))
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('outro erro no createUser vira 500 e nada é creditado (o MP reenvia)', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    createUserMock.mockResolvedValueOnce({ data: { user: null }, error: { code: 'unexpected_failure', message: 'boom' } })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+    errorSpy.mockRestore()
+
+    expect(pixInsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('sem PUBLIC_APP_URL: credita e marca pago, loga erro e não manda e-mail', async () => {
+    vi.stubEnv('PUBLIC_APP_URL', '')
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('PUBLIC_APP_URL'), expect.anything())
+    errorSpy.mockRestore()
+    expect(upsertMock).toHaveBeenCalled()
+    expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid' }))
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(intentUpdateMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ access_email_sent_at: expect.anything() }),
+    )
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('falha no envio do e-mail vira 500 sem marcar access_email_sent_at (o MP reenvia)', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    signInWithOtpMock.mockResolvedValueOnce({ data: {}, error: { message: 'smtp down' } })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+    errorSpy.mockRestore()
+
+    expect(intentUpdateMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ access_email_sent_at: expect.anything() }),
+    )
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('intent inexistente: ignora sem criar conta nem creditar', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    intentMaybeSingleMock.mockResolvedValueOnce({ data: null, error: null })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+    errorSpy.mockRestore()
+
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(pixInsertMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('cartão avulso logado (u1|card|1) aprovado: credita com source card, sem e-mail', async () => {
+    paymentGetMock.mockResolvedValueOnce({
+      id: 555,
+      status: 'approved',
+      transaction_amount: 49.9,
+      external_reference: 'u1|card|1',
+    })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ payment_id: '555', user_id: 'u1', months: 1 }))
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'u1', source: 'card' }),
+      { onConflict: 'user_id' },
+    )
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it("intent com pagamento rejected: status 'rejected', nada creditado", async () => {
+    paymentGetMock.mockResolvedValueOnce({ ...approvedIntentPayment, status: 'rejected' })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(intentUpdateMock).toHaveBeenCalledWith({ last_payment_status: 'rejected', status: 'rejected' })
+    expect(intentUpdateFilters[0]).toEqual([
+      ['eq', 'id', INTENT_ID],
+      ['neq', 'status', 'paid'],
+    ])
+    expect(pixInsertMock).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled()
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it("intent com pagamento cancelled também vira 'rejected'", async () => {
+    paymentGetMock.mockResolvedValueOnce({ ...approvedIntentPayment, status: 'cancelled' })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(intentUpdateMock).toHaveBeenCalledWith({ last_payment_status: 'cancelled', status: 'rejected' })
+  })
+
+  it('intent com pagamento em análise: atualiza last_payment_status e volta a pending (nova tentativa)', async () => {
+    paymentGetMock.mockResolvedValueOnce({ ...approvedIntentPayment, status: 'in_process' })
+
+    await handler(payReq() as any, createMockRes())
+
+    expect(intentUpdateMock).toHaveBeenCalledWith({ last_payment_status: 'in_process', status: 'pending' })
+    expect(intentUpdateFilters[0]).toContainEqual(['neq', 'status', 'paid'])
+    expect(pixInsertMock).not.toHaveBeenCalled()
   })
 })

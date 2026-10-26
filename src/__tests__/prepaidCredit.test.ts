@@ -1,0 +1,107 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { creditPrepaidPeriod } from '../../api/_lib/prepaidCredit'
+
+function fakeAdmin(opts: { ledgerError?: unknown; existing?: unknown } = {}) {
+  const ledgerInsert = vi.fn().mockResolvedValue({ error: opts.ledgerError ?? null })
+  const upsert = vi.fn().mockResolvedValue({ error: null })
+  const updateEq = vi.fn().mockResolvedValue({ error: null })
+  const update = vi.fn(() => ({ eq: updateEq }))
+  const maybeSingle = vi.fn().mockResolvedValue({ data: opts.existing ?? null, error: null })
+  const select = vi.fn(() => ({ eq: () => ({ maybeSingle }) }))
+  const from = vi.fn((table: string) =>
+    table === 'pix_payments' ? { insert: ledgerInsert } : { select, upsert, update },
+  )
+  return { admin: { from } as any, ledgerInsert, upsert, update }
+}
+
+const base = { userId: 'user-1', months: 3, paymentId: '12345', amount: 129.9, raw: { id: 12345 } }
+
+describe('creditPrepaidPeriod', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('grava no livro-razão e credita a partir de agora quando não há acesso vigente', async () => {
+    const { admin, ledgerInsert, upsert } = fakeAdmin()
+
+    const result = await creditPrepaidPeriod(admin, { ...base, source: 'pix' })
+
+    expect(result).toBe('credited')
+    expect(ledgerInsert).toHaveBeenCalledWith({
+      payment_id: '12345',
+      user_id: 'user-1',
+      months: 3,
+      amount: 129.9,
+      status: 'approved',
+      raw: { id: 12345 },
+    })
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'user-1',
+        source: 'pix',
+        payment_id: '12345',
+        preapproval_id: null,
+        status: 'authorized',
+        next_payment_date: '2026-11-19T12:00:00.000Z',
+      }),
+      { onConflict: 'user_id' },
+    )
+  })
+
+  it("grava source 'card' no cartão avulso", async () => {
+    const { admin, upsert } = fakeAdmin()
+
+    await creditPrepaidPeriod(admin, { ...base, source: 'card' })
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ source: 'card' }), { onConflict: 'user_id' })
+  })
+
+  it('soma sobre o acesso pré-pago que ainda está valendo', async () => {
+    const { admin, upsert } = fakeAdmin({
+      existing: { source: 'card', status: 'authorized', next_payment_date: '2026-09-19T12:00:00.000Z' },
+    })
+
+    await creditPrepaidPeriod(admin, { ...base, source: 'pix' })
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ next_payment_date: '2026-12-19T12:00:00.000Z' }),
+      { onConflict: 'user_id' },
+    )
+  })
+
+  it("reentrega (UNIQUE no livro-razão) devolve 'duplicate' e não credita", async () => {
+    const { admin, upsert, update } = fakeAdmin({ ledgerError: { code: '23505' } })
+
+    const result = await creditPrepaidPeriod(admin, { ...base, source: 'pix' })
+
+    expect(result).toBe('duplicate')
+    expect(upsert).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('outro erro no livro-razão é lançado', async () => {
+    const { admin } = fakeAdmin({ ledgerError: { code: '42P01', message: 'boom' } })
+
+    await expect(creditPrepaidPeriod(admin, { ...base, source: 'pix' })).rejects.toMatchObject({ code: '42P01' })
+  })
+
+  it('com assinatura recorrente ativa, credita a data mas preserva a linha do cartão', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { admin, upsert, update } = fakeAdmin({
+      existing: { source: 'preapproval', status: 'authorized', preapproval_id: 'pa-1', next_payment_date: null },
+    })
+
+    const result = await creditPrepaidPeriod(admin, { ...base, source: 'card' })
+    errorSpy.mockRestore()
+
+    expect(result).toBe('credited')
+    expect(upsert).not.toHaveBeenCalled()
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ next_payment_date: '2026-11-19T12:00:00.000Z' }),
+    )
+  })
+})
