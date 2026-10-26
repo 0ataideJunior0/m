@@ -7,6 +7,7 @@ const {
   upsertMock,
   updateMock,
   pixInsertMock,
+  pixDeleteEqMock,
   maybeSingleMock,
   intentMaybeSingleMock,
   intentUpdateMock,
@@ -22,6 +23,7 @@ const {
   const updateEqMock = vi.fn().mockResolvedValue({ error: null })
   const updateMock = vi.fn(() => ({ eq: updateEqMock }))
   const pixInsertMock = vi.fn().mockResolvedValue({ error: null })
+  const pixDeleteEqMock = vi.fn().mockResolvedValue({ error: null })
   // subscriptions
   const maybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
   const eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }))
@@ -48,7 +50,9 @@ const {
   // email_verifications
   const verificationMaybeSingleMock = vi.fn().mockResolvedValue({ data: null, error: null })
   const fromMock = vi.fn((table: string) => {
-    if (table === 'pix_payments') return { insert: pixInsertMock }
+    if (table === 'pix_payments') {
+      return { insert: pixInsertMock, delete: () => ({ eq: pixDeleteEqMock }) }
+    }
     if (table === 'purchase_intents') {
       return { select: () => ({ eq: () => ({ maybeSingle: intentMaybeSingleMock }) }), update: intentUpdateMock }
     }
@@ -65,6 +69,7 @@ const {
     upsertMock,
     updateMock,
     pixInsertMock,
+    pixDeleteEqMock,
     maybeSingleMock,
     intentMaybeSingleMock,
     intentUpdateMock,
@@ -667,6 +672,7 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
     intentMaybeSingleMock.mockReset().mockResolvedValue({ data: pendingIntent, error: null })
     intentUpdateMock.mockClear()
     intentUpdateFilters.length = 0
+    pixDeleteEqMock.mockClear()
     verificationMaybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
     listUsersMock.mockReset().mockResolvedValue({ data: { users: [] }, error: null })
     createUserMock.mockReset().mockResolvedValue({ data: { user: { id: 'new-user' } }, error: null })
@@ -876,6 +882,48 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
       expect.objectContaining({ access_email_sent_at: expect.anything() }),
     )
     expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('falha ao gravar a assinatura: 500, livro-razão desfeito, intent não marcado e sem e-mail', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    upsertMock.mockResolvedValueOnce({ error: { code: 'XX000', message: 'boom' } })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+    errorSpy.mockRestore()
+
+    expect(pixDeleteEqMock).toHaveBeenCalledWith('payment_id', '777')
+    expect(intentUpdateMock).not.toHaveBeenCalled()
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('reentrega depois dessa falha credita normalmente e conclui', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    // 1ª entrega: conta criada, livro-razão gravado, assinatura falha → desfeito
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    upsertMock.mockResolvedValueOnce({ error: { code: 'XX000', message: 'boom' } })
+    const first = createMockRes()
+    await handler(payReq() as any, first)
+    errorSpy.mockRestore()
+    expect(first.status).toHaveBeenCalledWith(500)
+
+    // 2ª entrega: a conta já existe; o livro-razão aceita de novo (linha apagada)
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'new-user', email: 'ana@exemplo.com' }] }, error: null })
+    const second = createMockRes()
+    await handler(payReq() as any, second)
+
+    expect(createUserMock).toHaveBeenCalledTimes(1)
+    expect(pixInsertMock).toHaveBeenCalledTimes(2)
+    expect(upsertMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ user_id: 'new-user', source: 'pix' }),
+      { onConflict: 'user_id' },
+    )
+    expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid', user_id: 'new-user' }))
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1)
+    expect(second.status).toHaveBeenCalledWith(200)
   })
 
   it('intent inexistente: ignora sem criar conta nem creditar', async () => {

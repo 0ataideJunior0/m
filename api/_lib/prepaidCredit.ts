@@ -37,11 +37,33 @@ export async function creditPrepaidPeriod(admin: AdminClient, o: PrepaidCredit):
     throw ledgerError
   }
 
-  const { data: existing } = await admin
+  // Livro-razão gravado sem a assinatura seria "pagou e ficou sem acesso" para
+  // sempre: toda reentrega daria 'duplicate' e pularia o crédito. Então, se a
+  // assinatura não for gravada, desfaz o livro-razão e lança — o webhook
+  // responde 500 e o MP reenvia, creditando de novo.
+  try {
+    await grantPeriod(admin, o)
+  } catch (error) {
+    const { error: undoError } = await admin.from('pix_payments').delete().eq('payment_id', o.paymentId)
+    if (undoError) {
+      console.error(
+        'mercadopago-webhook: CRÍTICO — período não creditado e linha do livro-razão não desfeita; ' +
+          'reentregas vão ser ignoradas. Apagar a linha de pix_payments à mão e reprocessar.',
+        { paymentId: o.paymentId, userId: o.userId, undoError, error },
+      )
+    }
+    throw error
+  }
+  return 'credited'
+}
+
+async function grantPeriod(admin: AdminClient, o: PrepaidCredit): Promise<void> {
+  const { data: existing, error: selectError } = await admin
     .from('subscriptions')
     .select('source, status, next_payment_date, preapproval_id')
     .eq('user_id', o.userId)
     .maybeSingle()
+  if (selectError) throw selectError
 
   const now = new Date()
 
@@ -67,14 +89,15 @@ export async function creditPrepaidPeriod(admin: AdminClient, o: PrepaidCredit):
       source: o.source,
       preapprovalId: existing.preapproval_id,
     })
-    await admin
+    const { error: updateError } = await admin
       .from('subscriptions')
       .update({ next_payment_date: accessUntil.toISOString(), updated_at: now.toISOString() })
       .eq('user_id', o.userId)
-    return 'credited'
+    if (updateError) throw updateError
+    return
   }
 
-  await admin.from('subscriptions').upsert(
+  const { error: upsertError } = await admin.from('subscriptions').upsert(
     {
       user_id: o.userId,
       preapproval_id: null,
@@ -87,5 +110,5 @@ export async function creditPrepaidPeriod(admin: AdminClient, o: PrepaidCredit):
     },
     { onConflict: 'user_id' },
   )
-  return 'credited'
+  if (upsertError) throw upsertError
 }
