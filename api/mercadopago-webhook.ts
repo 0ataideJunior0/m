@@ -256,7 +256,8 @@ interface PurchaseIntentRow {
  *      reescreve paid_at de um intent já pago.
  *   5. e-mail de acesso, só se a conta não tem e-mail provado e ainda não foi
  *      mandado (access_email_sent_at). Marca o envio depois de mandar: se o
- *      envio falha, a notificação volta 500 e o MP reenvia.
+ *      envio falha (ou falta PUBLIC_APP_URL), a notificação volta 500 e o MP
+ *      reenvia.
  *
  * Fica de fora de propósito: duas entregas simultâneas do mesmo pagamento
  * podem as duas mandar o e-mail (link duplicado para a mesma pessoa,
@@ -381,14 +382,12 @@ async function sendAccessEmailIfUnproven(
   // criado a conta com um e-mail que não é dela.
   if (await isCurrentEmailProven(supabaseAdmin, userId)) return
 
-  // A origem do link vem da configuração, nunca do host da notificação.
+  // A origem do link vem da configuração, nunca do host da notificação. Sem
+  // ela, lança: o webhook responde 500 e o MP reenvia até a variável existir,
+  // em vez de dar 200 e deixar quem pagou sem o link.
   const origin = (process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '')
   if (!origin) {
-    console.error('mercadopago-webhook: PUBLIC_APP_URL não configurada; e-mail de acesso não enviado', {
-      intentId,
-      userId,
-    })
-    return
+    throw new Error(`PUBLIC_APP_URL não configurada; e-mail de acesso não enviado (intent ${intentId})`)
   }
 
   await sendAccessEmail(supabaseAdmin, email, origin)

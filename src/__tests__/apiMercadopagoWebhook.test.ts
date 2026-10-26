@@ -870,7 +870,7 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
     expect(res.status).toHaveBeenCalledWith(500)
   })
 
-  it('sem PUBLIC_APP_URL: credita e marca pago, loga erro e não manda e-mail', async () => {
+  it('sem PUBLIC_APP_URL e precisando mandar o e-mail: 500 sem marcar o envio (o MP reenvia)', async () => {
     vi.stubEnv('PUBLIC_APP_URL', '')
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
@@ -878,7 +878,10 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
     const res = createMockRes()
     await handler(payReq() as any, res)
 
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('PUBLIC_APP_URL'), expect.anything())
+    expect(errorSpy).toHaveBeenCalledWith(
+      'mercadopago-webhook processing error:',
+      expect.objectContaining({ error: expect.stringContaining('PUBLIC_APP_URL') }),
+    )
     errorSpy.mockRestore()
     expect(upsertMock).toHaveBeenCalled()
     expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid' }))
@@ -886,6 +889,19 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
     expect(intentUpdateMock).not.toHaveBeenCalledWith(
       expect.objectContaining({ access_email_sent_at: expect.anything() }),
     )
+    expect(res.status).toHaveBeenCalledWith(500)
+  })
+
+  it('sem PUBLIC_APP_URL mas com e-mail provado (não manda e-mail): 200', async () => {
+    vi.stubEnv('PUBLIC_APP_URL', '')
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'old-user', email: 'ana@exemplo.com' }] }, error: null })
+    verificationMaybeSingleMock.mockResolvedValueOnce({ data: { email: 'ana@exemplo.com' }, error: null })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(signInWithOtpMock).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
   })
 

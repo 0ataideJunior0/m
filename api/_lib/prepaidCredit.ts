@@ -44,7 +44,15 @@ export async function creditPrepaidPeriod(admin: AdminClient, o: PrepaidCredit):
   try {
     await grantPeriod(admin, o)
   } catch (error) {
-    const { error: undoError } = await admin.from('pix_payments').delete().eq('payment_id', o.paymentId)
+    // O delete pode devolver erro ou lançar (rede): nos dois casos o log CRÍTICO
+    // sai e o erro relançado é o ORIGINAL, que é o que explica a falha.
+    let undoError: unknown
+    try {
+      const { error: deleteError } = await admin.from('pix_payments').delete().eq('payment_id', o.paymentId)
+      undoError = deleteError
+    } catch (deleteFailure) {
+      undoError = deleteFailure
+    }
     if (undoError) {
       console.error(
         'mercadopago-webhook: CRÍTICO — período não creditado e linha do livro-razão não desfeita; ' +

@@ -10,10 +10,13 @@ function fakeAdmin(
     upsertThrows?: Error
     updateError?: unknown
     ledgerDeleteError?: unknown
+    ledgerDeleteThrows?: Error
   } = {},
 ) {
   const ledgerInsert = vi.fn().mockResolvedValue({ error: opts.ledgerError ?? null })
-  const ledgerDeleteEq = vi.fn().mockResolvedValue({ error: opts.ledgerDeleteError ?? null })
+  const ledgerDeleteEq = opts.ledgerDeleteThrows
+    ? vi.fn().mockRejectedValue(opts.ledgerDeleteThrows)
+    : vi.fn().mockResolvedValue({ error: opts.ledgerDeleteError ?? null })
   const ledgerDelete = vi.fn(() => ({ eq: ledgerDeleteEq }))
   const upsert = opts.upsertThrows
     ? vi.fn().mockRejectedValue(opts.upsertThrows)
@@ -152,6 +155,21 @@ describe('creditPrepaidPeriod', () => {
       await expect(creditPrepaidPeriod(admin, { ...base, source: 'pix' })).rejects.toMatchObject({ code: 'XX000' })
       expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('livro-razão'),
+        expect.objectContaining({ paymentId: '12345', userId: 'user-1' }),
+      )
+      errorSpy.mockRestore()
+    })
+
+    it('se o delete do livro-razão LANÇAR, ainda loga CRÍTICO e relança o erro original', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const { admin } = fakeAdmin({
+        upsertError: { code: 'XX000', message: 'boom' },
+        ledgerDeleteThrows: new Error('network down'),
+      })
+
+      await expect(creditPrepaidPeriod(admin, { ...base, source: 'pix' })).rejects.toMatchObject({ code: 'XX000' })
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('CRÍTICO'),
         expect.objectContaining({ paymentId: '12345', userId: 'user-1' }),
       )
       errorSpy.mockRestore()
