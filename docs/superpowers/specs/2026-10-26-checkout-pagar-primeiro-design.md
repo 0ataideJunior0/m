@@ -20,7 +20,7 @@ Este documento cobre a **Etapa 1**. A Etapa 2 fica registrada para depois.
 ## Objetivos (Etapa 1)
 
 1. **Página de pagamento sem login** no app, aberta pelos cards da landing page com o plano já escolhido (ex.: `musafit.me/comprar?plano=trimestral`, com UTMs junto).
-2. Na página: a pessoa **digita só o e-mail** e paga — **cartão** no plano mensal recorrente, **Pix** nos planos de 1/3/6/12 meses (os mesmos planos e preços de hoje, `api/_lib/pixPlans.ts` e `CARD_MONTHLY_PRICE`).
+2. Na página: a pessoa **digita só o e-mail** e paga **1, 3, 6 ou 12 meses de uma vez**, no **Pix** ou no **cartão** (os mesmos planos e preços de hoje, `api/_lib/pixPlans.ts`). **Cartão é pagamento avulso**, pelo checkout normal do Mercado Pago (Checkout Pro / preferência), com **parcelamento** — não é mais assinatura recorrente (ver "Cartão" abaixo).
 3. **Logo depois de pagar**, ela é levada à **tela de login com um aviso para conferir o e-mail**.
 4. Quando o Mercado Pago confirma o pagamento:
    - **e-mail sem conta (ou com conta nunca provada — ver abaixo):** cria a conta e envia o **e-mail de acesso**;
@@ -37,7 +37,8 @@ Este documento cobre a **Etapa 1**. A Etapa 2 fica registrada para depois.
 - Login com Google (bloqueado no navegador do Instagram).
 - Pixel da Meta / Conversions API (Etapa 2).
 - Cupom de desconto (ver memória: nativo do MP só via Wallet Connect; quando vier, validação própria no backend).
-- Mudar preços, planos ou a forma como o acesso é calculado depois de pago.
+- Mudar preços dos planos ou a forma como o acesso pré-pago é calculado (o cartão avulso segue as mesmas regras do Pix).
+- Mexer em quem já tem assinatura recorrente no cartão: continua cobrando e podendo cancelar como hoje.
 - Mudar o login normal de quem já usa o app.
 
 ## Anti-objetivos (seria fracasso mesmo funcionando)
@@ -58,6 +59,7 @@ Este documento cobre a **Etapa 1**. A Etapa 2 fica registrada para depois.
 - Primeiro acesso pelo link do e-mail, **senha obrigatória**.
 - O e-mail de acesso segue o **estilo visual dos e-mails atuais** (marca MusaFit, português).
 - Medição no app + tela Funil; Pixel na Etapa 2, nesta ordem.
+- **Cartão vira pagamento avulso (1/3/6/12 meses, parcelável)**, no lugar da assinatura recorrente — decidido em 2026-10-26 depois do teste abaixo.
 - Resend já configurado como SMTP do Supabase e **testado** (2026-10-26: e-mail de redefinição chegou como "MusaFit" e aparece nos logs do Resend).
 
 ## Como fica
@@ -70,7 +72,7 @@ A conta **só é criada quando o pagamento é aprovado** — nunca na hora de di
 
 ### Servidor
 
-- Rotas novas **sem sessão** para criar a cobrança a partir de `{ email, plano, utms }`: Pix (QR code, como `api/create-pix-payment.ts`) e cartão (PreApproval, como `api/create-subscription.ts`). O preço continua vindo só do servidor.
+- Rotas novas **sem sessão** para criar a cobrança a partir de `{ email, plano, utms }`: Pix (QR code, como `api/create-pix-payment.ts`) e cartão (preferência do Checkout Pro com o valor do plano, `external_reference` = id da intenção, volta para o app). O preço continua vindo só do servidor.
 - Proteção básica contra abuso das rotas abertas (validação de e-mail, limite de tentativas por e-mail/IP em janela curta).
 - O **webhook** passa a reconhecer referências de intenção além das atuais (id puro de usuária no cartão e o formato do Pix em `api/_lib/pixPeriod.ts`, que continuam valendo para quem paga logada). Ao aprovar:
   1. marca a intenção como paga;
@@ -94,6 +96,13 @@ Com a confirmação desligada, o Supabase marca todo cadastro como confirmado au
 - **Primeiro acesso** (chegando pelo link do e-mail): tela "Crie sua senha" obrigatória → onboarding de hoje → Home.
 - **Cadastro direto** (`Register.tsx`): sem a etapa de confirmar e-mail; cria a conta e entra.
 
+### Cartão
+
+- Pagamento avulso pelo **Checkout Pro** (preferência), com os mesmos planos e preços do Pix; o webhook trata como pagamento aprovado de período pré-pago, com as mesmas regras do Pix (empilha períodos, aviso de vencimento, não convive com assinatura recorrente ativa).
+- Vale **no checkout novo e na tela de assinatura de quem já está logada** (`Subscribe.tsx`): a assinatura recorrente deixa de ser oferecida para novas compras.
+- Quem **já tem** assinatura recorrente ativa continua como está (cobrança mensal, cancelamento em "Minha assinatura"); o webhook segue entendendo esses avisos.
+- Status intermediários do cartão (em análise, recusado) são mostrados com clareza na volta do checkout; só "aprovado" libera acesso.
+
 ### E-mail de acesso
 
 Estilo dos modelos atuais (marca, português). Assunto e texto em português, um botão "Acessar minha conta". Texto final fica para a implementação, revisado pelo dono.
@@ -110,20 +119,21 @@ Repositório separado. Cada card de plano aponta para `https://musafit.me/compra
 
 ## Riscos a investigar antes de construir
 
-- **Cartão (PreApproval) e e-mail do pagador:** no sandbox, o MP exige que `payer_email` seja um usuário de teste real (`docs/spike-mp-log.md`, 2026-08); em produção não foi verificado. O MP pode exigir que a pessoa pague logada numa conta MP com o mesmo e-mail informado em `payer_email`. Se for assim, quem digita um e-mail e tem conta MP com outro não consegue pagar no cartão. Verificar na documentação/sandbox e, se confirmado, decidir a alternativa (ex.: plano de assinatura do MP com e-mail livre, ou orientar no texto da tela).
+- ~~**Cartão (PreApproval) e e-mail do pagador**~~ — **resolvido.** Testado em produção em 2026-10-26: assinatura recorrente com `payer_email` diferente do e-mail da conta MP de quem paga falha com "Seu e-mail não corresponde ao da assinatura". Por isso o cartão passou a ser pagamento avulso (Checkout Pro), que aceita qualquer e-mail e pagamento sem conta MP. **O mesmo erro afeta o app de hoje** para alunas com e-mail diferente no MP — mais um motivo para a troca valer também na tela de assinatura de quem está logada.
 - **Teste em produção:** o webhook real não dispara no sandbox (ver memória), e o plano de R$ 0,01 hoje exige admin logado. Precisa de um jeito controlado de testar o fluxo sem login (ver "Decisões minhas").
 - **Link do e-mail aberto em outro navegador:** o link vem do e-mail e normalmente abre fora do Instagram — o fluxo tem que funcionar sem depender de nada guardado no navegador onde ela pagou.
 
 ## Decisões minhas (pode mudar)
 
-- Nome da rota: `/comprar?plano=<id>`; ids iguais aos atuais (`mensal`, `trimestral`, `semestral`, `anual`; cartão = `mensal-cartao` ou equivalente).
+- Nome da rota: `/comprar?plano=<id>`; ids iguais aos atuais (`mensal`, `trimestral`, `semestral`, `anual`). Pix ou cartão é escolhido na própria página, não no link.
+- Parcelamento no cartão **até 12x**, com juros nas condições padrão do Mercado Pago (pagos por quem compra); "sem juros" fica para quando você quiser absorver a taxa.
 - Só um botão no e-mail ("Acessar minha conta"), senha criada logo em seguida.
 - Quem já tem conta provada **não recebe e-mail nosso** na compra (o MP já manda o comprovante).
 - Plano de teste R$ 0,01 aceito no checkout aberto **só para e-mails de uma lista** configurada no servidor (variável de ambiente), para testar o fluxo de conta nova em produção.
 - Link de acesso expirado → tela pede o e-mail e reenvia (só se houver compra paga para ele).
 - Aviso de conferência do e-mail + sugestão de domínio digitado errado, para reduzir "paguei e não chegou".
 - UTMs gravadas também no cadastro direto, para o Funil comparar os dois caminhos.
-- E-mail com **assinatura ativa no cartão** que tenta comprar de novo pela landing: o checkout recusa com "você já tem assinatura ativa — entre na sua conta", para não cobrar em dobro (mesma regra que hoje bloqueia o Pix nesse caso).
+- E-mail com **assinatura recorrente ativa no cartão** (das antigas) que tenta comprar de novo pela landing: o checkout recusa com "você já tem assinatura ativa — entre na sua conta", para não cobrar em dobro (mesma regra que hoje bloqueia o Pix nesse caso).
 
 ## Fica a critério de quem constrói
 
