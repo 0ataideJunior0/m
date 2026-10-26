@@ -44,7 +44,11 @@ describe('getPixExpiryWarning', () => {
     expect(getPixExpiryWarning(sub({ source: 'manual', payment_id: null }), NOW)?.daysLeft).toBe(5)
   })
 
-  it('não avisa sobre assinatura no cartão, que renova sozinha', () => {
+  it('avisa também sobre cartão avulso, que é pré-pago e não renova sozinho', () => {
+    expect(getPixExpiryWarning(sub({ source: 'card' }), NOW)?.daysLeft).toBe(5)
+  })
+
+  it('não avisa sobre assinatura recorrente no cartão, que renova sozinha', () => {
     expect(getPixExpiryWarning(sub({ source: 'preapproval' }), NOW)).toBeNull()
   })
 

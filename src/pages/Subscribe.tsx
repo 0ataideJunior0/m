@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Copy, QrCode, CreditCard } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { createSubscription, getHasActiveSubscription, getMySubscription } from '../utils/subscription'
+import { getHasActiveSubscription, getMySubscription } from '../utils/subscription'
 import { createPixPayment, PixCharge } from '../utils/pixPayment'
+import { createCardPayment } from '../utils/checkout'
 import { getPixPlansDisplay, PixPlanId, formatBRL } from '../utils/pixPlans'
-import { MONTHLY_PRICE } from '../utils/promo'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
@@ -23,7 +23,7 @@ export default function Subscribe() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user, isAdmin, hasActiveSubscription, needsOnboarding, setHasActiveSubscription } = useAuthStore()
-  const [creating, setCreating] = useState(false)
+  const [openingCard, setOpeningCard] = useState<PixPlanId | null>(null)
   const [generatingPix, setGeneratingPix] = useState<PixPlanId | null>(null)
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null)
   const [polling, setPolling] = useState(false)
@@ -31,7 +31,10 @@ export default function Subscribe() {
   const [pollKey, setPollKey] = useState(0)
   const { toast, show: showToast, dismiss: dismissToast } = useToast()
 
-  const returnedFromCheckout = searchParams.has('preapproval_id')
+  // O Mercado Pago devolve a pessoa para /subscribe com o id da assinatura
+  // recorrente (preapproval_id, contas antigas) ou o da preferência do cartão
+  // avulso (preference_id). Nos dois casos, falta o webhook confirmar.
+  const returnedFromCheckout = searchParams.has('preapproval_id') || searchParams.has('preference_id')
   // Quem está renovando TEM acesso ativo — sem esta intenção explícita, o
   // redirecionamento abaixo a expulsaria de volta para a Home e a renovação
   // via Pix seria impossível.
@@ -88,15 +91,15 @@ export default function Subscribe() {
     return () => clearInterval(interval)
   }, [awaitingPayment, user, navigate, setHasActiveSubscription, destination, timeoutMs, pixCharge, pollKey])
 
-  const handleSubscribe = async () => {
-    setCreating(true)
-    const { initPoint, error } = await createSubscription()
-    if (error || !initPoint) {
-      showToast(`Erro ao iniciar assinatura. ${error || ''}`.trim())
-      setCreating(false)
+  const handleCard = async (plan: PixPlanId) => {
+    setOpeningCard(plan)
+    const { data, error } = await createCardPayment(plan)
+    if (error || !data?.init_point) {
+      showToast(error || 'Erro ao abrir o pagamento no cartão')
+      setOpeningCard(null)
       return
     }
-    window.location.href = initPoint
+    window.location.href = data.init_point
   }
 
   const handlePix = async (plan: PixPlanId) => {
@@ -207,54 +210,45 @@ export default function Subscribe() {
           Acesso completo aos treinos e aos planos alimentares.
         </p>
 
-        <div className="rounded-2xl border border-border p-4 mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="w-4 h-4 text-accent" />
-            <span className="font-semibold text-text-strong">Cartão de crédito</span>
-          </div>
-          <p className="text-sm text-text-muted mb-3">
-            {formatBRL(MONTHLY_PRICE)} por mês, com renovação automática. Cancele quando quiser.
-          </p>
-          <Button className="w-full" onClick={handleSubscribe} isLoading={creating}>
-            Assinar agora
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-3 mb-5">
-          <span className="h-px flex-1 bg-border" />
-          <span className="text-xs uppercase tracking-wide text-text-muted">ou pague via Pix</span>
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
         <div className="space-y-3">
           {getPixPlansDisplay().filter((plan) => !plan.adminOnly || isAdmin).map((plan) => (
-            <div key={plan.id} className="rounded-2xl border border-border p-4">
+            <div key={plan.id} role="group" aria-label={plan.title} className="rounded-2xl border border-border p-4">
               <div className="flex items-start justify-between gap-3 mb-1">
                 <div className="flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-accent" />
                   <span className="font-semibold text-text-strong">{plan.title}</span>
+                  {plan.badge && (
+                    <span className="text-xs font-medium rounded-full px-2 py-0.5 bg-success/10 text-success">
+                      {plan.badge}
+                    </span>
+                  )}
                 </div>
-                {plan.badge && (
-                  <span className="text-xs font-medium rounded-full px-2 py-0.5 bg-success/10 text-success">
-                    {plan.badge}
-                  </span>
-                )}
+                <span className="font-extrabold tracking-tight text-text-strong">{formatBRL(plan.amount)}</span>
               </div>
               <p className="text-sm text-text-muted mb-3">{plan.subtitle}</p>
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => handlePix(plan.id)}
-                isLoading={generatingPix === plan.id}
-              >
-                Pagar {formatBRL(plan.amount)}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => handlePix(plan.id)}
+                  isLoading={generatingPix === plan.id}
+                  disabled={openingCard !== null}
+                >
+                  <QrCode className="w-4 h-4 mr-2" /> Pagar com Pix
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleCard(plan.id)}
+                  isLoading={openingCard === plan.id}
+                  disabled={generatingPix !== null}
+                >
+                  <CreditCard className="w-4 h-4 mr-2" /> Cartão (até 12x)
+                </Button>
+              </div>
             </div>
           ))}
         </div>
 
         <p className="text-xs text-text-muted mt-5 text-center">
-          No Pix não há renovação automática — avisamos no app antes de o acesso acabar.
+          Pagamento único, sem renovação automática — avisamos no app antes de o acesso acabar.
         </p>
       </Card>
       <Toast toast={toast} onDismiss={dismissToast} />

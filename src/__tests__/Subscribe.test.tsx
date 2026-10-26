@@ -1,24 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import Subscribe from '../pages/Subscribe'
 
-const { createSubscriptionMock, getHasActiveSubscriptionMock, getMySubscriptionMock, createPixPaymentMock } =
+const { getHasActiveSubscriptionMock, getMySubscriptionMock, createPixPaymentMock, createCardPaymentMock } =
   vi.hoisted(() => ({
-    createSubscriptionMock: vi.fn(),
     getHasActiveSubscriptionMock: vi.fn(),
     getMySubscriptionMock: vi.fn(),
     createPixPaymentMock: vi.fn(),
+    createCardPaymentMock: vi.fn(),
   }))
 
 vi.mock('../utils/subscription', () => ({
-  createSubscription: createSubscriptionMock,
   getHasActiveSubscription: getHasActiveSubscriptionMock,
   getMySubscription: getMySubscriptionMock,
 }))
 
 vi.mock('../utils/pixPayment', () => ({
   createPixPayment: createPixPaymentMock,
+}))
+
+vi.mock('../utils/checkout', () => ({
+  createCardPayment: createCardPaymentMock,
 }))
 
 const mockState: any = {
@@ -38,13 +41,13 @@ describe('Subscribe', () => {
     mockState.hasActiveSubscription = false
     mockState.needsOnboarding = false
     mockState.setHasActiveSubscription = vi.fn()
-    createSubscriptionMock.mockReset()
+    createCardPaymentMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
     createPixPaymentMock.mockReset()
   })
 
-  it('mostra o botão de assinar e redireciona pro checkout ao clicar', async () => {
-    createSubscriptionMock.mockResolvedValueOnce({ initPoint: 'https://mp.example/checkout', error: null })
+  it('redireciona para o checkout do cartão ao clicar em "Cartão (até 12x)" do trimestral', async () => {
+    createCardPaymentMock.mockResolvedValueOnce({ data: { init_point: 'https://mp.example/checkout' } })
     const originalHref = window.location.href
     Object.defineProperty(window, 'location', {
       writable: true,
@@ -59,9 +62,46 @@ describe('Subscribe', () => {
       </MemoryRouter>
     )
 
-    fireEvent.click(screen.getByText('Assinar agora'))
+    fireEvent.click(within(screen.getByRole('group', { name: '3 meses' })).getByText('Cartão (até 12x)'))
 
     await waitFor(() => expect(window.location.href).toBe('https://mp.example/checkout'))
+    expect(createCardPaymentMock).toHaveBeenCalledWith('trimestral')
+  })
+
+  it('avisa quando não dá para abrir o checkout do cartão', async () => {
+    createCardPaymentMock.mockResolvedValueOnce({
+      error: 'Você já tem uma assinatura ativa no cartão. Cancele antes de comprar um novo período.',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/subscribe']}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    fireEvent.click(within(screen.getByRole('group', { name: '1 mês' })).getByText('Cartão (até 12x)'))
+
+    expect(
+      await screen.findByText('Você já tem uma assinatura ativa no cartão. Cancele antes de comprar um novo período.')
+    ).not.toBeNull()
+  })
+
+  it('ao voltar do checkout do cartão avulso, espera o webhook e redireciona pra /home', async () => {
+    getHasActiveSubscriptionMock.mockResolvedValueOnce(true)
+
+    render(
+      <MemoryRouter initialEntries={['/subscribe?collection_status=approved&payment_id=999&preference_id=pref-1']}>
+        <Routes>
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/home" element={<div>Home Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Home Page')).not.toBeNull()
+    expect(mockState.setHasActiveSubscription).toHaveBeenCalledWith(true)
   })
 
   it('ao voltar do checkout, confirma a assinatura e redireciona pra /home', async () => {
@@ -103,7 +143,7 @@ describe('Subscribe — pagamento via Pix', () => {
     mockState.hasActiveSubscription = false
     mockState.needsOnboarding = false
     mockState.setHasActiveSubscription = vi.fn()
-    createSubscriptionMock.mockReset()
+    createCardPaymentMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
     createPixPaymentMock.mockReset()
   })
@@ -118,12 +158,16 @@ describe('Subscribe — pagamento via Pix', () => {
       </MemoryRouter>
     )
 
-  it('oferece os dois planos de Pix junto com o cartão', () => {
+  it('oferece Pix e cartão parcelado em cada plano, sem assinatura recorrente', () => {
     renderSubscribe()
 
-    expect(screen.getByText('Assinar agora')).not.toBeNull()
-    expect(screen.getByText('1 mês')).not.toBeNull()
-    expect(screen.getByText('3 meses')).not.toBeNull()
+    expect(screen.queryByText('Assinar agora')).toBeNull()
+    expect(screen.queryByText(/com renovação automática/)).toBeNull()
+    for (const title of ['1 mês', '3 meses', '6 meses', '12 meses']) {
+      const plan = within(screen.getByRole('group', { name: title }))
+      expect(plan.getByText('Pagar com Pix')).not.toBeNull()
+      expect(plan.getByText('Cartão (até 12x)')).not.toBeNull()
+    }
   })
 
   it('mostra o QR Code e o código copia e cola depois de gerar a cobrança', async () => {
@@ -140,7 +184,7 @@ describe('Subscribe — pagamento via Pix', () => {
     getHasActiveSubscriptionMock.mockResolvedValue(false)
 
     renderSubscribe()
-    fireEvent.click(screen.getByText(/Pagar R\$\s*129,90/))
+    fireEvent.click(within(screen.getByRole('group', { name: '3 meses' })).getByText('Pagar com Pix'))
 
     expect(await screen.findByText('00020126-codigo-pix-copia-e-cola')).not.toBeNull()
     expect(screen.getByAltText('QR Code do Pix')).not.toBeNull()
@@ -154,7 +198,7 @@ describe('Subscribe — pagamento via Pix', () => {
     })
 
     renderSubscribe()
-    fireEvent.click(screen.getByText(/Pagar R\$\s*49,90/))
+    fireEvent.click(within(screen.getByRole('group', { name: '1 mês' })).getByText('Pagar com Pix'))
 
     expect(await screen.findByText('Você já tem uma assinatura ativa no cartão.')).not.toBeNull()
   })
@@ -165,7 +209,7 @@ describe('Subscribe — renovação de acesso via Pix', () => {
     mockState.isAdmin = false
     mockState.needsOnboarding = false
     mockState.setHasActiveSubscription = vi.fn()
-    createSubscriptionMock.mockReset()
+    createCardPaymentMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
     getMySubscriptionMock.mockReset()
     createPixPaymentMock.mockReset()
@@ -211,7 +255,7 @@ describe('Subscribe — renovação de acesso via Pix', () => {
     getMySubscriptionMock.mockResolvedValue({ payment_id: 'antigo-111' })
 
     renderAt('/subscribe?renovar=1')
-    fireEvent.click(await screen.findByText(/Pagar R\$\s*129,90/))
+    fireEvent.click(within(await screen.findByRole('group', { name: '3 meses' })).getByText('Pagar com Pix'))
 
     expect(await screen.findByText('codigo')).not.toBeNull()
     await waitFor(() => expect(getMySubscriptionMock).toHaveBeenCalled())
@@ -226,7 +270,7 @@ describe('Subscribe — plano de verificação restrito a admin', () => {
     mockState.hasActiveSubscription = false
     mockState.needsOnboarding = false
     mockState.setHasActiveSubscription = vi.fn()
-    createSubscriptionMock.mockReset()
+    createCardPaymentMock.mockReset()
     getHasActiveSubscriptionMock.mockReset()
     getMySubscriptionMock.mockReset()
     createPixPaymentMock.mockReset()
@@ -282,7 +326,7 @@ describe('Subscribe — preço padrão (sem promoção com prazo)', () => {
     renderSubscribe()
 
     expect(screen.queryByText(/Promoção de lançamento/)).toBeNull()
-    expect(screen.getByText(/R\$\s*49,90 por mês/)).not.toBeNull()
-    expect(screen.getByText(/Pagar R\$\s*129,90/)).not.toBeNull()
+    expect(within(screen.getByRole('group', { name: '1 mês' })).getByText(/R\$\s*49,90/)).not.toBeNull()
+    expect(within(screen.getByRole('group', { name: '3 meses' })).getByText(/R\$\s*129,90/)).not.toBeNull()
   })
 })

@@ -20,6 +20,12 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelada',
 }
 
+const PREPAID_LABELS: Record<string, string> = {
+  pix: 'Acesso via Pix',
+  card: 'Acesso via cartão',
+  manual: 'Acesso liberado pela equipe',
+}
+
 export default function MySubscription() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -59,8 +65,9 @@ export default function MySubscription() {
     setCancelling(false)
   }
 
-  // Pré-pago (Pix ou liberado pela admin): período fechado, sem cobrança recorrente.
-  const isPrepaid = subscription?.source === 'pix' || subscription?.source === 'manual'
+  // Pré-pago (Pix, cartão avulso ou liberado pela admin): período fechado, sem cobrança recorrente.
+  const isPrepaid =
+    subscription?.source === 'pix' || subscription?.source === 'card' || subscription?.source === 'manual'
 
   if (loading) {
     return (
@@ -81,7 +88,7 @@ export default function MySubscription() {
               <div className="mb-4">
                 <div className="text-sm text-text-muted">Status</div>
                 <div className="text-lg font-extrabold tracking-tight text-text-strong">
-                  {isPrepaid ? (subscription.source === 'manual' ? 'Acesso liberado pela equipe' : 'Acesso via Pix') : STATUS_LABELS[subscription.status] || subscription.status}
+                  {isPrepaid ? PREPAID_LABELS[subscription.source] : STATUS_LABELS[subscription.status] || subscription.status}
                 </div>
               </div>
               {subscription.next_payment_date &&

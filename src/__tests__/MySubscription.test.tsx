@@ -125,6 +125,26 @@ describe('MySubscription', () => {
     expect(screen.getByText('Renovar acesso')).not.toBeNull()
   })
 
+  it('para cartão avulso, mostra "Acesso via cartão" e oferece renovar em vez de cancelar', async () => {
+    getMySubscriptionMock.mockResolvedValueOnce({
+      id: 's1', user_id: 'u1', preapproval_id: null, payment_id: 'pay-1', source: 'card',
+      status: 'authorized', next_payment_date: '2026-11-19T12:00:00.000Z', created_at: '', updated_at: '',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/minha-assinatura']}>
+        <Routes>
+          <Route path="/minha-assinatura" element={<MySubscription />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Acesso via cartão')).not.toBeNull()
+    expect(screen.getByText('Acesso liberado até')).not.toBeNull()
+    expect(screen.queryByText('Cancelar assinatura')).toBeNull()
+    expect(screen.getByText('Renovar acesso')).not.toBeNull()
+  })
+
   it('para acesso liberado pela admin, identifica a origem e oferece renovar em vez de cancelar', async () => {
     getMySubscriptionMock.mockResolvedValueOnce({
       id: 's1', user_id: 'u1', preapproval_id: null, payment_id: null, source: 'manual',

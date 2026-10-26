@@ -45,7 +45,7 @@ export default function PixExpiryBanner() {
       <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
       <div className="flex-1">
         <p className="font-medium text-sm">{formatExpiryMessage(warning)}</p>
-        <p className="text-sm opacity-90 mt-0.5">O pagamento via Pix não renova sozinho.</p>
+        <p className="text-sm opacity-90 mt-0.5">Este acesso não renova sozinho.</p>
       </div>
       <button
         onClick={() => navigate('/subscribe?renovar=1')}
