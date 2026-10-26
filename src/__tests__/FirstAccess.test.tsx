@@ -29,7 +29,13 @@ vi.mock('../utils/subscription', () => ({ getHasActiveSubscription: vi.fn(async 
 import FirstAccess from '../pages/FirstAccess'
 import { useAuthStore } from '../store/authStore'
 
-const SESSION = { data: { session: { access_token: 'tok' } } }
+const jwt = (amrMethod: string) => {
+  const b64 = (v: unknown) => btoa(JSON.stringify(v)).replace(/=+$/, '')
+  return `${b64({ alg: 'HS256' })}.${b64({ amr: [{ method: amrMethod, timestamp: 1 }] })}.sig`
+}
+const LINK_SESSION = { access_token: jwt('otp') }
+const SESSION = { data: { session: LINK_SESSION } }
+const PASSWORD_SESSION = { data: { session: { access_token: jwt('password') } } }
 const NO_SESSION = { data: { session: null } }
 
 const user = (onboardingCompletedAt: string | null) => ({
@@ -107,6 +113,60 @@ describe('FirstAccess (/primeiro-acesso)', () => {
     expect(await screen.findByRole('status')).not.toBeNull()
   })
 
+  it('sessão de senha (não veio do link do e-mail) mostra a tela de link expirado, sem o formulário', async () => {
+    authMock.getSession.mockResolvedValue(PASSWORD_SESSION)
+    renderPage()
+
+    expect(await screen.findByText('Este link expirou ou já foi usado.', {}, { timeout: 3000 })).not.toBeNull()
+    expect(screen.queryByRole('heading', { name: /crie sua senha/i })).toBeNull()
+    expect(claimAccessMock).not.toHaveBeenCalled()
+  })
+
+  it('evento do supabase com sessão de senha não abre o formulário', async () => {
+    authMock.getSession.mockResolvedValue(NO_SESSION)
+    let listener: ((event: string, session: unknown) => void) | undefined
+    authMock.onAuthStateChange.mockImplementation((cb: (event: string, session: unknown) => void) => {
+      listener = cb
+      return { data: { subscription: { unsubscribe: unsubscribeMock } } }
+    })
+    renderPage()
+
+    await waitFor(() => expect(listener).toBeDefined())
+    act(() => listener!('SIGNED_IN', PASSWORD_SESSION.data.session))
+
+    expect(await screen.findByText('Este link expirou ou já foi usado.', {}, { timeout: 3000 })).not.toBeNull()
+    expect(screen.queryByRole('heading', { name: /crie sua senha/i })).toBeNull()
+  })
+
+  it('password_set só é registrado depois que o link_opened terminou', async () => {
+    let finishLinkOpened: (v: { ok: boolean }) => void = () => {}
+    claimAccessMock.mockImplementation((step: string) => {
+      calls.push(`claim:${step}`)
+      if (step === 'link_opened') {
+        return new Promise((resolve) => {
+          finishLinkOpened = (v) => {
+            calls.push('claim:link_opened:done')
+            resolve(v)
+          }
+        })
+      }
+      return Promise.resolve({ ok: true })
+    })
+    renderPage()
+    await screen.findByRole('heading', { name: /crie sua senha/i })
+    await waitFor(() => expect(claimAccessMock).toHaveBeenCalledWith('link_opened'))
+
+    fillAndSubmit('abc123', 'abc123')
+    await waitFor(() => expect(calls).toContain('signOut'))
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
+    expect(claimAccessMock).not.toHaveBeenCalledWith('password_set')
+
+    act(() => finishLinkOpened({ ok: false }))
+
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+    expect(calls.indexOf('claim:link_opened:done')).toBeLessThan(calls.indexOf('claim:password_set'))
+  })
+
   it('a sessão do hash pode chegar depois da montagem: o evento do supabase abre o formulário', async () => {
     authMock.getSession.mockResolvedValue(NO_SESSION)
     let listener: ((event: string, session: unknown) => void) | undefined
@@ -117,7 +177,7 @@ describe('FirstAccess (/primeiro-acesso)', () => {
     renderPage()
 
     await waitFor(() => expect(listener).toBeDefined())
-    act(() => listener!('SIGNED_IN', { access_token: 'tok' }))
+    act(() => listener!('SIGNED_IN', LINK_SESSION))
 
     expect(await screen.findByRole('heading', { name: /crie sua senha/i })).not.toBeNull()
     expect(screen.queryByText('Este link expirou ou já foi usado.')).toBeNull()

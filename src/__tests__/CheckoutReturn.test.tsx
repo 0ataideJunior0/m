@@ -58,13 +58,43 @@ describe('CheckoutReturn', () => {
     expect(screen.getByText(/^Comprar/)).not.toBeNull()
   })
 
-  it('pending mostra "em análise" e continua consultando a cada 4s', async () => {
+  it('pending em análise (in_process) mostra o aviso, oferece voltar à compra e continua consultando a cada 4s', async () => {
     getCheckoutStatusMock.mockResolvedValue({ data: { status: 'pending', lastPaymentStatus: 'in_process' } })
     renderReturn()
     await flush()
-    expect(screen.getByText('Pagamento em análise. Avisaremos por e-mail assim que for aprovado.')).not.toBeNull()
+    expect(
+      screen.getByText('Pagamento em análise. Assim que for aprovado, seu acesso é liberado.'),
+    ).not.toBeNull()
     await flush(4000)
     expect(getCheckoutStatusMock).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: /voltar para a compra/i }))
+    expect(screen.getByText(/^Comprar/)).not.toBeNull()
+  })
+
+  it("pending com lastPaymentStatus 'pending' também é em análise", async () => {
+    getCheckoutStatusMock.mockResolvedValue({ data: { status: 'pending', lastPaymentStatus: 'pending' } })
+    renderReturn()
+    await flush()
+    expect(
+      screen.getByText('Pagamento em análise. Assim que for aprovado, seu acesso é liberado.'),
+    ).not.toBeNull()
+    expect(screen.getByRole('button', { name: /voltar para a compra/i })).not.toBeNull()
+  })
+
+  it('pending sem nenhum pagamento ainda (saiu do MP sem pagar): confirma e, depois de 60s, oferece voltar à compra', async () => {
+    getCheckoutStatusMock.mockResolvedValue({ data: { status: 'pending', lastPaymentStatus: null } })
+    renderReturn()
+    await flush()
+    expect(screen.getByText('Estamos confirmando seu pagamento...')).not.toBeNull()
+    expect(screen.queryByText(/em análise/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: /voltar para a compra/i })).toBeNull()
+
+    await flush(59_000)
+    expect(screen.queryByRole('button', { name: /voltar para a compra/i })).toBeNull()
+
+    await flush(1_000)
+    fireEvent.click(screen.getByRole('button', { name: /voltar para a compra/i }))
+    expect(screen.getByText(/^Comprar/)).not.toBeNull()
   })
 
   it('paid leva ao login com pago=1 e o e-mail guardado antes do cartão', async () => {

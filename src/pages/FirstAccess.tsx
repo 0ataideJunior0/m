@@ -8,6 +8,7 @@ import { getHasActiveSubscription } from '../utils/subscription'
 import { useAuthStore } from '../store/authStore'
 import { passwordsMatch } from '../utils/validation'
 import { authErrorMessage, isSamePasswordError } from '../utils/authErrors'
+import { sessionCameFromEmailLink } from '../utils/sessionAmr'
 import { Eye, EyeOff, Lock, Mail, MailCheck } from 'lucide-react'
 import Button from '../components/ui/Button'
 import AmbientGlow from '../components/ui/AmbientGlow'
@@ -18,9 +19,17 @@ type Phase = 'loading' | 'ready' | 'expired'
 // dá uma folga antes de concluir que o link não vale mais.
 const SESSION_GRACE_MS = 1500
 
+// Só a sessão aberta pelo link do e-mail serve para criar a senha aqui: uma
+// sessão de senha já existente (ex.: quem cadastrou o e-mail antes) vê a tela
+// de link expirado e pede um link novo.
+const isLinkSession = (session: { access_token: string } | null | undefined) =>
+  !!session && sessionCameFromEmailLink(session.access_token)
+
 export default function FirstAccess() {
   const [phase, setPhase] = useState<Phase>('loading')
-  const claimedRef = useRef(false)
+  // A promessa do link_opened: o password_set espera ela terminar, senão o
+  // servidor pode ver o password_set antes da prova do e-mail e recusar.
+  const linkOpenedClaimRef = useRef<Promise<unknown> | null>(null)
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -43,19 +52,19 @@ export default function FirstAccess() {
     let graceTimer: ReturnType<typeof setTimeout> | undefined
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) setPhase('ready')
+      if (active && isLinkSession(session)) setPhase('ready')
     })
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return
-      if (session) {
+      if (isLinkSession(session)) {
         setPhase('ready')
         return
       }
       graceTimer = setTimeout(async () => {
         const { data } = await supabase.auth.getSession()
         if (!active) return
-        setPhase((current) => (data.session || current === 'ready' ? 'ready' : 'expired'))
+        setPhase((current) => (isLinkSession(data.session) || current === 'ready' ? 'ready' : 'expired'))
       }, SESSION_GRACE_MS)
     })
 
@@ -69,11 +78,12 @@ export default function FirstAccess() {
   // Uma vez por abertura do link (o ref segura o efeito duplo do StrictMode).
   // O resultado não muda a tela: se o servidor recusar, a senha ainda é criada.
   useEffect(() => {
-    if (phase !== 'ready' || claimedRef.current) return
-    claimedRef.current = true
-    claimAccess('link_opened').then(({ ok, error: claimError }) => {
-      if (!ok) console.error('Não foi possível registrar a abertura do link:', claimError)
-    })
+    if (phase !== 'ready' || linkOpenedClaimRef.current) return
+    linkOpenedClaimRef.current = claimAccess('link_opened')
+      .then(({ ok, error: claimError }) => {
+        if (!ok) console.error('Não foi possível registrar a abertura do link:', claimError)
+      })
+      .catch((claimFailure) => console.error('Não foi possível registrar a abertura do link:', claimFailure))
   }, [phase])
 
   const validate = () => {
@@ -118,6 +128,7 @@ export default function FirstAccess() {
         console.error('Não foi possível encerrar as outras sessões:', signOutFailure)
       }
 
+      await linkOpenedClaimRef.current
       const { ok, error: claimError } = await claimAccess('password_set')
       if (!ok) console.error('Não foi possível registrar a senha criada:', claimError)
 

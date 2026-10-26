@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCheckoutStatus } from '../hooks/useCheckoutStatus'
 import { paidLoginPath, recallCheckoutEmail } from '../utils/checkoutEmail'
@@ -6,12 +6,24 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Spinner from '../components/ui/Spinner'
 
+// Quem sai do Mercado Pago sem pagar volta com o intent 'pending' e nenhum
+// pagamento registrado: depois deste tempo sem novidade, oferece voltar à compra.
+const CONFIRMING_TIMEOUT_MS = 60_000
+
 /** Volta do checkout do cartão: confirma o pagamento e leva ao login quando aprovado. */
 export default function CheckoutReturn() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const intentId = searchParams.get('intent')
   const status = useCheckoutStatus(intentId)
+  const [waitedTooLong, setWaitedTooLong] = useState(false)
+
+  useEffect(() => {
+    setWaitedTooLong(false)
+    if (!intentId) return
+    const timer = setTimeout(() => setWaitedTooLong(true), CONFIRMING_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [intentId])
 
   useEffect(() => {
     if (intentId && status?.status === 'paid') {
@@ -40,18 +52,21 @@ export default function CheckoutReturn() {
         {backToCheckout('Tentar de novo')}
       </>
     )
-  } else if (status?.status === 'pending') {
+  } else if (status?.status === 'pending' && status.lastPaymentStatus) {
+    // O MP registrou um pagamento que ainda não foi aprovado (in_process/pending).
     content = (
       <>
         <Spinner className="mx-auto mb-4" />
-        <p className="text-text-muted">Pagamento em análise. Avisaremos por e-mail assim que for aprovado.</p>
+        <p className="text-text-muted mb-4">Pagamento em análise. Assim que for aprovado, seu acesso é liberado.</p>
+        {backToCheckout('Voltar para a compra')}
       </>
     )
   } else {
     content = (
       <>
         <Spinner className="mx-auto mb-4" />
-        <p className="text-text-muted">Estamos confirmando seu pagamento...</p>
+        <p className={`text-text-muted${waitedTooLong ? ' mb-4' : ''}`}>Estamos confirmando seu pagamento...</p>
+        {waitedTooLong && backToCheckout('Voltar para a compra')}
       </>
     )
   }
