@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { signUp } from '../utils/auth'
+import { authErrorMessage } from '../utils/authErrors'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin, updateSignupUtm } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
@@ -80,7 +81,7 @@ export default function Register() {
       const { user, error, needsEmailConfirmation } = await signUp(email.trim(), password)
 
       if (error) {
-        setError(error.message)
+        setError(authErrorMessage(error))
         return
       }
 

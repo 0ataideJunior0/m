@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { signIn } from '../utils/auth'
+import { authErrorMessage } from '../utils/authErrors'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
@@ -75,7 +76,7 @@ export default function Login() {
       const { user, error } = await signIn(email, password)
 
       if (error) {
-        setError(error.message)
+        setError(authErrorMessage(error))
         return
       }
 

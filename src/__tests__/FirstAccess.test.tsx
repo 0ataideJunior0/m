@@ -192,16 +192,37 @@ describe('FirstAccess (/primeiro-acesso)', () => {
     spy.mockRestore()
   })
 
-  it('erro do updateUser mostra a mensagem e não segue adiante', async () => {
-    authMock.updateUser.mockResolvedValue({ data: {}, error: { message: 'Senha fraca' } })
+  it('erro do updateUser mostra a mensagem em português e não segue adiante', async () => {
+    authMock.updateUser.mockResolvedValue({
+      data: {},
+      error: { code: 'weak_password', message: 'Password should be at least 6 characters.' },
+    })
     renderPage()
     await screen.findByRole('heading', { name: /crie sua senha/i })
 
     fillAndSubmit('abc123', 'abc123')
 
-    expect(await screen.findByText('Senha fraca')).not.toBeNull()
+    expect(await screen.findByText('A senha deve ter pelo menos 6 caracteres.')).not.toBeNull()
+    expect(screen.queryByText(/Password should be/)).toBeNull()
     expect(authMock.signOut).not.toHaveBeenCalled()
     expect(claimAccessMock).not.toHaveBeenCalledWith('password_set')
     expect(screen.queryByText('Onboarding Page')).toBeNull()
+  })
+
+  it('senha igual à atual (same_password) conta como sucesso e segue o fluxo', async () => {
+    authMock.updateUser.mockImplementation(async () => {
+      calls.push('updateUser')
+      return {
+        data: {},
+        error: { code: 'same_password', message: 'New password should be different from the old password.' },
+      }
+    })
+    renderPage()
+    await screen.findByRole('heading', { name: /crie sua senha/i })
+
+    fillAndSubmit('abc123', 'abc123')
+
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+    expect(calls.filter((c) => c !== 'claim:link_opened')).toEqual(['updateUser', 'signOut', 'claim:password_set'])
   })
 })

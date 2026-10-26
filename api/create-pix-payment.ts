@@ -4,9 +4,11 @@ import { buildPrepaidExternalReference } from './_lib/pixPeriod.js'
 import { createPixCharge, ChargeResponseError, requestOrigin } from './_lib/charges.js'
 import { checkLoggedPurchase } from './_lib/loggedPurchase.js'
 
+const PIX_ERROR = 'Não foi possível gerar o código Pix. Tente de novo.'
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' })
+    res.status(405).json({ error: 'Método não permitido.' })
     return
   }
 
@@ -33,13 +35,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ ...pix, amount: plan.amount, months: plan.months })
   } catch (error) {
     if (error instanceof ChargeResponseError) {
-      res.status(502).json({ error: 'Não foi possível gerar o código Pix' })
+      res.status(502).json({ error: PIX_ERROR })
       return
     }
     console.error(
       'create-pix-payment error:',
       JSON.stringify(error, Object.getOwnPropertyNames(error as object))
     )
-    res.status(500).json({ error: 'Failed to create Pix payment' })
+    res.status(500).json({ error: PIX_ERROR })
   }
 }

@@ -63,18 +63,21 @@ describe('POST /api/create-pix-payment', () => {
     const res = createMockRes()
     await handler({ method: 'GET', headers: {} } as any, res)
     expect(res.status).toHaveBeenCalledWith(405)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Método não permitido.' })
   })
 
   it('retorna 401 sem token de autorização', async () => {
     const res = createMockRes()
     await handler({ method: 'POST', headers: {}, body: { plan: 'mensal' } } as any, res)
     expect(res.status).toHaveBeenCalledWith(401)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Sua sessão expirou. Entre de novo.' })
   })
 
   it('rejeita plano que não existe', async () => {
     const res = createMockRes()
     await handler(authedReq({ plan: 'bienal' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Plano inválido.' })
     expect(paymentCreateMock).not.toHaveBeenCalled()
   })
 
@@ -148,6 +151,18 @@ describe('POST /api/create-pix-payment', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('retorna 500 em português quando a chamada ao Mercado Pago falha', async () => {
+    paymentCreateMock.mockRejectedValueOnce(new Error('mp down'))
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'mensal' }) as any, res)
+    spy.mockRestore()
+
+    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Não foi possível gerar o código Pix. Tente de novo.' })
+  })
+
   it('retorna 502 quando o Mercado Pago responde sem QR Code', async () => {
     paymentCreateMock.mockResolvedValueOnce({ id: 1, status: 'rejected', point_of_interaction: undefined })
 
@@ -155,6 +170,7 @@ describe('POST /api/create-pix-payment', () => {
     await handler(authedReq({ plan: 'mensal' }) as any, res)
 
     expect(res.status).toHaveBeenCalledWith(502)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Não foi possível gerar o código Pix. Tente de novo.' })
   })
 })
 

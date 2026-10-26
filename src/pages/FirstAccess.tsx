@@ -7,6 +7,7 @@ import { getIsAdmin } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
 import { useAuthStore } from '../store/authStore'
 import { passwordsMatch } from '../utils/validation'
+import { authErrorMessage, isSamePasswordError } from '../utils/authErrors'
 import { Eye, EyeOff, Lock, Mail, MailCheck } from 'lucide-react'
 import Button from '../components/ui/Button'
 import AmbientGlow from '../components/ui/AmbientGlow'
@@ -101,8 +102,10 @@ export default function FirstAccess() {
     setSaving(true)
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password })
-      if (updateError) {
-        setError(updateError.message)
+      // Senha igual à atual (ex.: reabriu o link e digitou a mesma): a senha
+      // que ela quer já está valendo, então segue como sucesso.
+      if (updateError && !isSamePasswordError(updateError)) {
+        setError(authErrorMessage(updateError))
         return
       }
 

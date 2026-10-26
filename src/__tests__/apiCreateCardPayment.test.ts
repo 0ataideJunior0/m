@@ -47,18 +47,29 @@ describe('POST /api/create-card-payment', () => {
     const res = createMockRes()
     await handler({ method: 'GET', headers: {} } as any, res)
     expect(res.status).toHaveBeenCalledWith(405)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Método não permitido.' })
+  })
+
+  it('retorna 401 com sessão inválida, em português', async () => {
+    getUserMock.mockResolvedValueOnce({ data: { user: null }, error: { message: 'bad jwt' } })
+    const res = createMockRes()
+    await handler(authedReq({ plan: 'mensal' }) as any, res)
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Sua sessão expirou. Entre de novo.' })
   })
 
   it('retorna 401 sem token', async () => {
     const res = createMockRes()
     await handler({ method: 'POST', headers: {}, body: { plan: 'semestral' } } as any, res)
     expect(res.status).toHaveBeenCalledWith(401)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Sua sessão expirou. Entre de novo.' })
   })
 
   it('rejeita plano inexistente', async () => {
     const res = createMockRes()
     await handler(authedReq({ plan: 'bienal' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Plano inválido.' })
   })
 
   it('cria a preferência com referência u1|card|6 e volta para /subscribe', async () => {
@@ -81,6 +92,7 @@ describe('POST /api/create-card-payment', () => {
     const res = createMockRes()
     await handler(authedReq({ plan: 'teste' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Plano indisponível.' })
     expect(preferenceCreateMock).not.toHaveBeenCalled()
   })
 
@@ -89,13 +101,19 @@ describe('POST /api/create-card-payment', () => {
     const res = createMockRes()
     await handler(authedReq({ plan: 'mensal' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(409)
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Você já tem uma assinatura ativa no cartão. Cancele antes de comprar um novo período.',
+    })
     expect(preferenceCreateMock).not.toHaveBeenCalled()
   })
 
   it('retorna 500 quando o Mercado Pago falha', async () => {
     preferenceCreateMock.mockRejectedValueOnce(new Error('mp down'))
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = createMockRes()
     await handler(authedReq({ plan: 'mensal' }) as any, res)
+    spy.mockRestore()
     expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Não foi possível iniciar o pagamento. Tente de novo.' })
   })
 })

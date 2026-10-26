@@ -5,6 +5,9 @@ import { getPixPlan, ADMIN_ONLY_PLANS, isPixPlanId, type PixPlan } from './pixPl
 
 type AdminClient = ReturnType<typeof createSupabaseAdmin>
 
+// As mensagens chegam à tela de assinatura: português, sem detalhe técnico.
+const SESSION_ERROR = 'Sua sessão expirou. Entre de novo.'
+
 export type LoggedPurchaseCheck =
   | { user: User; plan: PixPlan }
   | { status: number; error: string }
@@ -22,15 +25,15 @@ export async function checkLoggedPurchase(
 ): Promise<LoggedPurchaseCheck> {
   const authHeader = (req.headers.authorization as string) || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  if (!token) return { status: 401, error: 'Missing authorization token' }
+  if (!token) return { status: 401, error: SESSION_ERROR }
 
   const planId = req.body?.plan
-  if (!isPixPlanId(planId)) return { status: 400, error: 'Invalid plan' }
+  if (!isPixPlanId(planId)) return { status: 400, error: 'Plano inválido.' }
   // O valor sai daqui, nunca do corpo da requisição.
   const plan = getPixPlan(planId)
 
   const { data: userData, error: userError } = await admin.auth.getUser(token)
-  if (userError || !userData.user) return { status: 401, error: 'Invalid session' }
+  if (userError || !userData.user) return { status: 401, error: SESSION_ERROR }
   const user = userData.user
 
   // O plano de verificação custa R$ 0,01. Sem esta checagem no SERVIDOR,
@@ -38,7 +41,7 @@ export async function checkLoggedPurchase(
   // centavo — esconder na interface não protegeria nada.
   if (ADMIN_ONLY_PLANS.includes(planId)) {
     const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
-    if (!profile?.is_admin) return { status: 403, error: 'Plano indisponível' }
+    if (!profile?.is_admin) return { status: 403, error: 'Plano indisponível.' }
   }
 
   // Regra de conflito (decisão P0.3 do docs/PLANO-PIX.md): quem tem assinatura

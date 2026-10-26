@@ -43,6 +43,24 @@ beforeEach(() => {
 })
 
 describe('Login page', () => {
+  it('credencial errada aparece em português, sem o texto do Supabase', async () => {
+    signInMock.mockResolvedValueOnce({ user: null, error: new Error('Invalid login credentials') } as any)
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'maria@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'errada1' } })
+    fireEvent.click(screen.getByRole('button', { name: /entrar/i }))
+
+    expect(await screen.findByText('E-mail ou senha incorretos.')).not.toBeNull()
+    expect(screen.queryByText('Invalid login credentials')).toBeNull()
+  })
+
   it('busca hasActiveSubscription no login, pra assinante não ficar barrada até recarregar a página', async () => {
     render(
       <MemoryRouter initialEntries={['/login']}>

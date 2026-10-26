@@ -64,6 +64,21 @@ beforeEach(() => {
 })
 
 describe('Register page', () => {
+  it('erro do Supabase em inglês aparece traduzido', async () => {
+    signUpMock.mockResolvedValueOnce({
+      user: null,
+      error: Object.assign(new Error('User already registered'), { code: 'user_already_exists' }),
+      needsEmailConfirmation: false,
+    } as any)
+    renderRegister()
+    fillAndSubmit()
+
+    expect(
+      await screen.findByText("Já existe uma conta com esse e-mail. Entre ou use 'Esqueci a senha'."),
+    ).not.toBeNull()
+    expect(screen.queryByText('User already registered')).toBeNull()
+  })
+
   it('mostra erro quando as senhas digitadas não coincidem', () => {
     render(
       <MemoryRouter>
