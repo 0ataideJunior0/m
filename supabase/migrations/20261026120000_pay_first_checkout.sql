@@ -70,6 +70,8 @@ ON CONFLICT (user_id) DO NOTHING;
 -- 3) UTM do cadastro: {source, medium, campaign, content, term}. A própria usuária grava
 --    pela policy de update que já existe em profiles.
 ALTER TABLE public.profiles ADD COLUMN signup_utm jsonb;
+-- profiles só tem UPDATE por coluna (20261026110000_profiles_column_grants.sql): a coluna nova precisa do grant.
+GRANT UPDATE (signup_utm) ON public.profiles TO authenticated;
 
 -- 4) subscriptions.source não tem CHECK no banco real (inspecionado antes de escrever
 --    esta migração), então 'card' já é aceito: nada a trocar aqui.
