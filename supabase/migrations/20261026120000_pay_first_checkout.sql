@@ -45,8 +45,12 @@ CREATE POLICY "Admins can view purchase intents" ON public.purchase_intents
 
 -- 2) E-mail provado: a pessoa já abriu um link enviado a esse e-mail (ou já tinha
 --    o e-mail confirmado quando o checkout nasceu). Decide se o checkout manda e-mail de acesso.
+--    A prova vale para o E-MAIL provado (coluna email), não para a conta: o checkout só
+--    considera provada a conta cujo e-mail de autenticação atual é o da prova.
 CREATE TABLE public.email_verifications (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- E-mail provado, em minúsculas.
+  email text NOT NULL,
   verified_at timestamptz NOT NULL DEFAULT now(),
   -- 'legacy' = já confirmado antes deste checkout; 'link' = abriu o link de acesso.
   method text NOT NULL CHECK (method IN ('legacy', 'link'))
@@ -61,11 +65,37 @@ CREATE POLICY "Own verification or admin can view" ON public.email_verifications
   FOR SELECT USING (user_id = (select auth.uid()) OR public.is_admin());
 
 -- Quem já tem e-mail confirmado hoje conta como provado.
-INSERT INTO public.email_verifications (user_id, verified_at, method)
-SELECT id, COALESCE(email_confirmed_at, now()), 'legacy'
+INSERT INTO public.email_verifications (user_id, email, verified_at, method)
+SELECT id, lower(email), COALESCE(email_confirmed_at, now()), 'legacy'
 FROM auth.users
-WHERE email_confirmed_at IS NOT NULL
+WHERE email_confirmed_at IS NOT NULL AND email IS NOT NULL
 ON CONFLICT (user_id) DO NOTHING;
+
+-- 2b) Troca de e-mail bloqueada. Com "Confirm email" desligado, a usuária logada trocaria
+--     o próprio e-mail na hora (supabase.auth.updateUser({ email })), o que (a) levaria a
+--     prova de um e-mail para outro que ela não controla e (b) deixaria quem cadastrou um
+--     e-mail alheio trocá-lo depois que a dona comprou, e o reenvio do link não acharia
+--     ninguém. O app não oferece troca de e-mail, então nenhuma troca é legítima.
+--     Só dispara em UPDATE que muda o e-mail: cadastro (INSERT) e login (last_sign_in_at)
+--     passam direto. Troca feita pela admin exige desligar o trigger temporariamente:
+--       ALTER TABLE auth.users DISABLE TRIGGER block_auth_email_change;
+--       -- troca o e-mail (e atualiza email_verifications.email, se for o caso)
+--       ALTER TABLE auth.users ENABLE TRIGGER block_auth_email_change;
+CREATE FUNCTION public.block_auth_email_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Troca de e-mail desativada';
+END;
+$$;
+
+CREATE TRIGGER block_auth_email_change
+  BEFORE UPDATE OF email ON auth.users
+  FOR EACH ROW
+  WHEN (OLD.email IS DISTINCT FROM NEW.email)
+  EXECUTE FUNCTION public.block_auth_email_change();
 
 -- 3) UTM do cadastro: {source, medium, campaign, content, term}. A própria usuária grava
 --    pela policy de update que já existe em profiles.

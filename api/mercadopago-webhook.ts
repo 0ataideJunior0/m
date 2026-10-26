@@ -379,13 +379,7 @@ async function sendAccessEmailIfUnproven(
   // Conta com e-mail provado não recebe e-mail nosso (o MP já manda o
   // comprovante). Sem prova, o link de acesso é o que tira de cena quem tinha
   // criado a conta com um e-mail que não é dela.
-  const { data: verified, error: verifiedError } = await supabaseAdmin
-    .from('email_verifications')
-    .select('user_id')
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (verifiedError) throw verifiedError
-  if (verified) return
+  if (await isCurrentEmailProven(supabaseAdmin, userId)) return
 
   // A origem do link vem da configuração, nunca do host da notificação.
   const origin = (process.env.PUBLIC_APP_URL || '').replace(/\/+$/, '')
@@ -404,4 +398,24 @@ async function sendAccessEmailIfUnproven(
     .update({ access_email_sent_at: new Date().toISOString() })
     .eq('id', intentId)
   if (error) throw error
+}
+
+/**
+ * A prova vale para o e-mail que foi provado, não para a conta: só conta se o
+ * e-mail de autenticação ATUAL da conta é o mesmo da prova. (A migração já
+ * bloqueia troca de e-mail; isto é a segunda trava.)
+ */
+async function isCurrentEmailProven(supabaseAdmin: SupabaseAdmin, userId: string): Promise<boolean> {
+  const { data: proof, error: proofError } = await supabaseAdmin
+    .from('email_verifications')
+    .select('email')
+    .eq('user_id', userId)
+    .maybeSingle<{ email: string }>()
+  if (proofError) throw proofError
+  if (!proof) return false
+
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId)
+  if (error) throw error
+  const currentEmail = (data.user?.email ?? '').trim().toLowerCase()
+  return currentEmail !== '' && proof.email === currentEmail
 }

@@ -16,12 +16,14 @@ function isStep(value: unknown): value is Step {
  * própria aluna com a sessão aberta pelo link do e-mail.
  *
  *   link_opened  — a sessão nasceu de um link enviado ao e-mail (amr), logo a
- *                  pessoa controla a caixa de entrada: grava o e-mail como
- *                  provado. É a trava contra tomada de conta: quem cadastrou um
+ *                  pessoa controla a caixa de entrada: grava o e-mail ATUAL da
+ *                  conta como provado (a prova vale para aquele e-mail, não
+ *                  para a conta). É a trava contra tomada de conta: quem cadastrou um
  *                  e-mail alheio nunca chega aqui. Sessão de senha (ou sem
  *                  amr) NÃO prova nada e leva 403.
  *   password_set — a senha acabou de ser criada na mesma sessão, então não exige
- *                  o amr; exige, porém, e-mail já provado (link_opened antes).
+ *                  o amr; exige, porém, que o e-mail atual da conta seja o
+ *                  provado (link_opened antes).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -49,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
   const userId = userData.user.id
+  const currentEmail = (userData.user.email ?? '').trim().toLowerCase()
 
   try {
     if (step === 'link_opened') {
@@ -58,24 +61,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return
       }
 
-      // ignoreDuplicates: quem já está provada (inclusive 'legacy') fica como está.
-      const { error } = await supabaseAdmin
-        .from('email_verifications')
-        .upsert({ user_id: userId, method: 'link' }, { onConflict: 'user_id', ignoreDuplicates: true })
-      if (error) throw error
+      // Prova do mesmo e-mail (inclusive 'legacy') fica como está. Prova de
+      // outro e-mail não vale mais: passa a valer para o e-mail atual.
+      if (!currentEmail) {
+        res.status(403).json({ error: 'Conta sem e-mail' })
+        return
+      }
+      const proof = await findEmailProof(supabaseAdmin, userId)
+      if (proof?.email !== currentEmail) {
+        const { error } = await supabaseAdmin
+          .from('email_verifications')
+          .upsert(
+            { user_id: userId, email: currentEmail, method: 'link', verified_at: new Date().toISOString() },
+            { onConflict: 'user_id' },
+          )
+        if (error) throw error
+      }
 
       await stampLatestPaidIntent(supabaseAdmin, userId, 'link_opened_at')
     } else {
       // Sem prova de e-mail, quem cadastrou a conta com o e-mail de outra
       // pessoa (e uma senha) carimbaria a compra dela e silenciaria o reenvio.
       // O fluxo real sempre passa por link_opened antes, que cria a prova.
-      const { data: verified, error: verifiedError } = await supabaseAdmin
-        .from('email_verifications')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle()
-      if (verifiedError) throw verifiedError
-      if (!verified) {
+      const proof = await findEmailProof(supabaseAdmin, userId)
+      if (!currentEmail || proof?.email !== currentEmail) {
         res.status(403).json({ error: 'E-mail ainda não confirmado' })
         return
       }
@@ -86,6 +95,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('claim-access error:', JSON.stringify(error, Object.getOwnPropertyNames(error as object)))
     res.status(500).json({ error: 'Failed to record access step' })
   }
+}
+
+async function findEmailProof(supabaseAdmin: SupabaseAdmin, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('email_verifications')
+    .select('email')
+    .eq('user_id', userId)
+    .maybeSingle<{ email: string }>()
+  if (error) throw error
+  return data
 }
 
 /**

@@ -14,6 +14,7 @@ const {
   intentUpdateFilters,
   verificationMaybeSingleMock,
   listUsersMock,
+  getUserByIdMock,
   createUserMock,
   signInWithOtpMock,
   fromMock,
@@ -76,6 +77,7 @@ const {
     intentUpdateFilters,
     verificationMaybeSingleMock,
     listUsersMock: vi.fn(),
+    getUserByIdMock: vi.fn(),
     createUserMock: vi.fn(),
     signInWithOtpMock: vi.fn(),
     fromMock,
@@ -86,7 +88,10 @@ const {
 vi.mock('../../api/_lib/supabaseAdmin', () => ({
   createSupabaseAdmin: () => ({
     from: fromMock,
-    auth: { admin: { listUsers: listUsersMock, createUser: createUserMock }, signInWithOtp: signInWithOtpMock },
+    auth: {
+      admin: { listUsers: listUsersMock, getUserById: getUserByIdMock, createUser: createUserMock },
+      signInWithOtp: signInWithOtpMock,
+    },
   }),
 }))
 
@@ -675,6 +680,7 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
     pixDeleteEqMock.mockClear()
     verificationMaybeSingleMock.mockReset().mockResolvedValue({ data: null, error: null })
     listUsersMock.mockReset().mockResolvedValue({ data: { users: [] }, error: null })
+    getUserByIdMock.mockReset().mockResolvedValue({ data: { user: { id: 'old-user', email: 'Ana@Exemplo.com' } }, error: null })
     createUserMock.mockReset().mockResolvedValue({ data: { user: { id: 'new-user' } }, error: null })
     signInWithOtpMock.mockReset().mockResolvedValue({ data: {}, error: null })
   })
@@ -728,15 +734,29 @@ describe('POST /api/mercadopago-webhook — checkout aberto (intent) e cartão a
   it('conta existente com e-mail provado: credita, sem createUser e sem e-mail', async () => {
     paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
     listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'old-user', email: 'Ana@Exemplo.com' }] }, error: null })
-    verificationMaybeSingleMock.mockResolvedValueOnce({ data: { user_id: 'old-user' }, error: null })
+    verificationMaybeSingleMock.mockResolvedValueOnce({ data: { email: 'ana@exemplo.com' }, error: null })
 
     const res = createMockRes()
     await handler(payReq() as any, res)
 
     expect(createUserMock).not.toHaveBeenCalled()
+    expect(getUserByIdMock).toHaveBeenCalledWith('old-user')
     expect(pixInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'old-user' }))
     expect(intentUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid', user_id: 'old-user' }))
     expect(signInWithOtpMock).not.toHaveBeenCalled()
+    expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it('prova de OUTRO e-mail (conta trocou de e-mail depois de provar): conta como não provada e manda o link', async () => {
+    paymentGetMock.mockResolvedValueOnce(approvedIntentPayment)
+    listUsersMock.mockResolvedValueOnce({ data: { users: [{ id: 'old-user', email: 'ana@exemplo.com' }] }, error: null })
+    verificationMaybeSingleMock.mockResolvedValueOnce({ data: { email: 'antigo@exemplo.com' }, error: null })
+
+    const res = createMockRes()
+    await handler(payReq() as any, res)
+
+    expect(signInWithOtpMock).toHaveBeenCalledTimes(1)
+    expect(intentUpdateMock).toHaveBeenCalledWith({ access_email_sent_at: expect.any(String) })
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
