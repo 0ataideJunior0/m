@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { getUserMock, verificationUpsertMock, intentSelectMock, intentIsMock, intentEqMock } = vi.hoisted(() => ({
+const { getUserMock, verificationUpsertMock, verificationSelectMock, intentSelectMock, intentIsMock, intentEqMock, intentFilters } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
   verificationUpsertMock: vi.fn(),
+  verificationSelectMock: vi.fn(),
+  intentFilters: [] as Array<[string, string, unknown]>,
   intentSelectMock: vi.fn(),
   intentIsMock: vi.fn(),
   intentEqMock: vi.fn(),
@@ -12,13 +14,19 @@ vi.mock('../../api/_lib/supabaseAdmin', () => ({
   createSupabaseAdmin: () => ({
     auth: { getUser: getUserMock },
     from: (table: string) => {
-      if (table === 'email_verifications') return { upsert: verificationUpsertMock }
+      if (table === 'email_verifications') {
+        return {
+          upsert: verificationUpsertMock,
+          // select('user_id').eq('user_id', id).maybeSingle()
+          select: () => ({ eq: () => ({ maybeSingle: verificationSelectMock }) }),
+        }
+      }
       if (table === 'purchase_intents') {
         return {
           // select(...).eq(user_id).eq(status).order(paid_at desc).limit(1).maybeSingle()
           select: (cols: string) => {
             const chain: any = {
-              eq: () => chain,
+              eq: (c: string, v: unknown) => (intentFilters.push(['eq', c, v]), chain),
               order: () => chain,
               limit: () => chain,
               maybeSingle: () => intentSelectMock(cols),
@@ -63,6 +71,8 @@ describe('POST /api/claim-access', () => {
   beforeEach(() => {
     getUserMock.mockReset().mockResolvedValue({ data: { user: { id: 'u-1' } }, error: null })
     verificationUpsertMock.mockReset().mockResolvedValue({ error: null })
+    verificationSelectMock.mockReset().mockResolvedValue({ data: { user_id: 'u-1' }, error: null })
+    intentFilters.length = 0
     intentSelectMock.mockReset().mockResolvedValue({
       data: { id: 'intent-1', link_opened_at: null, password_set_at: null },
       error: null,
@@ -115,6 +125,8 @@ describe('POST /api/claim-access', () => {
       { user_id: 'u-1', method: 'link' },
       { onConflict: 'user_id', ignoreDuplicates: true },
     )
+    expect(intentFilters).toContainEqual(['eq', 'user_id', 'u-1'])
+    expect(intentFilters).toContainEqual(['eq', 'status', 'paid'])
     expect(intentEqMock).toHaveBeenCalledWith({ link_opened_at: expect.any(String) }, 'id', 'intent-1')
     expect(intentIsMock).toHaveBeenCalledWith('link_opened_at', null)
     expect(res.status).toHaveBeenCalledWith(200)
@@ -143,11 +155,25 @@ describe('POST /api/claim-access', () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true })
   })
 
-  it('password_set carimba password_set_at sem exigir sessão de link', async () => {
+  it('password_set sem e-mail provado: 403 e nada é carimbado', async () => {
+    verificationSelectMock.mockResolvedValueOnce({ data: null, error: null })
+    const res = createMockRes()
+    await handler(req({ step: 'password_set' }, tokenWith('password')) as any, res)
+
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: 'E-mail ainda não confirmado' })
+    expect(intentSelectMock).not.toHaveBeenCalled()
+    expect(intentIsMock).not.toHaveBeenCalled()
+    expect(verificationUpsertMock).not.toHaveBeenCalled()
+  })
+
+  it('password_set com e-mail provado carimba password_set_at sem exigir sessão de link', async () => {
     const res = createMockRes()
     await handler(req({ step: 'password_set' }, tokenWith('password')) as any, res)
 
     expect(verificationUpsertMock).not.toHaveBeenCalled()
+    expect(intentFilters).toContainEqual(['eq', 'user_id', 'u-1'])
+    expect(intentFilters).toContainEqual(['eq', 'status', 'paid'])
     expect(intentEqMock).toHaveBeenCalledWith({ password_set_at: expect.any(String) }, 'id', 'intent-1')
     expect(intentIsMock).toHaveBeenCalledWith('password_set_at', null)
     expect(res.status).toHaveBeenCalledWith(200)

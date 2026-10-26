@@ -20,8 +20,8 @@ function isStep(value: unknown): value is Step {
  *                  provado. É a trava contra tomada de conta: quem cadastrou um
  *                  e-mail alheio nunca chega aqui. Sessão de senha (ou sem
  *                  amr) NÃO prova nada e leva 403.
- *   password_set — a senha acabou de ser criada na mesma sessão; só carimba o
- *                  funil, então não exige o amr.
+ *   password_set — a senha acabou de ser criada na mesma sessão, então não exige
+ *                  o amr; exige, porém, e-mail já provado (link_opened antes).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -66,6 +66,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await stampLatestPaidIntent(supabaseAdmin, userId, 'link_opened_at')
     } else {
+      // Sem prova de e-mail, quem cadastrou a conta com o e-mail de outra
+      // pessoa (e uma senha) carimbaria a compra dela e silenciaria o reenvio.
+      // O fluxo real sempre passa por link_opened antes, que cria a prova.
+      const { data: verified, error: verifiedError } = await supabaseAdmin
+        .from('email_verifications')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (verifiedError) throw verifiedError
+      if (!verified) {
+        res.status(403).json({ error: 'E-mail ainda não confirmado' })
+        return
+      }
       await stampLatestPaidIntent(supabaseAdmin, userId, 'password_set_at')
     }
     res.status(200).json({ ok: true })
