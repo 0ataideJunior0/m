@@ -10,8 +10,9 @@ const NOW = new Date('2026-10-19T12:00:00Z')
 const days = (n: number) => new Date(NOW.getTime() + n * 86400000).toISOString()
 
 describe('isPrepaidSource', () => {
-  it('Pix e liberação manual são pré-pagos; cartão não', () => {
+  it('Pix, cartão avulso e liberação manual são pré-pagos; assinatura recorrente não', () => {
     expect(isPrepaidSource('pix')).toBe(true)
+    expect(isPrepaidSource('card')).toBe(true)
     expect(isPrepaidSource('manual')).toBe(true)
     expect(isPrepaidSource('preapproval')).toBe(false)
     expect(isPrepaidSource(undefined)).toBe(false)

@@ -1,10 +1,10 @@
 /**
- * Acesso pré-pago: período fechado, sem renovação automática. Vale para o Pix
- * e para a liberação manual feita pela admin (ex.: aluna que pagou em dinheiro).
+ * Acesso pré-pago: período fechado, sem renovação automática. Vale para o Pix,
+ * para o cartão em pagamento avulso (parcelado) e para a liberação manual feita pela admin (ex.: aluna que pagou em dinheiro).
  * As duas fontes seguem as mesmas regras — soma de período, aviso de
  * vencimento, preservação ao assinar no cartão.
  */
-export const PREPAID_SOURCES = ['pix', 'manual'] as const
+export const PREPAID_SOURCES = ['pix', 'card', 'manual'] as const
 
 export const isPrepaidSource = (source: unknown): boolean =>
   typeof source === 'string' && (PREPAID_SOURCES as readonly string[]).includes(source)

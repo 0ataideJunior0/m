@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildPixExternalReference,
+  buildPrepaidExternalReference,
   parsePixExternalReference,
   addMonths,
 } from '../../api/_lib/pixPeriod'
@@ -8,7 +9,22 @@ import {
 describe('external_reference do Pix', () => {
   it('faz ida e volta do que foi construído', () => {
     const ref = buildPixExternalReference('user-1', 3)
-    expect(parsePixExternalReference(ref)).toEqual({ userId: 'user-1', months: 3 })
+    expect(parsePixExternalReference(ref)).toEqual({ userId: 'user-1', months: 3, method: 'pix' })
+  })
+
+  it('buildPixExternalReference é o mesmo que o método pix', () => {
+    expect(buildPixExternalReference('u1', 3)).toBe(buildPrepaidExternalReference('u1', 3, 'pix'))
+  })
+
+  it('faz ida e volta da referência do cartão logado', () => {
+    const ref = buildPrepaidExternalReference('u1', 6, 'card')
+    expect(ref).toBe('u1|card|6')
+    expect(parsePixExternalReference(ref)).toEqual({ userId: 'u1', months: 6, method: 'card' })
+    expect(parsePixExternalReference('u1|pix|1')).toEqual({ userId: 'u1', months: 1, method: 'pix' })
+  })
+
+  it('rejeita a referência de intenção do checkout aberto', () => {
+    expect(parsePixExternalReference('intent|abc')).toBeNull()
   })
 
   it('ignora o external_reference das assinaturas no cartão (user id puro)', () => {

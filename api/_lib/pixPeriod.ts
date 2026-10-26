@@ -6,31 +6,47 @@
  * um lugar só, e usado tanto na criação quanto na leitura.
  */
 
-const PIX_MARKER = 'pix'
+export type PrepaidMethod = 'pix' | 'card'
+
+const METHODS: readonly string[] = ['pix', 'card']
+
+/**
+ * Pix e cartão avulso (pagamento único parcelado) compartilham o formato; o
+ * marcador do meio diz qual foi o método.
+ */
+export function buildPrepaidExternalReference(
+  userId: string,
+  months: number,
+  method: PrepaidMethod,
+): string {
+  return `${userId}|${method}|${months}`
+}
 
 export function buildPixExternalReference(userId: string, months: number): string {
-  return `${userId}|${PIX_MARKER}|${months}`
+  return buildPrepaidExternalReference(userId, months, 'pix')
 }
 
 export interface ParsedPixReference {
   userId: string
   months: number
+  method: PrepaidMethod
 }
 
 /**
- * Devolve null para qualquer coisa que não seja uma referência de Pix — o que
- * inclui o external_reference das assinaturas no cartão, que é o user id puro.
+ * Devolve null para qualquer coisa que não seja uma referência de pagamento
+ * avulso (Pix ou cartão) — o que inclui o external_reference das assinaturas
+ * recorrentes, que é o user id puro, e o da intenção do checkout aberto.
  */
 export function parsePixExternalReference(reference: unknown): ParsedPixReference | null {
   if (typeof reference !== 'string') return null
   const parts = reference.split('|')
   if (parts.length !== 3) return null
   const [userId, marker, monthsRaw] = parts
-  if (marker !== PIX_MARKER) return null
+  if (!METHODS.includes(marker)) return null
   if (!userId) return null
   const months = Number(monthsRaw)
   if (!Number.isInteger(months) || months <= 0) return null
-  return { userId, months }
+  return { userId, months, method: marker as PrepaidMethod }
 }
 
 /**
