@@ -22,6 +22,8 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Home = lazy(() => import('./pages/Home'))
 const HIIT = lazy(() => import('./pages/HIIT'))
 const Subscribe = lazy(() => import('./pages/Subscribe'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const CheckoutReturn = lazy(() => import('./pages/CheckoutReturn'))
 const MySubscription = lazy(() => import('./pages/MySubscription'))
 const MealPlan = lazy(() => import('./pages/MealPlan'))
 const Recipes = lazy(() => import('./pages/Recipes'))
@@ -126,6 +128,9 @@ function App() {
             <Route path="/forgot" element={<ForgotPassword />} />
             <Route path="/reset-confirm" element={<ResetConfirm />} />
             <Route path="/reset" element={<ResetPassword />} />
+            {/* Checkout aberto (pagar primeiro, conta depois): público, sem guards. */}
+            <Route path="/comprar" element={<Checkout />} />
+            <Route path="/comprar/retorno" element={<CheckoutReturn />} />
             {/* Funil: cadastro/login -> pagamento -> onboarding -> app.
                 /subscribe e /minha-assinatura só exigem login (sem onboarding
                 completo, que só acontece depois de pagar). /onboarding exige

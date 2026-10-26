@@ -30,12 +30,14 @@ describe('GET /api/checkout-status', () => {
     const res = createMockRes()
     await handler({ method: 'POST', headers: {}, query: {} } as any, res)
     expect(res.status).toHaveBeenCalledWith(405)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Método não permitido.' })
   })
 
   it('retorna 400 e não consulta o banco quando o intent não é uuid', async () => {
     const res = createMockRes()
     await handler({ method: 'GET', headers: {}, query: { intent: 'x-or-1=1' } } as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Pedido inválido.' })
     expect(selectMock).not.toHaveBeenCalled()
   })
 
@@ -43,6 +45,7 @@ describe('GET /api/checkout-status', () => {
     const res = createMockRes()
     await handler({ method: 'GET', headers: {}, query: { intent: UUID } } as any, res)
     expect(res.status).toHaveBeenCalledWith(404)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Pedido não encontrado.' })
   })
 
   it('devolve status e último status do pagamento, sem e-mail', async () => {

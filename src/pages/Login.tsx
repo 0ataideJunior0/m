@@ -1,23 +1,57 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { signIn } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
 import { getIsAdmin } from '../utils/profile'
 import { getHasActiveSubscription } from '../utils/subscription'
+import { resendAccess } from '../utils/checkout'
 import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react'
 import Button from '../components/ui/Button'
 import AmbientGlow from '../components/ui/AmbientGlow'
 
+const RESEND_COOLDOWN_MS = 60_000
+
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [searchParams] = useSearchParams()
+  // Vindo do checkout: a conta foi criada pelo pagamento e o link de acesso foi
+  // por e-mail. O e-mail da URL só preenche o campo; quem manda é o servidor.
+  const justPaid = searchParams.get('pago') === '1'
+  const paidEmail = justPaid ? searchParams.get('email')?.trim() ?? '' : ''
+
+  const [email, setEmail] = useState(paidEmail)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; reset?: string; success?: string }>({})
 
+  const [resendSent, setResendSent] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendError, setResendError] = useState('')
+  const resendTimer = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => () => clearTimeout(resendTimer.current), [])
+
   const navigate = useNavigate()
   const { setUser, setIsAdmin, setNeedsOnboarding, setHasActiveSubscription } = useAuthStore()
+
+  const handleResend = async () => {
+    const target = paidEmail || email.trim()
+    if (!target) {
+      setResendError('Digite seu e-mail para reenviar o link.')
+      return
+    }
+    setResendError('')
+    setResendLoading(true)
+    const { ok, error: resendFailure } = await resendAccess(target)
+    setResendLoading(false)
+    if (!ok) {
+      setResendError(resendFailure || 'Não foi possível reenviar o link. Tente de novo.')
+      return
+    }
+    setResendSent(true)
+    resendTimer.current = setTimeout(() => setResendSent(false), RESEND_COOLDOWN_MS)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,6 +120,33 @@ export default function Login() {
             </h2>
             <p className="text-text-muted text-sm">Entre para continuar seu progresso</p>
           </div>
+
+          {justPaid && (
+            <div className="mb-6 rounded-2xl border border-accent bg-surface-hover px-4 py-3 text-sm text-text">
+              <p>
+                {paidEmail
+                  ? `Pagamento recebido! Enviamos um link de acesso para ${paidEmail}. Confira também a caixa de spam.`
+                  : 'Pagamento recebido! Enviamos um link de acesso para o seu e-mail. Confira também a caixa de spam.'}
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onClick={handleResend}
+                disabled={resendSent}
+                isLoading={resendLoading}
+              >
+                Reenviar link
+              </Button>
+              {resendSent && (
+                <p role="status" className="mt-2 text-text-muted">Enviado. Aguarde 1 minuto para pedir de novo.</p>
+              )}
+              {resendError && (
+                <p role="alert" className="mt-2 text-red-700 dark:text-red-400">{resendError}</p>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (

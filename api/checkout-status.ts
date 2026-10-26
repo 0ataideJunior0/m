@@ -10,13 +10,13 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' })
+    res.status(405).json({ error: 'Método não permitido.' })
     return
   }
 
   const intent = req.query?.intent
   if (typeof intent !== 'string' || !UUID_PATTERN.test(intent)) {
-    res.status(400).json({ error: 'Invalid intent' })
+    res.status(400).json({ error: 'Pedido inválido.' })
     return
   }
 
@@ -28,11 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (error) {
     console.error('checkout-status error:', error.message)
-    res.status(500).json({ error: 'Failed to load status' })
+    res.status(500).json({ error: 'Não foi possível consultar o pedido. Tente de novo.' })
     return
   }
   if (!data) {
-    res.status(404).json({ error: 'Not found' })
+    res.status(404).json({ error: 'Pedido não encontrado.' })
     return
   }
 

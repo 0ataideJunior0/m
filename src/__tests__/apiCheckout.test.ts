@@ -75,12 +75,14 @@ describe('POST /api/checkout', () => {
     const res = createMockRes()
     await handler({ method: 'GET', headers: {} } as any, res)
     expect(res.status).toHaveBeenCalledWith(405)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Método não permitido.' })
   })
 
   it('rejeita e-mail inválido com 400', async () => {
     const res = createMockRes()
     await handler(req({ email: 'nao-e-email', plan: 'mensal', method: 'pix' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'E-mail inválido.' })
     expect(insertMock).not.toHaveBeenCalled()
   })
 
@@ -88,18 +90,21 @@ describe('POST /api/checkout', () => {
     const res = createMockRes()
     await handler(req({ email: 'a@b.com', plan: 'bienal', method: 'pix' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Plano inválido.' })
   })
 
   it('rejeita método inválido com 400', async () => {
     const res = createMockRes()
     await handler(req({ email: 'a@b.com', plan: 'mensal', method: 'boleto' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Método de pagamento inválido.' })
   })
 
   it('recusa o plano teste sem o e-mail na lista, com 403', async () => {
     const res = createMockRes()
     await handler(req({ email: 'a@b.com', plan: 'teste', method: 'pix' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(403)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Plano indisponível.' })
     expect(insertMock).not.toHaveBeenCalled()
     expect(paymentCreateMock).not.toHaveBeenCalled()
   })
@@ -243,6 +248,7 @@ describe('POST /api/checkout', () => {
     const res = createMockRes()
     await handler(req({ email: 'a@b.com', plan: 'mensal', method: 'pix' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Não foi possível iniciar o pagamento. Tente de novo.' })
     expect(paymentCreateMock).not.toHaveBeenCalled()
   })
 
@@ -251,5 +257,6 @@ describe('POST /api/checkout', () => {
     const res = createMockRes()
     await handler(req({ email: 'a@b.com', plan: 'mensal', method: 'pix' }) as any, res)
     expect(res.status).toHaveBeenCalledWith(502)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Não foi possível iniciar o pagamento. Tente de novo.' })
   })
 })

@@ -11,6 +11,7 @@ import {
 import { findAuthUserIdByEmail } from './_lib/authUsers.js'
 import { createCardCheckout, createPixCharge, ChargeResponseError, requestOrigin } from './_lib/charges.js'
 
+const CHARGE_ERROR = 'Não foi possível iniciar o pagamento. Tente de novo.'
 const UTM_KEYS = ['source', 'medium', 'campaign', 'content', 'term'] as const
 
 /** Texto livre vindo do cliente: só string, aparada e com teto de tamanho. */
@@ -27,28 +28,28 @@ function cleanText(value: unknown, max: number): string | null {
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' })
+    res.status(405).json({ error: 'Método não permitido.' })
     return
   }
 
   const body = req.body ?? {}
   const email = normalizeEmail(body.email)
   if (!email) {
-    res.status(400).json({ error: 'E-mail inválido' })
+    res.status(400).json({ error: 'E-mail inválido.' })
     return
   }
 
   const resolved = resolveCheckoutPlan(body.plan, email, parseTestEmails(process.env.CHECKOUT_TEST_EMAILS))
   if ('error' in resolved) {
-    if (resolved.error === 'invalid_plan') res.status(400).json({ error: 'Plano inválido' })
-    else res.status(403).json({ error: 'Plano indisponível' })
+    if (resolved.error === 'invalid_plan') res.status(400).json({ error: 'Plano inválido.' })
+    else res.status(403).json({ error: 'Plano indisponível.' })
     return
   }
   const { plan } = resolved
 
   const method = body.method
   if (method !== 'pix' && method !== 'card') {
-    res.status(400).json({ error: 'Método de pagamento inválido' })
+    res.status(400).json({ error: 'Método de pagamento inválido.' })
     return
   }
 
@@ -125,10 +126,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ intentId, method: 'card', init_point })
   } catch (error) {
     if (error instanceof ChargeResponseError) {
-      res.status(502).json({ error: 'Não foi possível gerar a cobrança. Tente novamente.' })
+      res.status(502).json({ error: CHARGE_ERROR })
       return
     }
     console.error('checkout error:', JSON.stringify(error, Object.getOwnPropertyNames(error as object)))
-    res.status(500).json({ error: 'Failed to create checkout' })
+    res.status(500).json({ error: CHARGE_ERROR })
   }
 }
