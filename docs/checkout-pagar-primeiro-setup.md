@@ -156,7 +156,11 @@ Cada card de plano passa a apontar para:
 
 E repassa os `utm_*` da URL da landing (por exemplo `?utm_source=instagram`) para o link do `/comprar`.
 
+Só depois do passo 5 (deploy), para os links já apontarem para um `/comprar` que existe em produção.
+
 Você não precisa fazer nada neste passo até compartilhar o repositório da landing.
+
+**Conferir as UTMs (depois que o Claude trocar os links):** abra `https://<endereço da landing>/?utm_source=teste`, toque num card de plano e confira que a URL do `/comprar` ainda tem `utm_source=teste`.
 
 ---
 
@@ -176,7 +180,7 @@ Use um e-mail de teste **novo** (que nunca teve conta) e que esteja na lista `CH
 
 **Teste B — mesmo e-mail de novo (só credita)**
 
-1. Abra de novo `https://musafit.me/comprar?plano=teste` com o **mesmo e-mail**.
+1. Depois de ter clicado no link do Teste A, abra de novo `https://musafit.me/comprar?plano=teste` com o **mesmo e-mail**.
 2. Pague Pix de R$ 0,01.
 3. O período deve ser creditado na conta e **nenhum e-mail novo** deve chegar.
 
@@ -198,6 +202,6 @@ Use um e-mail de teste **novo** (que nunca teve conta) e que esteja na lista `CH
 
 - **Cadastro ou login quebrou depois do passo 6:** religue **Confirm email** (Supabase → Authentication → Providers → Email → **Confirm email** ligado → Save). Isso volta ao comportamento antigo na hora.
 - **Landing page:** os cards voltam ao link antigo (o Claude reverte o commit do repositório da landing, ou você restaura o link anterior de cada card).
-- **Código novo com problema:** avise o Claude para reverter o merge na `main` (a Vercel publica a versão anterior).
+- **Código novo com problema:** avise o Claude para reverter o merge na `main` (a Vercel publica a versão anterior). **Ao mesmo tempo, e antes da reversão,** religue **Confirm email** (veja o item acima). Se o passo 6 já foi feito e o código voltar ao antigo com o "Confirm email" desligado, e-mails não verificados conseguem criar conta.
 - Os e-mails/templates do Supabase (passo 3) são seguros de deixar como estão; não atrapalham o fluxo antigo.
 - Não apague a migração do banco. As tabelas novas não interferem no fluxo antigo.
