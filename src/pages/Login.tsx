@@ -124,9 +124,7 @@ export default function Login() {
           {justPaid && (
             <div className="mb-6 rounded-2xl border border-accent bg-surface-hover px-4 py-3 text-sm text-text">
               <p>
-                {paidEmail
-                  ? `Pagamento recebido! Enviamos um link de acesso para ${paidEmail}. Confira também a caixa de spam.`
-                  : 'Pagamento recebido! Enviamos um link de acesso para o seu e-mail. Confira também a caixa de spam.'}
+                {`Pagamento recebido! Se for seu primeiro acesso, enviamos um link para ${paidEmail || 'o seu e-mail'} — confira também a caixa de spam. Se você já tem conta, é só entrar com sua senha.`}
               </p>
               <Button
                 type="button"

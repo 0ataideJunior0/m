@@ -79,9 +79,16 @@ describe('Login page', () => {
     it('mostra o aviso com o e-mail e deixa o campo preenchido', () => {
       renderPaid()
       expect(
-        screen.getByText('Pagamento recebido! Enviamos um link de acesso para a@b.com. Confira também a caixa de spam.')
+        screen.getByText('Pagamento recebido! Se for seu primeiro acesso, enviamos um link para a@b.com — confira também a caixa de spam. Se você já tem conta, é só entrar com sua senha.')
       ).not.toBeNull()
       expect((screen.getByLabelText('Email') as HTMLInputElement).value).toBe('a@b.com')
+    })
+
+    it('sem e-mail na URL, o aviso fala "o seu e-mail"', () => {
+      renderPaid('/login?pago=1')
+      expect(
+        screen.getByText('Pagamento recebido! Se for seu primeiro acesso, enviamos um link para o seu e-mail — confira também a caixa de spam. Se você já tem conta, é só entrar com sua senha.')
+      ).not.toBeNull()
     })
 
     it('sem pago=1, não mostra o aviso nem preenche o e-mail', () => {

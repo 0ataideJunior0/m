@@ -24,8 +24,10 @@ const METHOD_OPTIONS: { value: CheckoutMethod; label: string }[] = [
   { value: 'card', label: 'Cartão (até 12x)' },
 ]
 
-// O plano de verificação (R$ 0,01) nunca é oferecido no checkout aberto.
-const PLANS = getPixPlansDisplay().filter((plan) => !plan.adminOnly)
+const ALL_PLANS = getPixPlansDisplay()
+// O plano de verificação (R$ 0,01) nunca aparece na lista de opções. Só chega
+// por link (?plano=teste) e o servidor recusa quem não está na lista de teste.
+const PLANS = ALL_PLANS.filter((plan) => !plan.adminOnly)
 
 interface PixPurchase {
   intentId: string
@@ -60,7 +62,7 @@ export default function Checkout() {
 
   const [planId, setPlanId] = useState<PixPlanId | null>(() => {
     const requested = searchParams.get('plano')
-    return PLANS.some((plan) => plan.id === requested) ? (requested as PixPlanId) : null
+    return ALL_PLANS.some((plan) => plan.id === requested) ? (requested as PixPlanId) : null
   })
   const [choosingPlan, setChoosingPlan] = useState(false)
   const [email, setEmail] = useState('')
@@ -76,7 +78,7 @@ export default function Checkout() {
     if (pix && status?.status === 'paid') navigate(paidLoginPath(pix.email), { replace: true })
   }, [pix, status, navigate])
 
-  const plan = PLANS.find((p) => p.id === planId) ?? null
+  const plan = ALL_PLANS.find((p) => p.id === planId) ?? null
   const trimmedEmail = email.trim()
   const emailValid = EMAIL_PATTERN.test(trimmedEmail)
   const suggestion = emailValid ? suggestEmail(trimmedEmail) : null

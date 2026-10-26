@@ -80,7 +80,7 @@ describe('Checkout', () => {
     expect(screen.queryByRole('radio', { name: /6 meses/ })).toBeNull()
   })
 
-  it.each(['/comprar', '/comprar?plano=bienal', '/comprar?plano=teste'])(
+  it.each(['/comprar', '/comprar?plano=bienal'])(
     'sem plano válido (%s) mostra as 4 opções sem pré-seleção e não deixa pagar',
     (url) => {
       renderCheckout(url)
@@ -91,6 +91,26 @@ describe('Checkout', () => {
       expect((screen.getByRole('button', { name: /ir para o pagamento/i }) as HTMLButtonElement).disabled).toBe(true)
     },
   )
+
+  it('?plano=teste pré-seleciona o plano de verificação, mas ele nunca aparece nas opções', () => {
+    renderCheckout('/comprar?plano=teste')
+    expect(screen.getByText('Verificação (admin)')).not.toBeNull()
+    expect(screen.getByText(/0,01/)).not.toBeNull()
+    expect((screen.getByRole('button', { name: /ir para o pagamento/i }) as HTMLButtonElement).disabled).toBe(false)
+
+    fireEvent.click(screen.getByRole('button', { name: /trocar plano/i }))
+    expect(screen.getAllByRole('radio', { name: /^(1 mês|3 meses|6 meses|12 meses)/ })).toHaveLength(4)
+    expect(screen.queryByText(/Verificação/)).toBeNull()
+    expect(screen.queryByText(/0,01/)).toBeNull()
+  })
+
+  it('compra o plano teste quando vem na URL', async () => {
+    startCheckoutMock.mockResolvedValueOnce(pixReply)
+    renderCheckout('/comprar?plano=teste')
+    typeEmail('dev@b.com')
+    await submit()
+    expect(startCheckoutMock).toHaveBeenCalledWith({ email: 'dev@b.com', plan: 'teste', method: 'pix' })
+  })
 
   it('mostra para onde vai o acesso quando o e-mail é válido', () => {
     renderCheckout()
