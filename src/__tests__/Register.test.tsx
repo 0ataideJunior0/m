@@ -20,13 +20,47 @@ vi.mock('../utils/auth', () => ({
   signUp: (...args: unknown[]) => signUpMock(...(args as [string, string])),
 }))
 
+const updateSignupUtmMock = vi.fn(async (_userId: string, _utm: unknown): Promise<{ error: Error | null }> => ({ error: null }))
+const getAttributionMock = vi.fn((): unknown => null)
+
 vi.mock('../utils/profile', () => ({
   getIsAdmin: vi.fn(async () => false),
+  updateSignupUtm: (userId: string, utm: unknown) => updateSignupUtmMock(userId, utm),
 }))
+
+vi.mock('../utils/subscription', () => ({
+  getHasActiveSubscription: vi.fn(async () => false),
+}))
+
+vi.mock('../utils/attribution', () => ({
+  getAttribution: () => getAttributionMock(),
+}))
+
+function renderRegister() {
+  return render(
+    <MemoryRouter initialEntries={['/register']}>
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        <Route path="/onboarding" element={<div>Onboarding Page</div>} />
+        <Route path="/subscribe" element={<div>Subscribe Page</div>} />
+      </Routes>
+    </MemoryRouter>
+  )
+}
+
+function fillAndSubmit() {
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'maria@example.com' } })
+  fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: '123456' } })
+  fireEvent.change(screen.getByLabelText(/confirmar senha/i), { target: { value: '123456' } })
+  fireEvent.click(screen.getByRole('button', { name: /criar conta/i }))
+}
 
 beforeEach(() => {
   localStorage.clear()
   signUpMock.mockClear()
+  updateSignupUtmMock.mockClear()
+  getAttributionMock.mockReset()
+  getAttributionMock.mockReturnValue(null)
 })
 
 describe('Register page', () => {
@@ -50,24 +84,41 @@ describe('Register page', () => {
     expect(screen.getByText(/não coincidem/i)).not.toBeNull()
   })
 
-  it('cadastra com email e senha (sem username) e redireciona pra assinatura antes do onboarding', async () => {
-    render(
-      <MemoryRouter initialEntries={['/register']}>
-        <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/subscribe" element={<div>Subscribe Page</div>} />
-        </Routes>
-      </MemoryRouter>
-    )
+  it('cadastra com email e senha (sem username) e, com sessão, segue direto para o onboarding', async () => {
+    renderRegister()
+    fillAndSubmit()
 
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'maria@example.com' } })
-    fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: '123456' } })
-    fireEvent.change(screen.getByLabelText(/confirmar senha/i), { target: { value: '123456' } })
-
-    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }))
-
-    expect(await screen.findByText('Subscribe Page')).not.toBeNull()
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
     expect(signUpMock).toHaveBeenCalledWith('maria@example.com', '123456')
+    expect(updateSignupUtmMock).not.toHaveBeenCalled()
+  })
+
+  it('com sessão e origem do tráfego, grava profiles.signup_utm sem o referrer', async () => {
+    getAttributionMock.mockReturnValue({
+      source: 'instagram', medium: 'bio', campaign: 'lancamento', content: null, term: null,
+      referrer: 'https://l.instagram.com/',
+    })
+    renderRegister()
+    fillAndSubmit()
+
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+    expect(updateSignupUtmMock).toHaveBeenCalledWith('u1', {
+      source: 'instagram', medium: 'bio', campaign: 'lancamento', content: null, term: null,
+    })
+  })
+
+  it('falha ao gravar signup_utm não trava o cadastro', async () => {
+    getAttributionMock.mockReturnValue({
+      source: 'instagram', medium: null, campaign: null, content: null, term: null, referrer: null,
+    })
+    updateSignupUtmMock.mockResolvedValueOnce({ error: new Error('sem permissão') })
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderRegister()
+    fillAndSubmit()
+
+    expect(await screen.findByText('Onboarding Page')).not.toBeNull()
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
   })
 
   // Com "Confirm email" ligado na Supabase, o cadastro devolve um user mas
@@ -106,5 +157,7 @@ describe('Register page', () => {
 
     expect(await screen.findByText(/confirme seu email/i)).not.toBeNull()
     expect(screen.queryByText('Subscribe Page')).toBeNull()
+    expect(screen.queryByText('Onboarding Page')).toBeNull()
+    expect(updateSignupUtmMock).not.toHaveBeenCalled()
   })
 })

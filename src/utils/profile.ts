@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { Sex, Goal } from '../types'
+import { Sex, Goal, FunnelUtm } from '../types'
 
 export const getIsAdmin = async (userId: string): Promise<boolean> => {
   const { data, error } = await supabase
@@ -49,6 +49,20 @@ export const updateProfileFields = async (
 ): Promise<{ error: Error | null }> => {
   try {
     const { error } = await supabase.from('profiles').update(fields).eq('id', userId)
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    return { error: error as Error }
+  }
+}
+
+/** Grava a origem do tráfego do cadastro em profiles.signup_utm (grant de UPDATE só nessa coluna). */
+export const updateSignupUtm = async (
+  userId: string,
+  utm: FunnelUtm
+): Promise<{ error: Error | null }> => {
+  try {
+    const { error } = await supabase.from('profiles').update({ signup_utm: utm }).eq('id', userId)
     if (error) throw error
     return { error: null }
   } catch (error) {

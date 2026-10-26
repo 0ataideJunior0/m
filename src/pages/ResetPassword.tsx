@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { claimAccess } from '../utils/checkout'
 import { Lock, CheckCircle } from 'lucide-react'
 import Button from '../components/ui/Button'
 
@@ -11,11 +12,19 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [message, setMessage] = useState('')
+  const claimedRef = useRef(false)
 
   useEffect(() => {
     const check = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       setReady(!!session)
+      // O link de recuperação também prova a caixa de entrada. Uma vez por abertura
+      // (o ref segura o efeito duplo do StrictMode); a resposta não muda a tela.
+      if (session && !claimedRef.current) {
+        claimedRef.current = true
+        const { ok, error } = await claimAccess('link_opened')
+        if (!ok) console.error('Não foi possível registrar a abertura do link:', error)
+      }
     }
     check()
   }, [])

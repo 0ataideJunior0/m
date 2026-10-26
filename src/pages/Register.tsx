@@ -2,11 +2,22 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { signUp } from '../utils/auth'
 import { useAuthStore } from '../store/authStore'
-import { getIsAdmin } from '../utils/profile'
+import { getIsAdmin, updateSignupUtm } from '../utils/profile'
+import { getHasActiveSubscription } from '../utils/subscription'
+import { getAttribution } from '../utils/attribution'
 import { Eye, EyeOff, Lock, Mail, CheckCircle2, MailCheck } from 'lucide-react'
 import { passwordsMatch } from '../utils/validation'
 import Button from '../components/ui/Button'
 import AmbientGlow from '../components/ui/AmbientGlow'
+
+/** Grava de onde a pessoa veio; falhar aqui nunca pode travar o cadastro. */
+async function saveSignupUtm(userId: string) {
+  const attribution = getAttribution()
+  if (!attribution) return
+  const { source, medium, campaign, content, term } = attribution
+  const { error } = await updateSignupUtm(userId, { source, medium, campaign, content, term })
+  if (error) console.error('Não foi possível gravar a origem do cadastro:', error)
+}
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -21,7 +32,7 @@ export default function Register() {
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean; confirmPassword?: boolean }>({})
 
   const navigate = useNavigate()
-  const { setUser, setIsAdmin, setNeedsOnboarding } = useAuthStore()
+  const { setUser, setIsAdmin, setNeedsOnboarding, setHasActiveSubscription } = useAuthStore()
 
   const validateFields = (forSubmit: boolean = false) => {
     const errs: typeof fieldErrors = {}
@@ -82,10 +93,14 @@ export default function Register() {
       }
 
       if (user) {
+        // Com sessão (Confirm email desligado) a conta já nasce logada: segue
+        // como o Login e deixa os guards mandarem para o pagamento se faltar.
         setUser(user)
         setIsAdmin(await getIsAdmin(user.id))
-        setNeedsOnboarding(true)
-        navigate('/subscribe')
+        setNeedsOnboarding(!user.onboardingCompletedAt)
+        setHasActiveSubscription(await getHasActiveSubscription())
+        await saveSignupUtm(user.id)
+        navigate('/onboarding')
       }
     } catch (err) {
       setError('Erro ao criar conta. Tente novamente.')
