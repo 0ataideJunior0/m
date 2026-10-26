@@ -12,6 +12,7 @@ O Claude aplica no banco de produção, depois de inspecionar o estado real do b
 
 - Arquivo: `supabase/migrations/20261026120000_pay_first_checkout.sql`
 - A migração de proteção da tabela de perfis (`20261026110000_profiles_column_grants.sql`) **já está aplicada**. Não precisa repetir.
+- A migração também **bloqueia a troca de e-mail** das contas. O app não oferece essa troca, e com o "Confirm email" desligado (passo 6) ela aconteceria na hora, sem confirmação. Se um dia precisar trocar o e-mail de uma aluna, peça ao Claude: ele desliga a trava só durante a troca.
 
 Você só precisa dizer "pode aplicar". Não faça nada nos painéis neste passo.
 
@@ -132,6 +133,12 @@ Motivo: um login por código no telefone seria contado como prova de e-mail, e n
 O Claude faz o merge da branch `feature/pay-first-checkout` na `main` e a Vercel publica.
 
 Espere o deploy terminar (status **Ready** na Vercel) antes de ir para o passo 6.
+
+---
+
+## Antes do passo 6: confirme que trocar o e-mail pela conta não é possível — [Claude]
+
+Depois de aplicar a migração (passo 0), o Claude confere no banco que a trava existe e funciona: tentar trocar o e-mail de uma conta de teste tem que dar o erro **"Troca de e-mail desativada"**, e o e-mail da conta tem que continuar o mesmo. Só siga para o passo 6 com essa confirmação.
 
 ---
 
