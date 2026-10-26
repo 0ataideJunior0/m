@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChefHat, Dumbbell, Users, MessageSquareX } from 'lucide-react'
+import { ArrowLeft, ChefHat, Dumbbell, Users, MessageSquareX, Filter } from 'lucide-react'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -49,6 +49,15 @@ export default function AdminDashboard() {
             <MessageSquareX className="w-8 h-8 text-accent mb-3" />
             <div className="text-lg font-bold text-text-strong mb-1">Cancelamentos</div>
             <div className="text-sm text-text-muted">Motivos informados ao cancelar a assinatura</div>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/funnel')}
+            className="bg-surface border border-border-card rounded-3xl shadow-lg p-6 text-left hover:shadow-xl transition"
+          >
+            <Filter className="w-8 h-8 text-accent mb-3" />
+            <div className="text-lg font-bold text-text-strong mb-1">Funil</div>
+            <div className="text-sm text-text-muted">Onde as compradoras param e qual origem vende</div>
           </button>
         </div>
       </div>

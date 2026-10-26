@@ -31,4 +31,18 @@ describe('AdminDashboard', () => {
     fireEvent.click(screen.getByText('Usuárias'))
     expect(screen.getByText('Users Page')).not.toBeNull()
   })
+
+  it('navega para /admin/funnel ao clicar em Funil', () => {
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/funnel" element={<div>Funnel Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    fireEvent.click(screen.getByText('Funil'))
+    expect(screen.getByText('Funnel Page')).not.toBeNull()
+  })
 })

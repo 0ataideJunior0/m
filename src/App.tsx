@@ -42,6 +42,7 @@ const AdminRecipes = lazy(() => import('./pages/admin/AdminRecipes'))
 const AdminRecipeEdit = lazy(() => import('./pages/admin/AdminRecipeEdit'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminCancellations = lazy(() => import('./pages/admin/AdminCancellations'))
+const AdminFunnel = lazy(() => import('./pages/admin/AdminFunnel'))
 
 // Limpeza one-shot de chaves órfãs deixadas por mecanismos removidos:
 // - musa_auth_enc: cache de sessão cifrado (utils/authPersist.ts, removido
@@ -165,6 +166,7 @@ function App() {
             <Route path="/admin/recipes/nova" element={<RequireOnboarding><RequireAdmin><AdminRecipeEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/recipes/:id" element={<RequireOnboarding><RequireAdmin><AdminRecipeEdit /></RequireAdmin></RequireOnboarding>} />
             <Route path="/admin/cancellations" element={<RequireOnboarding><RequireAdmin><AdminCancellations /></RequireAdmin></RequireOnboarding>} />
+            <Route path="/admin/funnel" element={<RequireOnboarding><RequireAdmin><AdminFunnel /></RequireAdmin></RequireOnboarding>} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </Suspense>
