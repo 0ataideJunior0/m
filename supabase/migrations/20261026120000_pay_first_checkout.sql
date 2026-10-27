@@ -77,10 +77,15 @@ ON CONFLICT (user_id) DO NOTHING;
 --     e-mail alheio trocá-lo depois que a dona comprou, e o reenvio do link não acharia
 --     ninguém. O app não oferece troca de e-mail, então nenhuma troca é legítima.
 --     Só dispara em UPDATE que muda o e-mail: cadastro (INSERT) e login (last_sign_in_at)
---     passam direto. Troca feita pela admin exige desligar o trigger temporariamente:
---       ALTER TABLE auth.users DISABLE TRIGGER block_auth_email_change;
+--     passam direto. Troca feita pela admin: auth.users pertence a supabase_auth_admin,
+--     então DISABLE TRIGGER não funciona; em vez disso troque a função por uma que não
+--     bloqueia, faça a troca e restaure:
+--       CREATE OR REPLACE FUNCTION public.block_auth_email_change() RETURNS trigger
+--         LANGUAGE plpgsql SET search_path = '' AS $f$ BEGIN RETURN NEW; END; $f$;
 --       -- troca o e-mail (e atualiza email_verifications.email, se for o caso)
---       ALTER TABLE auth.users ENABLE TRIGGER block_auth_email_change;
+--       -- recria a função original (RAISE EXCEPTION 'Troca de e-mail desativada')
+--     Atenção: isso também bloqueia apagar usuária com soft delete e um futuro login
+--     com Google que sincronize e-mail.
 CREATE FUNCTION public.block_auth_email_change()
 RETURNS trigger
 LANGUAGE plpgsql
