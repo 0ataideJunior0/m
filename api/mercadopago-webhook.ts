@@ -92,8 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isPreapprovalEvent =
     bodyType === 'subscription_preapproval' || bodyEntity === 'preapproval' || queryType === 'subscription_preapproval'
   const isPaymentEvent = bodyType === 'payment' || bodyEntity === 'payment' || queryType === 'payment'
+  const isRenewalEvent =
+    bodyType === 'subscription_authorized_payment' || queryType === 'subscription_authorized_payment'
 
-  if (!isPreapprovalEvent && !isPaymentEvent) {
+  if (!isPreapprovalEvent && !isPaymentEvent && !isRenewalEvent) {
     // Loga o que veio para descobrirmos formatos novos pelo comportamento real,
     // em vez de confiar no que a documentação do MP diz que chega.
     console.log('mercadopago-webhook evento ignorado:', { bodyType, bodyEntity, queryType, dataId })
@@ -105,6 +107,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabaseAdmin = createSupabaseAdmin()
     if (isPreapprovalEvent) {
       await handlePreapproval(dataId, supabaseAdmin, res)
+    } else if (isRenewalEvent) {
+      await handleRenewal(dataId, supabaseAdmin, res)
     } else {
       await handlePayment(dataId, supabaseAdmin, res)
     }
@@ -118,6 +122,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdmin>
+
+/**
+ * Cobrança mensal de uma assinatura no cartão. O MP avisa a renovação por este
+ * tópico, sem mandar subscription_preapproval: sem tratar aqui, a data do acesso
+ * nunca avança e quem pagou é bloqueada depois da tolerância (aconteceu em
+ * 2026-10-28). Falhas viram 500 para o MP reenviar, em vez de perder a renovação.
+ */
+async function handleRenewal(dataId: string, supabaseAdmin: SupabaseAdmin, res: VercelResponse) {
+  const response = await fetch(`https://api.mercadopago.com/authorized_payments/${encodeURIComponent(dataId)}`, {
+    headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN || ''}` },
+  })
+  if (!response.ok) throw new Error(`authorized_payments respondeu ${response.status}`)
+  const charge = await response.json()
+
+  if (!charge?.preapproval_id) throw new Error('authorized_payment sem preapproval_id')
+
+  // Cobrança recusada ou ainda em andamento não estende o acesso; o MP tenta de
+  // novo e avisa de novo por este mesmo tópico.
+  if (charge.payment?.status !== 'approved') {
+    res.status(200).json({ ignored: true, reason: `renewal payment ${charge.payment?.status ?? 'absent'}` })
+    return
+  }
+
+  await handlePreapproval(String(charge.preapproval_id), supabaseAdmin, res)
+}
 
 async function handlePreapproval(dataId: string, supabaseAdmin: SupabaseAdmin, res: VercelResponse) {
   const preApproval = new PreApproval(createMercadoPagoConfig())
@@ -165,7 +194,7 @@ async function handlePreapproval(dataId: string, supabaseAdmin: SupabaseAdmin, r
     }
   }
 
-  await supabaseAdmin.from('subscriptions').upsert(
+  const { error: upsertError } = await supabaseAdmin.from('subscriptions').upsert(
     {
       user_id: userId,
       preapproval_id: resource.id,
@@ -178,6 +207,7 @@ async function handlePreapproval(dataId: string, supabaseAdmin: SupabaseAdmin, r
     },
     { onConflict: 'user_id' }
   )
+  if (upsertError) throw upsertError
 
   res.status(200).json({ ok: true })
 }

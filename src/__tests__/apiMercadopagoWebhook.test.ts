@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const {
   validateMock,
@@ -206,6 +206,115 @@ describe('POST /api/mercadopago-webhook', () => {
       { onConflict: 'user_id' }
     )
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  describe('renovação da assinatura no cartão (subscription_authorized_payment)', () => {
+    const renewalReq = (): any => ({
+      method: 'POST',
+      headers: { 'x-signature': 'ts=1,v1=good', 'x-request-id': 'req-1' },
+      query: { 'data.id': '555', type: 'subscription_authorized_payment' },
+      body: { type: 'subscription_authorized_payment', data: { id: '555' } },
+    })
+    const stubAuthorizedPayment = (body: unknown, ok = true) => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 503, json: async () => body })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+
+    beforeEach(() => {
+      vi.stubEnv('MERCADOPAGO_ACCESS_TOKEN', 'token-abc')
+      validateMock.mockImplementationOnce(() => undefined)
+      preApprovalGetMock.mockReset()
+      upsertMock.mockReset().mockResolvedValue({ error: null })
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('cobrança aprovada avança a data do acesso com o estado real da assinatura', async () => {
+      const fetchMock = stubAuthorizedPayment({
+        id: 555,
+        preapproval_id: 'preapproval-999',
+        payment: { id: 777, status: 'approved' },
+      })
+      preApprovalGetMock.mockResolvedValueOnce({
+        id: 'preapproval-999',
+        external_reference: 'user-1',
+        status: 'authorized',
+        next_payment_date: '2026-11-28T13:20:53.000Z',
+      })
+      const res = createMockRes()
+
+      await handler(renewalReq(), res)
+
+      expect(fetchMock).toHaveBeenCalledWith('https://api.mercadopago.com/authorized_payments/555', {
+        headers: { Authorization: 'Bearer token-abc' },
+      })
+      expect(preApprovalGetMock).toHaveBeenCalledWith({ id: 'preapproval-999' })
+      expect(upsertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 'user-1',
+          source: 'preapproval',
+          status: 'authorized',
+          next_payment_date: '2026-11-28T13:20:53.000Z',
+        }),
+        { onConflict: 'user_id' }
+      )
+      expect(res.status).toHaveBeenCalledWith(200)
+    })
+
+    it.each([
+      ['recusada', { status: 'rejected' }],
+      ['ainda em andamento', { status: 'in_process' }],
+      ['sem pagamento ainda', undefined],
+    ])('cobrança %s não estende o acesso', async (_nome, payment) => {
+      stubAuthorizedPayment({ id: 555, preapproval_id: 'preapproval-999', payment })
+      const res = createMockRes()
+
+      await handler(renewalReq(), res)
+
+      expect(preApprovalGetMock).not.toHaveBeenCalled()
+      expect(upsertMock).not.toHaveBeenCalled()
+      expect(res.status).toHaveBeenCalledWith(200)
+    })
+
+    it('se o Mercado Pago não responder, devolve 500 para ele reenviar o aviso', async () => {
+      stubAuthorizedPayment({}, false)
+      const res = createMockRes()
+
+      await handler(renewalReq(), res)
+
+      expect(upsertMock).not.toHaveBeenCalled()
+      expect(res.status).toHaveBeenCalledWith(500)
+    })
+
+    it('resposta sem a assinatura devolve 500, em vez de perder a renovação em silêncio', async () => {
+      stubAuthorizedPayment({ id: 555, payment: { status: 'approved' } })
+      const res = createMockRes()
+
+      await handler(renewalReq(), res)
+
+      expect(preApprovalGetMock).not.toHaveBeenCalled()
+      expect(res.status).toHaveBeenCalledWith(500)
+    })
+
+    it('se não conseguir gravar a nova data, devolve 500 para ele reenviar o aviso', async () => {
+      stubAuthorizedPayment({ id: 555, preapproval_id: 'preapproval-999', payment: { status: 'approved' } })
+      preApprovalGetMock.mockResolvedValueOnce({
+        id: 'preapproval-999',
+        external_reference: 'user-1',
+        status: 'authorized',
+        next_payment_date: '2026-11-28T13:20:53.000Z',
+      })
+      upsertMock.mockResolvedValueOnce({ error: new Error('banco fora') })
+      const res = createMockRes()
+
+      await handler(renewalReq(), res)
+
+      expect(res.status).toHaveBeenCalledWith(500)
+      expect(res.status).not.toHaveBeenCalledWith(200)
+    })
   })
 
   it('assinar no cartão não encurta um acesso liberado manualmente que vai além da data do cartão', async () => {
