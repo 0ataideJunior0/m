@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChefHat, Dumbbell, Users, MessageSquareX, Filter } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ChefHat, Dumbbell, Users, MessageSquareX, Filter } from 'lucide-react'
+import { listNonAdminUsers } from '../../utils/adminUsers'
+import { overdueCardUsers } from '../../utils/adminUsersView'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const [overdueCount, setOverdueCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    listNonAdminUsers()
+      .then((users) => {
+        if (!cancelled) setOverdueCount(overdueCardUsers(users).length)
+      })
+      .catch((error) => console.error('Error checking overdue card billing:', error))
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-bg">
@@ -13,6 +29,16 @@ export default function AdminDashboard() {
           </button>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-strong">Painel Admin</h1>
         </div>
+
+        {overdueCount > 0 && (
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="w-full mb-4 flex items-center gap-2 rounded-2xl border border-red-300 dark:border-red-800 bg-red-500/10 p-4 text-left font-bold text-red-700 dark:text-red-400 hover:bg-red-500/15 transition"
+          >
+            <AlertTriangle aria-hidden="true" className="w-5 h-5 shrink-0" />
+            {overdueCount === 1 ? '1 cobrança do cartão atrasada' : `${overdueCount} cobranças do cartão atrasadas`} — ver quem
+          </button>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button

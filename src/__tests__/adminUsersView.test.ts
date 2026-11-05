@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyAccess, filterUsers, countByFilter } from '../utils/adminUsersView'
+import { classifyAccess, filterUsers, countByFilter, isCardBillingOverdue, overdueCardUsers } from '../utils/adminUsersView'
 import type { AdminUserSummary, UserAccess } from '../utils/adminUsers'
 
 const NOW = new Date('2026-10-19T12:00:00.000Z')
@@ -88,5 +88,56 @@ describe('filterUsers', () => {
 
   it('conta quantas há em cada situação', () => {
     expect(countByFilter(all, NOW)).toEqual({ all: 4, active: 2, expiring: 1, expired: 1, none: 1 })
+  })
+})
+
+describe('cobrança atrasada no cartão', () => {
+  const card = (until: string | null, over: Partial<UserAccess> = {}): UserAccess => ({
+    active: true,
+    until,
+    source: 'preapproval',
+    status: 'authorized',
+    ...over,
+  })
+
+  it('assinatura ativa com a renovação vencida há mais de 24 horas está atrasada', () => {
+    expect(isCardBillingOverdue(card(inDays(-2)), NOW)).toBe(true)
+  })
+
+  it('nas primeiras 24 horas não alerta: o aviso da cobrança pode estar chegando', () => {
+    expect(isCardBillingOverdue(card(inDays(-0.5)), NOW)).toBe(false)
+  })
+
+  it('renovação no futuro não está atrasada', () => {
+    expect(isCardBillingOverdue(card(inDays(5)), NOW)).toBe(false)
+  })
+
+  it('assinatura cancelada ou pendente não é cobrança atrasada', () => {
+    expect(isCardBillingOverdue(card(inDays(-5), { status: 'cancelled' }), NOW)).toBe(false)
+    expect(isCardBillingOverdue(card(inDays(-5), { status: 'pending' }), NOW)).toBe(false)
+  })
+
+  it('Pix e liberação manual vencidos não são cobrança atrasada', () => {
+    expect(isCardBillingOverdue(card(inDays(-5), { source: 'pix' }), NOW)).toBe(false)
+    expect(isCardBillingOverdue(card(inDays(-5), { source: 'manual' }), NOW)).toBe(false)
+  })
+
+  it('o selo diz cobrança atrasada, mesmo depois de a aluna perder o acesso', () => {
+    expect(classifyAccess(card(inDays(-2)), NOW)).toEqual({
+      kind: 'expiring',
+      label: 'Cobrança atrasada desde 17/10/2026',
+    })
+    expect(classifyAccess(card(inDays(-8), { active: false }), NOW)).toEqual({
+      kind: 'expired',
+      label: 'Cobrança atrasada desde 11/10/2026',
+    })
+  })
+
+  it('lista só as alunas atrasadas, começando pela mais antiga', () => {
+    const recente = user({ id: 'a', access: card(inDays(-2)) })
+    const antiga = user({ id: 'b', access: card(inDays(-8), { active: false }) })
+    const emDia = user({ id: 'c', access: card(inDays(9)) })
+
+    expect(overdueCardUsers([recente, emDia, antiga], NOW).map((u) => u.id)).toEqual(['b', 'a'])
   })
 })

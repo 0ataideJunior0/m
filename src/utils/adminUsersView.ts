@@ -10,8 +10,29 @@ export type UserFilter = 'all' | 'active' | 'expiring' | 'expired' | 'none'
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
+/**
+ * Assinatura no cartão ativa cuja data de renovação passou sem o app registrar a
+ * cobrança: ou o cartão foi recusado, ou o aviso do Mercado Pago não chegou (e a
+ * aluna pode estar bloqueada mesmo tendo pago). As primeiras 24 horas não contam,
+ * porque o aviso de uma cobrança normal pode ainda estar a caminho.
+ */
+export function isCardBillingOverdue(access: UserAccess, now: Date = new Date()): boolean {
+  if (access.source !== 'preapproval' || access.status !== 'authorized' || !access.until) return false
+  return new Date(access.until).getTime() < now.getTime() - MS_PER_DAY
+}
+
+export function overdueCardUsers(users: AdminUserSummary[], now: Date = new Date()): AdminUserSummary[] {
+  return users
+    .filter((u) => isCardBillingOverdue(u.access, now))
+    .sort((a, b) => new Date(a.access.until ?? 0).getTime() - new Date(b.access.until ?? 0).getTime())
+}
+
 export function classifyAccess(access: UserAccess, now: Date = new Date()): { kind: AccessKind; label: string } {
   if (!access.until && !access.active) return { kind: 'none', label: 'Sem acesso' }
+
+  if (access.until && isCardBillingOverdue(access, now)) {
+    return { kind: access.active ? 'expiring' : 'expired', label: `Cobrança atrasada desde ${formatDate(access.until)}` }
+  }
 
   if (!access.active) {
     return { kind: 'expired', label: access.until ? `Vencida em ${formatDate(access.until)}` : 'Sem acesso' }

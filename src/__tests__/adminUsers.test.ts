@@ -83,7 +83,7 @@ describe('listNonAdminUsers', () => {
         username: 'Ana',
         created_at: '2026-01-01',
         completedDays: 2,
-        access: { active: true, until: '2099-01-01T00:00:00.000Z', source: 'manual' },
+        access: { active: true, until: '2099-01-01T00:00:00.000Z', source: 'manual', status: 'authorized' },
       },
       {
         id: 'u2',
@@ -91,7 +91,7 @@ describe('listNonAdminUsers', () => {
         username: null,
         created_at: '2026-02-01',
         completedDays: 1,
-        access: { active: false, until: null, source: null },
+        access: { active: false, until: null, source: null, status: null },
       },
     ])
   })
@@ -109,7 +109,7 @@ describe('listNonAdminUsers', () => {
 
     const [ana] = await listNonAdminUsers()
 
-    expect(ana.access).toEqual({ active: false, until: '2020-01-01T00:00:00.000Z', source: 'pix' })
+    expect(ana.access).toEqual({ active: false, until: '2020-01-01T00:00:00.000Z', source: 'pix', status: 'authorized' })
   })
 
   it('retorna lista vazia sem consultar progresso quando não há usuários', async () => {

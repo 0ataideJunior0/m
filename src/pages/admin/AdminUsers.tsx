@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Dumbbell, CalendarPlus, Search } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Dumbbell, CalendarPlus, Search } from 'lucide-react'
 import { listNonAdminUsers, grantAccess, AdminUserSummary } from '../../utils/adminUsers'
-import { classifyAccess, filterUsers, countByFilter, AccessKind, UserFilter } from '../../utils/adminUsersView'
+import { classifyAccess, filterUsers, countByFilter, overdueCardUsers, AccessKind, UserFilter } from '../../utils/adminUsersView'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import ChoiceGroup from '../../components/ui/ChoiceGroup'
@@ -89,6 +89,7 @@ export default function AdminUsers() {
 
   const counts = useMemo(() => countByFilter(users), [users])
   const visible = useMemo(() => filterUsers(users, filter, query), [users, filter, query])
+  const overdue = useMemo(() => overdueCardUsers(users), [users])
 
   const openGrant = (user: AdminUserSummary) => {
     setSelected(user)
@@ -144,6 +145,26 @@ export default function AdminUsers() {
             </p>
           </div>
         </header>
+
+        {overdue.length > 0 && (
+          <div role="alert" className="mb-5 rounded-2xl border border-red-300 dark:border-red-800 bg-red-500/10 p-4">
+            <div className="flex items-center gap-2 font-extrabold text-red-700 dark:text-red-400">
+              <AlertTriangle aria-hidden="true" className="w-5 h-5 shrink-0" />
+              Cobrança do cartão atrasada
+            </div>
+            <ul className="mt-2 text-sm text-text-strong">
+              {overdue.map((u) => (
+                <li key={u.id}>
+                  {displayName(u)} · {u.email} · desde {u.access.until ? formatDate(u.access.until) : '—'}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-sm text-text-muted">
+              A data de renovação passou e o app não registrou a cobrança. Confira no Mercado Pago: se a cobrança foi feita, o
+              acesso precisa ser corrigido; se foi recusada, a aluna precisa atualizar o cartão.
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 mb-5">
           <label htmlFor="user-search" className="sr-only">

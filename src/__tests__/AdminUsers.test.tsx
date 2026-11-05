@@ -132,6 +132,26 @@ describe('AdminUsers', () => {
     expect(await screen.findByText('Não foi possível liberar o acesso')).toBeInTheDocument()
   })
 
+  it('avisa no topo quem está com a cobrança do cartão atrasada', async () => {
+    listNonAdminUsersMock.mockResolvedValue([
+      ana,
+      { ...bia, username: 'Juh', access: { active: false, until: inDays(-8), source: 'preapproval', status: 'authorized' } },
+    ])
+    renderPage()
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Cobrança do cartão atrasada')
+    expect(alert).toHaveTextContent('Juh')
+    expect(alert).toHaveTextContent(/Mercado Pago/)
+  })
+
+  it('sem cobrança atrasada não mostra o aviso', async () => {
+    renderPage()
+
+    await screen.findByText('ana@example.com')
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
   it('com assinatura ativa no cartão, explica e não deixa liberar', async () => {
     listNonAdminUsersMock.mockResolvedValue([
       { ...ana, access: { active: true, until: '2099-01-01T12:00:00.000Z', source: 'preapproval' } },

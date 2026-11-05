@@ -7,6 +7,8 @@ export interface UserAccess {
   /** Fim do período pago (ou próxima cobrança no cartão), mesmo se já venceu. */
   until: string | null
   source: SubscriptionSource | null
+  /** Status da assinatura (authorized, cancelled, pending...); nulo sem assinatura. */
+  status?: string | null
 }
 
 export interface AdminUserSummary {
@@ -38,8 +40,8 @@ const hasActiveAccess = (sub: SubscriptionRow, now = Date.now()): boolean => {
 
 const toAccess = (sub: SubscriptionRow | undefined): UserAccess =>
   sub
-    ? { active: hasActiveAccess(sub), until: sub.next_payment_date, source: sub.source }
-    : { active: false, until: null, source: null }
+    ? { active: hasActiveAccess(sub), until: sub.next_payment_date, source: sub.source, status: sub.status }
+    : { active: false, until: null, source: null, status: null }
 
 export const listNonAdminUsers = async (): Promise<AdminUserSummary[]> => {
   const { data: profiles, error: profilesError } = await supabase
